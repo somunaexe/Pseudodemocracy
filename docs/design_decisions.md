@@ -3,6 +3,19 @@
 Decisions made while building the digital version, so they aren't lost.
 Add a line whenever the handbook is silent and the table has to decide.
 
+## Final ranking (who wins)
+
+Compared in this order. Built in `scripts/scoring.gd` and covered by 22 tests.
+
+1. **Half-rounds as Leader** (full term = 2, couped term = 1).
+2. **Tie-break score** `(popularity + 51) x PSD`. Anyone in debt scores their negative PSD, so they rank below everyone at 0 PSD or above, and a smaller debt wins.
+3. **Popularity.** This settles: everyone at exactly 0 PSD, equal debts, and different players whose products happen to be equal.
+4. **Still equal:** a shared win.
+
+Open:
+- Are eliminated players eligible to win? (`winners` leaves that to the caller.)
+- The handbook must be reworded: "popularity + 51", a 1-101 score, popularity as the second key, and a shared win on a full tie.
+
 ## Debt
 
 | Question | Decision | Status |
@@ -24,7 +37,6 @@ Open debt questions:
 - Elimination by debt is only *marked* so far. PSD to the treasury, roles rescinded, wills and heirs are not wired up.
 - Can an heir reject a debt-only estate?
 - A round cut short by a coup gives some players no turn that round. By the "own turn" definition, no debt term is counted for them.
-- Tie-break gap that remains: everyone with exactly 0 PSD scores 0, whatever their popularity. Add popularity as a second key?
 
 ## Other
 
