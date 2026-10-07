@@ -1,0 +1,117 @@
+{
+ "minPlayers": 3,
+ "boxPlayers": 10,
+ "playerNotes": {
+  "1": 10,
+  "5": 10,
+  "10": 10,
+  "20": 12,
+  "50": 6,
+  "100": 3
+ },
+ "treasuryNotes": {
+  "1": 50,
+  "5": 20,
+  "10": 10,
+  "20": 15,
+  "50": 10,
+  "100": 15
+ },
+ "popMin": -50,
+ "popMax": 50,
+ "cancelledAt": -50,
+ "examQuestions": 5,
+ "examOptions": 2,
+ "passMark": 50,
+ "taxRate": 20,
+ "levy": {
+  "start": 25,
+  "bandLow": 25,
+  "bandHigh": 50,
+  "shift": 10,
+  "trigger": 20,
+  "floor": 25
+ },
+ "coupCost": 300,
+ "coupGap": 20,
+ "coupedScore": "½",
+ "goodCard": "Settlement",
+ "badCard": "Scandal",
+ "corruption": {
+  "limit": 3,
+  "pop": 30,
+  "fine": 200,
+  "wait": 3
+ },
+ "discussionMinutes": 1,
+ "malpracticeFine": 25,
+ "amendPenalty": 100,
+ "swing": [
+  [
+   "3",
+   10
+  ],
+  [
+   "4",
+   7
+  ],
+  [
+   "5",
+   6
+  ],
+  [
+   "6",
+   5
+  ],
+  [
+   "7",
+   4
+  ],
+  [
+   "8–10",
+   3
+  ],
+  [
+   "11+",
+   1
+  ]
+ ],
+ "components": {
+  "leaderCards": {
+   "Dictator": 1,
+   "President": 3,
+   "Commander": 1
+  },
+  "roleCards": [
+   "Doctor",
+   "Lawyer",
+   "Secret Agent",
+   "Activist",
+   "Agbero"
+  ],
+  "roleCopies": 5,
+  "willCards": 8,
+  "corruptionTokens": 15,
+  "coupStickers": 10
+ },
+ "beads": {
+  "cure": "blue",
+  "poison": "red"
+ },
+ "doctorCharges": 2,
+ "agboRounds": 1,
+ "concoctionRounds": 2,
+ "unionStart": 1,
+ "unionMin": 2,
+ "agberoSteal": 50,
+ "activistVote": "double",
+ "nepoDebuff": [
+  30,
+  20,
+  10
+ ],
+ "startMoney": 1000,
+ "treasuryReserve": 2550,
+ "boxTotal": 12550,
+ "highestNote": 100
+}

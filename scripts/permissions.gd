@@ -4,8 +4,7 @@ class_name Permissions
 # before Godot has built its class cache.
 const GameStateScript = preload("res://scripts/game_state.gd")
 
-# TODO: load from the game data (cancelledAt in game_data.js) instead of typing it here.
-const CANCELLED_AT := -50
+const GameDataScript = preload("res://scripts/game_data.gd")
 
 
 # Returns "" if allowed, or the reason it isn't.
@@ -18,7 +17,7 @@ static func can_amend(state: GameStateScript, player_id: int, window: GameStateS
 		return "A Commander can't amend."
 	if state.sick.get(player_id, false):
 		return "A sick Leader can't amend."
-	if state.popularity.get(player_id, 0) <= CANCELLED_AT:
+	if state.popularity.get(player_id, 0) <= GameDataScript.get_int("cancelledAt"):
 		return "A CANCELLED Leader can't amend."
 	if state.windows_used[window]:
 		return "This amendment window has already been used."
