@@ -3,9 +3,9 @@ extends SceneTree
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
 
-const INAUG = GameStateScript.Window.INAUGURATION
-const MID = GameStateScript.Window.MID_TERM
-const FAREWELL = GameStateScript.Window.FAREWELL
+const INAUG = GameStateScript.AmendWindow.INAUGURATION
+const MID = GameStateScript.AmendWindow.MID_TERM
+const FAREWELL = GameStateScript.AmendWindow.FAREWELL
 
 var failures: int = 0
 

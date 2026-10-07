@@ -11,7 +11,7 @@ const CANCELLED_AT := -50
 # Returns "" if allowed, or the reason it isn't.
 # Checks run from most basic to most specific: who you are, your role,
 # your condition, then timing. So a stranger learns nothing about the Leader.
-static func can_amend(state: GameStateScript, player_id: int, window: GameStateScript.Window) -> String:
+static func can_amend(state: GameStateScript, player_id: int, window: GameStateScript.AmendWindow) -> String:
 	if player_id != state.leader_id:
 		return "Only the Leader can amend the Constitution."
 	if state.leader_type == GameStateScript.LeaderType.COMMANDER:
@@ -28,12 +28,12 @@ static func can_amend(state: GameStateScript, player_id: int, window: GameStateS
 
 
 # Mid-term opens once half the players (rounded up) have played; Farewell once all have.
-static func window_open(state: GameStateScript, window: GameStateScript.Window) -> bool:
+static func window_open(state: GameStateScript, window: GameStateScript.AmendWindow) -> bool:
 	match window:
-		GameStateScript.Window.INAUGURATION:
+		GameStateScript.AmendWindow.INAUGURATION:
 			return true
-		GameStateScript.Window.MID_TERM:
+		GameStateScript.AmendWindow.MID_TERM:
 			return state.turns_played >= ceili(state.player_count / 2.0)
-		GameStateScript.Window.FAREWELL:
+		GameStateScript.AmendWindow.FAREWELL:
 			return state.turns_played >= state.player_count
 	return false
