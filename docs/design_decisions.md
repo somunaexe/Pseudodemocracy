@@ -70,4 +70,13 @@ Assumptions to confirm:
 1. **Agbero steal.** The handbook says "steal 50 x union size". I read it as 50 to *each* member (so 50 x size in total). If the Leader can't pay everyone, members are paid in the order they joined and the rest becomes debt (FIFO). Is "who gets paid first" meant to matter?
 2. **Activist doubling.** I doubled the weight for both the keep/reject count and the popularity swing. The handbook says "the union's total vote is doubled".
 3. **A union that contains the Leader** can't confront at all (Article 17 says its actions target a rival; not built yet).
-4. **Commands from the network** must carry whole numbers as ints. JSON turns them into floats, so a serialization layer must convert them back before `handle` sees them.
+4. ~~Commands from the network carry floats.~~ Solved: `Serializer.parse_command` converts them to ints before `handle` sees them.
+
+## Serialization (built: scripts/serializer.gd, 105 checks)
+
+| Question | Decision | Status |
+|---|---|---|
+| How are saves and messages written? | JSON text, with non-text dictionary keys as `$pairs` so they keep their type. | **Built** |
+| What stops an old save being misread? | `SCHEMA_VERSION`; a save with another version is refused. Bump it when a field or enum changes meaning. | **Built** |
+| What can a client send? | Only a command object, max 64 KB, nested at most 32 deep. Whether it is allowed is decided by the rules, not the parser. | **Built** |
+| What does a reconnecting player see? | Not decided. The full state holds secrets, so they need a filtered view. | Open |

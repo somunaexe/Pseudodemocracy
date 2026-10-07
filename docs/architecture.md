@@ -41,7 +41,27 @@ has a test (`tools/run_tests.sh`).
 - Validate and store the same normalised string.
 - Don't name your own types after Godot classes (`Window` broke us once).
 
+## Serialization (scripts/serializer.gd)
+
+JSON gets three things wrong, and the serializer fixes each:
+
+| Problem | Fix |
+|---|---|
+| Dictionary keys turn into text (`{1: x}` comes back as `{"1": x}`) | A dictionary with any non-text key is written as `{"$pairs": [[key, value], ...]}`, so keys keep their type. |
+| Every number comes back as a float | Whole numbers are turned back into ints on loading. (The state holds no real fractions.) |
+| Clients can send anything | `parse_command` checks size (64 KB), depth (32), and shape, and returns the command with ints restored. |
+
+- `state_to_json` / `state_from_json` save and load the **whole** state. It lists the fields by
+  asking Godot, so a field added to `GameState` is saved automatically. **It includes secrets
+  (sealed votes): server saves only, never send it to a client.**
+- A save carries `SCHEMA_VERSION`. Bump it whenever a field or an enum value changes meaning;
+  an old save is then refused instead of silently misread.
+- Functions that can fail take an `errors` array and never crash on bad input.
+- The test builds a state with every field filled in, round-trips it, and compares **types as
+  well as values**; it also fails if a new field is not covered by that state.
+
 ## Not built yet
 
-Serialization (state and commands to and from JSON), per-player event filtering, the other
+Per-player views of the state for reconnecting clients (events already carry an `audience`; a
+filtered snapshot does not exist), the other
 phases (exam, vote for Leader, role draw, turns), cards, wills, elimination effects, the UI.
