@@ -60,7 +60,7 @@ static func end_of_turn(state: GameStateScript, player_id: int) -> bool:
 	var terms: int = int(state.debt_terms.get(player_id, 0)) + 1
 	state.debt_terms[player_id] = terms
 	if terms >= GameDataScript.get_int("debtMaxTerms"):
-		state.eliminated[player_id] = true
+		eliminate(state, player_id)
 		return true
 	return false
 
@@ -68,6 +68,25 @@ static func end_of_turn(state: GameStateScript, player_id: int) -> bool:
 # Pay the oldest debt first until the cash or the debts run out. State is updated before
 # each creditor is paid, because paying a creditor may in turn pay off the creditor's debts.
 # That always ends: every step removes debt from the system.
+# Eliminate a player. Debts owed TO them are cleared, unless they have an heir
+# (state.heirs), in which case the heir is owed instead. (Their own debts, PSD and roles
+# are handled by the elimination rules, not here.)
+static func eliminate(state: GameStateScript, player_id: int) -> void:
+	state.eliminated[player_id] = true
+	var heir: int = int(state.heirs.get(player_id, 0))   # 0 is the treasury's id, never a player
+	for debtor_id in state.debts:
+		var entries: Array = state.debts[debtor_id]
+		for i in range(entries.size() - 1, -1, -1):
+			if entries[i]["creditor"] != player_id:
+				continue
+			if heir == 0:
+				entries.remove_at(i)
+			else:
+				entries[i]["creditor"] = heir
+		if entries.is_empty():
+			state.debt_terms[debtor_id] = 0
+
+
 static func _collect(state: GameStateScript, debtor_id: int) -> void:
 	var entries: Array = state.debts.get(debtor_id, [])
 	while not entries.is_empty() and int(state.psd.get(debtor_id, 0)) > 0:

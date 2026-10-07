@@ -27,6 +27,7 @@ Open:
 | How long can debt last? | 3 terms, then the player is eliminated. A "term" here is one of that player's own turns coming round again. | Decided. Open: see below. |
 | Forced vs agreed payments (levy vs a Doctor's fee). | No split. Any payment a player can't cover becomes debt, as in real life. There is no "loan" concept. | **Built** |
 | When is debt collected, and in what order? | Immediately, the moment money reaches the player, oldest debt first (FIFO). Each debt is its own entry; same-creditor debts are not merged. | **Built** (`Debt.receive`) |
+| A debt is owed to a player who is then eliminated. | The debt is cleared, unless they have an heir: then the heir is owed instead. | **Built** (`Debt.eliminate`, `GameState.heirs`) |
 | Paying it off and falling back in. | Paying off all debt resets the count to zero. | Decided |
 | Can a player in debt launch a coup? | No. A coup costs 300 PSD and they don't have it. No special rule needed. | Decided |
 | Do heirs inherit debt? | Yes. A Nepo Baby inherits debt along with the estate. | Decided. Open: can they reject a debt-only estate? |
@@ -37,7 +38,6 @@ Open:
 
 Open debt questions:
 - All income must go through `Debt.receive()` (roles, cards, treasury payouts), or it will skip collection.
-- A debt owed to an eliminated player: is it still paid to them (and then to their heirs)?
 - Elimination by debt is only *marked* so far. PSD to the treasury, roles rescinded, wills and heirs are not wired up.
 - Can an heir reject a debt-only estate?
 - A round cut short by a coup gives some players no turn that round. By the "own turn" definition, no debt term is counted for them.
@@ -48,3 +48,26 @@ Open debt questions:
 |---|---|---|
 | Where does grammar checking for amendments happen? | Server decides. Method still open (referee, tool, or word lists). | Open |
 | Amendment words are validated on the server, never trusted from the client. | Server-authoritative. | Decided |
+
+## Amendment flow (built: scripts/amendment_flow.gd, 113 tests)
+
+Commands in, events out, a state machine in between (NONE, PROPOSED, VOTING). See docs/architecture.md.
+
+| Question | Decision | Status |
+|---|---|---|
+| Does a failed check use up the window? | Yes. So does a blocked, rejected or successful amendment: the window is used the moment a proposal is accepted. | **Built** |
+| What counts as a "failed check"? | Changing a fixed word, a wrong word count, a replacement that isn't one word, or a bad grammar ruling. All cost 100 PSD and (base swing x other players) popularity. | **Built** |
+| Active players for the swing / penalty. | Players who are not eliminated, the Leader included. | **Built** |
+| Who rules on grammar? | Only the server (player 0). *How* it decides is still open. | Open |
+| Who can vote? | Everyone except the Leader, the sick and the eliminated. | **Built** |
+| How do you vote? | By hand, in secret: the server holds the votes, everyone is told THAT you voted, and the result reveals HOW. | **Built** |
+| President / Dictator | President needs more for than against (a tie fails). A Dictator's amendment always stands. Both still move popularity. | **Built** |
+| Agbero confront | Blocks the amendment (window stays used). The Leader pays the steal amount to each member. | **Built**, see assumption 1 |
+| Activist confront | Each member's vote counts double, against the Leader, cast automatically. A vote they cast earlier is ignored. | **Built**, see assumption 2 |
+| Who can confront? | Only the unionizer, not sick or eliminated, union of at least 2, once only, while the amendment is PROPOSED or VOTING. | **Built** |
+
+Assumptions to confirm:
+1. **Agbero steal.** The handbook says "steal 50 x union size". I read it as 50 to *each* member (so 50 x size in total). If the Leader can't pay everyone, members are paid in the order they joined and the rest becomes debt (FIFO). Is "who gets paid first" meant to matter?
+2. **Activist doubling.** I doubled the weight for both the keep/reject count and the popularity swing. The handbook says "the union's total vote is doubled".
+3. **A union that contains the Leader** can't confront at all (Article 17 says its actions target a rival; not built yet).
+4. **Commands from the network** must carry whole numbers as ints. JSON turns them into floats, so a serialization layer must convert them back before `handle` sees them.
