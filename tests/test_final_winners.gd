@@ -2,6 +2,7 @@ extends SceneTree
 
 const ScoringScript = preload("res://scripts/scoring.gd")
 const DebtScript = preload("res://scripts/debt.gd")
+const ElimScript = preload("res://scripts/elimination.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
 
 var failures: int = 0
@@ -31,10 +32,10 @@ func _init() -> void:
 	s = make_state()
 	s.psd[1] = 0
 	DebtScript.charge(s, 1, DebtScript.TREASURY_ID, 25)
-	DebtScript.end_of_turn(s, 1)
-	DebtScript.end_of_turn(s, 1)
+	ElimScript.end_turn(s, 1)
+	ElimScript.end_turn(s, 1)
 	ids("still in the game after 2 debt terms", ScoringScript.final_winners(s), [1])
-	DebtScript.end_of_turn(s, 1)
+	ElimScript.end_turn(s, 1)
 	ids("eliminated by debt after the 3rd term", ScoringScript.final_winners(s), [2])
 
 	# Level on rounds: the debtor loses to the one with cash.

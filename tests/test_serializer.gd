@@ -83,7 +83,7 @@ func saved_games_are_checked() -> void:
 	expect("... with a message", errors.is_empty(), false)
 
 	errors = []
-	SerializerScript.state_from_json(text.replace("\"version\":1", "\"version\":99"), errors)
+	SerializerScript.state_from_json(text.replace("\"version\":%d" % SerializerScript.SCHEMA_VERSION, "\"version\":99"), errors)
 	expect("a different schema version is refused", errors.size(), 1)
 	expect("... and says why", errors[0].contains("version"), true)
 
@@ -191,6 +191,7 @@ func rich_state() -> GameStateScript:
 	s.unions[10] = {"type": GameStateScript.UnionType.ACTIVIST, "owner": 2, "members": [2, 3], "confront_used": false}
 	s.unions[11] = {"type": GameStateScript.UnionType.AGBERO, "owner": 4, "members": [4, 5], "confront_used": true}
 	s.heirs[6] = 4
+	s.wills[2] = {"psd_heir": 4, "on_hold": false}
 
 	# 1) an amendment that is voted on (so the log holds a result with player ids as keys)
 	send(s, 1, propose(s, INAUG, {1: "30%"}))

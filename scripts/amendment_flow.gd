@@ -248,10 +248,19 @@ static func _auto_voters(state: GameStateScript) -> Array:
 	var eligible: Array = _eligible_voters(state)
 	var result: Array = []
 	for union_id in state.amend.get("activists", []):
+		if not state.unions.has(union_id):
+			continue   # the union was dissolved since it confronted
 		for member in state.unions[union_id]["members"]:
 			if member in eligible and not member in result:
 				result.append(member)
 	return result
+
+
+# Call after anything that changes who can vote (an elimination): the vote may now be complete.
+static func recheck(state: GameStateScript) -> Array:
+	var events: Array = _maybe_resolve(state)
+	state.event_log.append_array(events)
+	return events
 
 
 static func _maybe_resolve(state: GameStateScript) -> Array:

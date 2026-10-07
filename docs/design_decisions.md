@@ -27,10 +27,10 @@ Open:
 | How long can debt last? | 3 terms, then the player is eliminated. A "term" here is one of that player's own turns coming round again. | Decided. Open: see below. |
 | Forced vs agreed payments (levy vs a Doctor's fee). | No split. Any payment a player can't cover becomes debt, as in real life, including payments they agree to (e.g. a Doctor's fee). There is no "loan" concept and no "can they afford it?" guard on agreed payments. Confirmed twice. | **Built** (`Debt.charge`; `test_debt.gd` covers an agreed payment to a player) |
 | When is debt collected, and in what order? | Immediately, the moment money reaches the player, oldest debt first (FIFO). Each debt is its own entry; same-creditor debts are not merged. | **Built** (`Debt.receive`) |
-| A debt is owed to a player who is then eliminated. | The debt is cleared, unless they have an heir: then the heir is owed instead. | **Built** (`Debt.eliminate`, `GameState.heirs`) |
+| A debt is owed to a player who is then eliminated. | The debt is cleared, unless they have an heir: then the heir is owed instead. | **Built** (`Elimination`, `GameState.heirs`) |
 | Paying it off and falling back in. | Paying off all debt resets the count to zero. | Decided |
 | Can a player in debt launch a coup? | No. A coup costs 300 PSD and they don't have it. No special rule needed. | Decided |
-| Do heirs inherit debt? | Yes. A Nepo Baby inherits debt along with the estate. | Decided. Open: can they reject a debt-only estate? |
+| Do heirs inherit debt? | Yes, automatically. **An heir can't accept or refuse any inheritance** (rule changed). They get the whole estate: cash and debt. | **Built** (`Elimination.eliminate`) |
 | Tie-break `(popularity + 50) x PSD` with negative PSD. | Anyone below 0 PSD ranks under everyone at 0 or above; among debtors the smaller debt wins. | **Built** (scripts/scoring.gd, tested) |
 | Tie-break shift: 50 or 51? | 51. A CANCELLED player (-50) scored 0 whatever their PSD; now they score 1 x PSD. Handbook wording must change to `popularity + 51`. | **Built** (`tieBreakShift` in game data) |
 | Can a player pay part of what they owe? | Yes. They pay what they have; the rest becomes a debt to the same creditor. | **Built** (scripts/debt.gd, tested) |
@@ -38,8 +38,7 @@ Open:
 
 Open debt questions:
 - All income must go through `Debt.receive()` (roles, cards, treasury payouts), or it will skip collection.
-- Elimination by debt is only *marked* so far. PSD to the treasury, roles rescinded, wills and heirs are not wired up.
-- Can an heir reject a debt-only estate?
+- Elimination is built for cash, debt, wills and unions. Roles and the Nepo Baby debuff are not (see Elimination below).
 - A round cut short by a coup gives some players no turn that round. By the "own turn" definition, no debt term is counted for them.
 
 ## Other
@@ -91,3 +90,33 @@ Assumptions to confirm:
 | When is a will carried out? | When its owner is eliminated. The Lawyer reads it out, so it becomes public then. Before that, a will is secret (server only). | Decided, not built |
 | Votes during an amendment | Hidden until the result; everyone sees who has voted, and you see your own. | **Built** |
 | Wills, role cards, coup stickers, Doctor's beads, exam keys | Server only, when they are built. | Not built |
+
+## Elimination (built: scripts/elimination.gd, 67 checks)
+
+| Question | Decision | Status |
+|---|---|---|
+| Who gets the estate? | The heir named in the will, whole, automatically. An heir can't refuse anything. | **Built** (rule changed) |
+| What counts as a usable will? | It exists, is not on hold (Article 27), and names a living player other than the owner. Otherwise it is void and the event says why. | **Built** |
+| No usable will: where does the cash go? | The treasury (Article 29). | **Built** |
+| No usable will: what happens to their debts? | They disappear with them; the creditors lose the money. | Decided by me, please confirm |
+| An heir inherits debt and has cash. | Collection is immediate: the cash pays the oldest debt first (the heir's own debts, then the inherited ones). Inherited debt goes to the back of the queue. | **Built** |
+| The dead player owed the heir. | That debt is cancelled; nobody owes themselves. | **Built** |
+| Money owed TO the dead player. | Goes to the heir, or is cleared if there is none. No money is ever paid to a dead player. | **Built** |
+| Union memberships. | Ended (Article 25). A union left with one member dissolves (Article 11). | **Built** |
+| A union whose unionizer is eliminated. | Dissolves. | Assumed, please confirm |
+| A vote that was waiting for the eliminated player. | Finishes if they were the last one awaited. | **Built** |
+| When is a will carried out? | At elimination, and it is then public. Until then it is server-only (`wills`). | **Built** |
+
+A fact worth knowing: debt is collected the moment money arrives, so a player who owes anything holds 0 cash. An estate is therefore always cash *or* debt, never both. The code handles both anyway.
+
+Handbook sentences that now contradict "an heir cannot refuse":
+- Part 6: "Each heir accepts or rejects independently."
+- Article 29: "Unwilled or **rejected** PSD goes to the treasury."
+- Article 30: "An heir who **accepts** an inheritance becomes a Nepo Baby." (`accepts` is a highlighted, amendable word.)
+
+Not built yet, and why:
+- **Nepo Baby debuff.** The handbook says -30, -20, -10 over three rounds and "removed in the 4th round". Is that three one-off hits (-60 in total), or a temporary reduction that is lifted afterwards (popularity returns)? That changes how popularity is stored.
+- **Roles** don't exist in the game state yet, so they can't be inherited or rescinded.
+- **Wills.** Nothing creates one yet (the Lawyer, the fee, "on hold" upkeep). Tests set them directly.
+- **The Leader is eliminated.** Mid-term, or mid-amendment: there is no rule. What happens to the seat?
+- **A dissolved union's earlier confront.** If an Activist union confronts and then dissolves before the vote ends, its automatic votes disappear and its members vote by hand. Is that intended?

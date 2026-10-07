@@ -75,8 +75,7 @@ func _init() -> void:
 	DebtScript.charge(s, 1, TREASURY, 25)
 	expect("turn 1 in debt: not eliminated", DebtScript.end_of_turn(s, 1), false)
 	expect("turn 2 in debt: not eliminated", DebtScript.end_of_turn(s, 1), false)
-	expect("turn 3 in debt: eliminated", DebtScript.end_of_turn(s, 1), true)
-	expect("marked eliminated", s.eliminated[1], true)
+	expect("turn 3 in debt: the limit is reached", DebtScript.end_of_turn(s, 1), true)
 
 	s = make_state(0)
 	DebtScript.charge(s, 1, TREASURY, 25)
@@ -88,28 +87,6 @@ func _init() -> void:
 	DebtScript.charge(s, 1, TREASURY, 25)
 	expect("falling back in: first term, not eliminated", DebtScript.end_of_turn(s, 1), false)
 	expect("count restarted at 1", s.debt_terms[1], 1)
-
-	# --- Debts owed TO a player who is eliminated
-	s = make_state(0)
-	DebtScript.charge(s, 1, 2, 50)
-	DebtScript.charge(s, 1, TREASURY, 10)
-	DebtScript.eliminate(s, 2)
-	expect("no heir: the debt to them is cleared", DebtScript.total_debt(s, 1), 10)
-	expect("other creditors are untouched", s.debts[1][0]["creditor"], TREASURY)
-
-	s = make_state(0)
-	DebtScript.charge(s, 1, 2, 50)
-	s.heirs[2] = 3
-	DebtScript.eliminate(s, 2)
-	expect("with an heir: the heir is owed instead", s.debts[1][0]["creditor"], 3)
-	DebtScript.receive(s, 1, 50)
-	expect("... and gets paid", s.psd[3], 50)
-
-	s = make_state(0)
-	DebtScript.charge(s, 1, 2, 50)
-	DebtScript.end_of_turn(s, 1)
-	DebtScript.eliminate(s, 2)
-	expect("clearing every debt resets the term count", s.debt_terms[1], 0)
 
 	s = make_state(100)
 	expect("no debt: end of turn is safe", DebtScript.end_of_turn(s, 1), false)

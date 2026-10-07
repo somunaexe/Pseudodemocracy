@@ -20,9 +20,9 @@ const PUBLIC_FIELDS = [
 # Shown only after being cleaned up for the one asking (see state_view).
 const REDACTED_FIELDS = ["amend", "event_log"]
 
-# Never leave the server. (None yet; wills, role cards, exam keys and the Doctor's beads
-# will go here when they exist.)
-const SERVER_ONLY_FIELDS = []
+# Never leave the server. A will is secret until its owner is eliminated; then it is read out
+# in an event. (Role cards, exam keys and the Doctor's beads will go here when they exist.)
+const SERVER_ONLY_FIELDS = ["wills"]
 
 
 # Fields of GameState that are in none of the three lists.

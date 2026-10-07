@@ -74,6 +74,14 @@ The server holds the whole truth; a phone only gets a **view**.
   stops `state_view` and fails the test, so a new secret can never leak by being forgotten.
 - A view is a deep copy and survives the serializer, so it can be sent as it is.
 
+## Elimination (scripts/elimination.gd)
+
+`Elimination.end_turn` counts a debt term and eliminates on the third; `Elimination.eliminate`
+settles the estate (to the heir, or the treasury), reassigns debts owed to the dead player,
+ends union memberships, and re-checks any vote waiting on them. It returns events like
+everything else. `Debt.end_of_turn` only reports that the limit was reached.
+Schema version 2 added `GameState.wills` (server-only; see Views).
+
 ## Not built yet
 
 The other

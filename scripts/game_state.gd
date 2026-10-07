@@ -38,3 +38,6 @@ var event_log: Array = []           # every event the server has emitted, in ord
 # Unions and inheritance.
 var unions: Dictionary = {}         # union id -> { "type": UnionType, "owner": int, "members": Array, "confront_used": bool }
 var heirs: Dictionary = {}          # eliminated player id -> the heir who is owed money they were owed
+
+# Wills are SECRET until their owner is eliminated, then carried out. Server only (see Views).
+var wills: Dictionary = {}          # player id -> { "psd_heir": int, "on_hold": bool }
