@@ -25,6 +25,8 @@ Open:
 | Who is owed? | It depends on the cause: the treasury (levy, tax), another player (e.g. 50 PSD to a Doctor for a treatment). Each debt records its creditor. | Decided |
 | What happens to a player in debt each round? | The levy and tax are added to their debt. | Decided |
 | How long can debt last? | 3 terms, then the player is eliminated. A "term" here is one of that player's own turns coming round again. | Decided. Open: see below. |
+| Forced vs agreed payments (levy vs a Doctor's fee). | No split. Any payment a player can't cover becomes debt, as in real life. There is no "loan" concept. | **Built** |
+| When is debt collected, and in what order? | Immediately, the moment money reaches the player, oldest debt first (FIFO). Each debt is its own entry; same-creditor debts are not merged. | **Built** (`Debt.receive`) |
 | Paying it off and falling back in. | Paying off all debt resets the count to zero. | Decided |
 | Can a player in debt launch a coup? | No. A coup costs 300 PSD and they don't have it. No special rule needed. | Decided |
 | Do heirs inherit debt? | Yes. A Nepo Baby inherits debt along with the estate. | Decided. Open: can they reject a debt-only estate? |
@@ -34,7 +36,8 @@ Open:
 | When is a debt term counted? | At the END of the debtor's own turn, if they still owe anything. The 3rd such turn eliminates them. | **Built** |
 
 Open debt questions:
-- Repayment order: when a debtor gets cash and owes several creditors, who is paid first? (Today repayment is explicit, per creditor.)
+- All income must go through `Debt.receive()` (roles, cards, treasury payouts), or it will skip collection.
+- A debt owed to an eliminated player: is it still paid to them (and then to their heirs)?
 - Elimination by debt is only *marked* so far. PSD to the treasury, roles rescinded, wills and heirs are not wired up.
 - Can an heir reject a debt-only estate?
 - A round cut short by a coup gives some players no turn that round. By the "own turn" definition, no debt term is counted for them.
