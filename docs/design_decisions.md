@@ -85,8 +85,9 @@ Assumptions to confirm:
 
 | Question | Decision | Status |
 |---|---|---|
-| Is a player's PSD, debt and popularity public? | Yes. | Assumed, please confirm |
-| Is union membership public? | Yes (the rules say you can't recruit a member of another union, so players must be able to tell). | Assumed, please confirm |
-| Are heirs public? | Yes, once the player is eliminated (the Lawyer reads the will out). | Assumed, please confirm |
+| Is a player's PSD, debt and popularity public? | Yes. | Confirmed |
+| Is union membership public? | Yes (the rules say you can't recruit a member of another union, so players must be able to tell). | Confirmed |
+| Are heirs public? | Yes, once the player is eliminated (the Lawyer reads the will out). | Confirmed |
+| When is a will carried out? | When its owner is eliminated. The Lawyer reads it out, so it becomes public then. Before that, a will is secret (server only). | Decided, not built |
 | Votes during an amendment | Hidden until the result; everyone sees who has voted, and you see your own. | **Built** |
 | Wills, role cards, coup stickers, Doctor's beads, exam keys | Server only, when they are built. | Not built |
