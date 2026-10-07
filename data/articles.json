@@ -1,0 +1,2425 @@
+{
+ "chapters": [
+  {
+   "title": "Chapter I — Elections & the Treasury",
+   "articles": [
+    {
+     "id": 1,
+     "title": "Exam Pass Mark",
+     "words": [
+      {
+       "text": "Players",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "pass",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "exam",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "by",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "answering",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "more",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "than",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "50%",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "of",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "questions",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "correctly.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 2,
+     "title": "Tax",
+     "words": [
+      {
+       "text": "Tax:",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "20%",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "of",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "income",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "goes",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "to",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "treasury",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "every",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "round",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 3,
+     "title": "Levy",
+     "words": [
+      {
+       "text": "Every",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "player",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "pays",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "levy",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "of",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "25",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "PSD",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "to",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "treasury",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "every",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "round,",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "regardless",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "of",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "income.",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "The",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "levy",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "must",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "stay",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "within",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "levy",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "band.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 4,
+     "title": "Levy Band",
+     "words": [
+      {
+       "text": "The",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "Leader",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "sets",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "levy",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "between",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "25",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "50",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "PSD.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 5,
+     "title": "Levy Band Shift",
+     "words": [
+      {
+       "text": "When",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "term",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "ends",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ",",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "a",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "Leader",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "below",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "−",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "20",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "popularity",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "raises",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "levy",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "band",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "by",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "10",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "PSD,",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "Leader",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "above",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "+",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "20",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "popularity",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "lowers",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "it",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "by",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "10",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "PSD.",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "The",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "band",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "never",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "drops",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "below",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "25",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "PSD.",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "If",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "levy",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "ends",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "up",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "outside",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "band,",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "it",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "moves",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "to",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "closest",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "value",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "inside",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "it.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 6,
+     "title": "Malpractice",
+     "words": [
+      {
+       "text": "An",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "out-of-sync",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "hand",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "is",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "null",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "vote",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "25",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "PSD",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "fine,",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "paid",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "to",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "treasury",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Chapter II — Unions",
+   "articles": [
+    {
+     "id": 7,
+     "title": "Union Size",
+     "words": [
+      {
+       "text": "A",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "union",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "starts",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "with",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "1",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "member",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "needs",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "2",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "members",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "to",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "act.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 8,
+     "title": "Recruiting",
+     "words": [
+      {
+       "text": "Unions",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "can’t",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "recruit",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "Leader",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "or",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "member",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "of",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "another",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "union.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 9,
+     "title": "Union Turns",
+     "words": [
+      {
+       "text": "A",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "union",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "may",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "recruit,",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "kick",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "or",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "act",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "only",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "on",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "unionizer’s",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "turn",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "on",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "Leader’s",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "turn",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "if",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Leader",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "is",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "member.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 10,
+     "title": "Leaving & Kicking",
+     "words": [
+      {
+       "text": "A",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "member",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "may",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "leave",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "on",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "their",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "turn.",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "The",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "unionizer",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "kicks",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "member",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "just",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "by",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "saying",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "so.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 11,
+     "title": "Dissolving",
+     "words": [
+      {
+       "text": "If",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "union",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "drops",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "to",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "1",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "member,",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "it",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "dissolves.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 12,
+     "title": "Activists",
+     "words": [
+      {
+       "text": "Activist",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "gains",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "losses",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "are",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "shared",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ",",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "union",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "lingers",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "after",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "acting.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 13,
+     "title": "Agberos",
+     "words": [
+      {
+       "text": "Agbero",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "gains",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "losses",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "are",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "personal",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ",",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "mob",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "disperses",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "after",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "acting.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 14,
+     "title": "Activist Confront",
+     "words": [
+      {
+       "text": "Activists",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "confronting",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Leader",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "double",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "their",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "votes",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "against",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Leader.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 15,
+     "title": "Agbero Confront",
+     "words": [
+      {
+       "text": "Agberos",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "confronting",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Leader",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "block",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "amendment",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "steal",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "50",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "×",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "union",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "size.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 16,
+     "title": "Command Performance",
+     "words": [
+      {
+       "text": "The",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Leader",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "performs",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "scenario",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "scripted",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "by",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "unionizer",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 17,
+     "title": "Leader in Union",
+     "words": [
+      {
+       "text": "If",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Leader",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "is",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "in",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "union,",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "its",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "actions",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "target",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "rival",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "of",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "Leader’s",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "choice.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Chapter III — Health",
+   "articles": [
+    {
+     "id": 18,
+     "title": "Sabotage Guess",
+     "words": [
+      {
+       "text": "Anyone",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "may",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "guess",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Sabotage",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "before",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "patient",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "takes",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "bead.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 19,
+     "title": "Right Guess",
+     "words": [
+      {
+       "text": "If",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "right,",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "Doctor",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "pays",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "guesser",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ",",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "gives",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "real",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Cure",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "loses",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "their",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "licence",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 20,
+     "title": "Wrong Guess",
+     "words": [
+      {
+       "text": "If",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "wrong,",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "guesser",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "pays",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "Doctor",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "amount",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "patient",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "paid",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 21,
+     "title": "Sickness",
+     "words": [
+      {
+       "text": "Sick",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "players",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "can’t",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "use",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "role",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "powers",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ",",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "write",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "exams",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ",",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "vote",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "or",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "be",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "voted",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "for",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 22,
+     "title": "Agbo",
+     "words": [
+      {
+       "text": "Agbo:",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "±1",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "round",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "sick",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "payment",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "lost.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 23,
+     "title": "Concoction",
+     "words": [
+      {
+       "text": "Concoction:",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "±2",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "rounds",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "sick",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "payment",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "lost.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 24,
+     "title": "Surgery",
+     "words": [
+      {
+       "text": "Surgery:",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "instant",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "cure",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "or",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "elimination",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 25,
+     "title": "Elimination",
+     "words": [
+      {
+       "text": "Eliminated",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "players’",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "PSD",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "goes",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "to",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "treasury",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "their",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "roles",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "are",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "rescinded",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ",",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "unless",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "willed.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Chapter IV — Wills & Inheritance",
+   "articles": [
+    {
+     "id": 26,
+     "title": "Lawyer",
+     "words": [
+      {
+       "text": "The",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Lawyer",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "signs",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "wills",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "for",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "an",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "agreed",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "fee",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "collects",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "upkeep",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "every",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "round",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 27,
+     "title": "Will on Hold",
+     "words": [
+      {
+       "text": "If",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "you",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "die",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "while",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "your",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "will",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "is",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "on",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "hold",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ",",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "it",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "doesn’t",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "count",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 28,
+     "title": "Heirs",
+     "words": [
+      {
+       "text": "You",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "can",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "name",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "same",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "heir",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "or",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "different",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "heirs",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "for",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "your",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "PSD",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "your",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "roles",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 29,
+     "title": "Unclaimed PSD",
+     "words": [
+      {
+       "text": "Unwilled",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "or",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "rejected",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "PSD",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "goes",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "to",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "treasury",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": ".",
+       "amendable": false,
+       "glue": true
+      }
+     ]
+    },
+    {
+     "id": 30,
+     "title": "Nepo Baby",
+     "words": [
+      {
+       "text": "An",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "heir",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "who",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "accepts",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "an",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "inheritance",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "becomes",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "a",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Nepo",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Baby.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    },
+    {
+     "id": 31,
+     "title": "Nepo Baby Debuff",
+     "words": [
+      {
+       "text": "Nepo",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "Babies",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "get",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "−",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "30,",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "−",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "20",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "and",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "−",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "10",
+       "amendable": false,
+       "glue": true
+      },
+      {
+       "text": "popularity",
+       "amendable": true,
+       "glue": false
+      },
+      {
+       "text": "over",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "the",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "next",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "3",
+       "amendable": false,
+       "glue": false
+      },
+      {
+       "text": "rounds.",
+       "amendable": false,
+       "glue": false
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
