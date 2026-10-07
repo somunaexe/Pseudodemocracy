@@ -12,8 +12,9 @@ Compared in this order. Built in `scripts/scoring.gd` and covered by 22 tests.
 3. **Popularity.** This settles: everyone at exactly 0 PSD, equal debts, and different players whose products happen to be equal.
 4. **Still equal:** a shared win.
 
+**Eliminated players can never win**, even with the most rounds (decided). `Scoring.final_winners(state)` filters them out first; if everyone is eliminated there is no winner.
+
 Open:
-- Are eliminated players eligible to win? (`winners` leaves that to the caller.)
 - The handbook must be reworded: "popularity + 51", a 1-101 score, popularity as the second key, and a shared win on a full tie.
 
 ## Debt

@@ -1,6 +1,8 @@
 class_name Scoring
 
 const GameDataScript = preload("res://scripts/game_data.gd")
+const GameStateScript = preload("res://scripts/game_state.gd")
+const DebtScript = preload("res://scripts/debt.gd")
 
 
 # Tie-break score. Higher wins.
@@ -53,3 +55,19 @@ static func winners(entries: Array) -> Array:
 		elif result == 0:
 			ids.append(entry["id"])
 	return ids
+
+
+# Who wins the game. Eliminated players can never win, even with the most rounds,
+# so they are left out before anyone is ranked. Returns [] if everyone is eliminated.
+static func final_winners(state: GameStateScript) -> Array:
+	var entries: Array = []
+	for id in state.player_ids:
+		if state.eliminated.get(id, false):
+			continue
+		entries.append({
+			"id": id,
+			"half_rounds": int(state.half_rounds.get(id, 0)),
+			"popularity": int(state.popularity.get(id, 0)),
+			"net_psd": DebtScript.net_psd(state, id),
+		})
+	return winners(entries)

@@ -21,3 +21,7 @@ var psd: Dictionary = {}            # player id -> cash (never negative)
 var debts: Dictionary = {}          # player id -> Array of { "creditor": int, "amount": int }
 var debt_terms: Dictionary = {}     # player id -> own turns ended while owing anything
 var eliminated: Dictionary = {}     # player id -> bool
+
+# Who is playing and how they are doing, for the end-of-game ranking.
+var player_ids: Array = []          # every player id at the table
+var half_rounds: Dictionary = {}    # player id -> half-rounds as Leader (full term = 2, couped = 1)
