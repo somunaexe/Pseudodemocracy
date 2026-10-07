@@ -15,12 +15,16 @@ Add a line whenever the handbook is silent and the table has to decide.
 | Can a player in debt launch a coup? | No. A coup costs 300 PSD and they don't have it. No special rule needed. | Decided |
 | Do heirs inherit debt? | Yes. A Nepo Baby inherits debt along with the estate. | Decided. Open: can they reject a debt-only estate? |
 | Tie-break `(popularity + 50) x PSD` with negative PSD. | Anyone below 0 PSD ranks under everyone at 0 or above; among debtors the smaller debt wins. | **Built** (scripts/scoring.gd, tested) |
+| Tie-break shift: 50 or 51? | 51. A CANCELLED player (-50) scored 0 whatever their PSD; now they score 1 x PSD. Handbook wording must change to `popularity + 51`. | **Built** (`tieBreakShift` in game data) |
+| Can a player pay part of what they owe? | Yes. They pay what they have; the rest becomes a debt to the same creditor. | **Built** (scripts/debt.gd, tested) |
+| When is a debt term counted? | At the END of the debtor's own turn, if they still owe anything. The 3rd such turn eliminates them. | **Built** |
 
 Open debt questions:
-- Cannot pay in full: does the player pay what they have and owe the rest, or owe the whole amount?
-- When exactly is the term counted (start or end of their turn)? Proposed: end of their own turn, if they still owe anything, so they get a turn to pay it off.
-- A round cut short by a coup gives some players no turn that round. By the "own turn" definition, no term is counted for them.
-- Remaining quirk: a CANCELLED player (-50 popularity) scores 0 however rich they are, tying with a broke player. Intended?
+- Repayment order: when a debtor gets cash and owes several creditors, who is paid first? (Today repayment is explicit, per creditor.)
+- Elimination by debt is only *marked* so far. PSD to the treasury, roles rescinded, wills and heirs are not wired up.
+- Can an heir reject a debt-only estate?
+- A round cut short by a coup gives some players no turn that round. By the "own turn" definition, no debt term is counted for them.
+- Tie-break gap that remains: everyone with exactly 0 PSD scores 0, whatever their popularity. Add popularity as a second key?
 
 ## Other
 

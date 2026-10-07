@@ -7,8 +7,9 @@ var failures: int = 0
 
 func _init() -> void:
 	# Normal play: handbook formula (popularity + 50) x PSD.
-	expect("90 x 100 = 9000", ScoringScript.tie_break_score(40, 100), 9000)
-	expect("cancelled scores 0", ScoringScript.tie_break_score(-50, 5000), 0)
+	expect("91 x 100 = 9100", ScoringScript.tie_break_score(40, 100), 9100)
+	expect("cancelled still scores 1 x PSD", ScoringScript.tie_break_score(-50, 5000), 5000)
+	better("cancelled: richer beats poorer", ScoringScript.tie_break_score(-50, 500), ScoringScript.tie_break_score(-50, 100))
 	expect("broke scores 0", ScoringScript.tie_break_score(0, 0), 0)
 	better("same PSD: more popular wins", ScoringScript.tie_break_score(40, 100), ScoringScript.tie_break_score(-40, 100))
 

@@ -14,3 +14,10 @@ var windows_used: Dictionary = {    # AmendWindow -> bool
 	AmendWindow.MID_TERM: false,
 	AmendWindow.FAREWELL: false,
 }
+
+# Money and debt. Player ids start at 1 (0 means the treasury, see Debt.TREASURY_ID).
+var treasury: int = 0
+var psd: Dictionary = {}            # player id -> cash (never negative)
+var debts: Dictionary = {}          # player id -> Array of { "creditor": int, "amount": int }
+var debt_terms: Dictionary = {}     # player id -> own turns ended while owing anything
+var eliminated: Dictionary = {}     # player id -> bool

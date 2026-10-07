@@ -51,6 +51,9 @@ const V = {
 
   // Inheritance
   nepoDebuff: [30, 20, 10],
+
+  // Debt (digital version)
+  debtMaxTerms: 3,                // eliminated when still in debt at the end of this many of their own turns
 };
 
 // ---- Derived values (computed, never typed) ----
@@ -61,6 +64,7 @@ V.boxTotal = V.startMoney * V.boxPlayers + V.treasuryReserve;
 V.highestNote = Math.max(...Object.keys(V.playerNotes).map(Number));
 V.treasuryFor = (players) => V.boxTotal - V.startMoney * players;
 V.midTermAfter = (players) => Math.ceil(players / 2);
+V.tieBreakShift = -V.popMin + 1;   // tie-break score = (popularity + this) x PSD; the +1 keeps a CANCELLED player (-50) above 0
 
 // ---- Fail fast: sanity checks ----
 const EXPECTED_START_MONEY = 1000; // change this on purpose if you change starting money

@@ -110,8 +110,10 @@
   20,
   10
  ],
+ "debtMaxTerms": 3,
  "startMoney": 1000,
  "treasuryReserve": 2550,
  "boxTotal": 12550,
- "highestNote": 100
+ "highestNote": 100,
+ "tieBreakShift": 51
 }
