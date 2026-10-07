@@ -1,0 +1,15 @@
+class_name Scoring
+
+const GameDataScript = preload("res://scripts/game_data.gd")
+
+
+# Tie-break score when players are level on rounds as Leader. Higher wins.
+# Handbook rule: (popularity + 50) x PSD, where the 50 shifts popularity onto 0-100.
+# Fix for debt: anyone below 0 PSD always ranks under everyone at 0 or above, and a
+# smaller debt beats a bigger one. (Multiplying by a negative PSD would have flipped
+# the meaning of popularity and ranked a more popular debtor lower.)
+static func tie_break_score(popularity: int, net_psd: int) -> int:
+	if net_psd < 0:
+		return net_psd
+	var shift: int = -GameDataScript.get_int("popMin")
+	return (popularity + shift) * net_psd
