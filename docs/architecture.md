@@ -60,8 +60,21 @@ JSON gets three things wrong, and the serializer fixes each:
 - The test builds a state with every field filled in, round-trips it, and compares **types as
   well as values**; it also fails if a new field is not covered by that state.
 
+## Views: what each player may see (scripts/views.gd)
+
+The server holds the whole truth; a phone only gets a **view**.
+
+- `Views.visible_events(events, player_id)` keeps events for everyone (empty `audience`) and
+  those addressed to that player. `Views.deliver(events, player_ids)` does it for the whole table.
+- `Views.state_view(state, player_id)` is the game as that player may see it. It is an
+  **allow-list**: only fields listed in `PUBLIC_FIELDS` are copied. `amend` and `event_log` are
+  cleaned up per player: others' votes are removed (you get `voted`, the list of who has voted,
+  and `my_vote` for yourself), and the history is filtered by audience.
+- A field in none of the three lists (`PUBLIC_FIELDS`, `REDACTED_FIELDS`, `SERVER_ONLY_FIELDS`)
+  stops `state_view` and fails the test, so a new secret can never leak by being forgotten.
+- A view is a deep copy and survives the serializer, so it can be sent as it is.
+
 ## Not built yet
 
-Per-player views of the state for reconnecting clients (events already carry an `audience`; a
-filtered snapshot does not exist), the other
+The other
 phases (exam, vote for Leader, role draw, turns), cards, wills, elimination effects, the UI.

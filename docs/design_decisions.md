@@ -79,4 +79,14 @@ Assumptions to confirm:
 | How are saves and messages written? | JSON text, with non-text dictionary keys as `$pairs` so they keep their type. | **Built** |
 | What stops an old save being misread? | `SCHEMA_VERSION`; a save with another version is refused. Bump it when a field or enum changes meaning. | **Built** |
 | What can a client send? | Only a command object, max 64 KB, nested at most 32 deep. Whether it is allowed is decided by the rules, not the parser. | **Built** |
-| What does a reconnecting player see? | Not decided. The full state holds secrets, so they need a filtered view. | Open |
+| What does a reconnecting player see? | `Views.state_view`: an allow-list of public fields, with others' votes removed. | **Built** (scripts/views.gd, 50 checks) |
+
+## What is public (Views)
+
+| Question | Decision | Status |
+|---|---|---|
+| Is a player's PSD, debt and popularity public? | Yes. | Assumed, please confirm |
+| Is union membership public? | Yes (the rules say you can't recruit a member of another union, so players must be able to tell). | Assumed, please confirm |
+| Are heirs public? | Yes, once the player is eliminated (the Lawyer reads the will out). | Assumed, please confirm |
+| Votes during an amendment | Hidden until the result; everyone sees who has voted, and you see your own. | **Built** |
+| Wills, role cards, coup stickers, Doctor's beads, exam keys | Server only, when they are built. | Not built |
