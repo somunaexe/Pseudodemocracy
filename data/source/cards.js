@@ -202,6 +202,8 @@ const effects = {
     // loyalist: the chosen player becomes the drawer's Loyalist for that many rounds (who 'loyalist' offers the players that
     // can be); target_role 'random' gives them a random role card they can hold.
     ['You appointed an unqualified friend', { choose: { kind: 'player', who: 'loyalist' }, target: { psd: 100 }, target_role: 'random', loyalist: { rounds: 3 } }],
+    // keys: the keys to the city. The drawer takes the Leader's role if they are more popular (the Leader becomes Vice), else becomes Vice.
+    ["You've obtained the keys to the city", { keys: true }],
     ['You survived a vote of no confidence', { keep: true, truce: true, choose: { kind: 'player', who: 'rival' } }],
     ["A rival's scandal breaks", { popularity: 5, choose: { kind: 'player', who: 'rival' }, target: { popularity: -15 } }],
     ['Peace Accord', { choose: { kind: 'player', who: 'rival' }, accord: { rounds: 3, loss: 10 } }],

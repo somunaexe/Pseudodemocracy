@@ -12,9 +12,10 @@ const GameDataScript = preload("res://scripts/game_data.gd")
 # not the Leader, they are a Commander, or they are sick or CANCELLED. Checks run from most basic
 # to most specific, so a stranger learns nothing about the Leader.
 static func leader_powers_problem(state: GameStateScript, player_id: int) -> String:
-	if player_id != state.leader_id:
+	if player_id != state.leader_id and not (player_id == state.vice_id and state.vice_id != -1):
 		return "Only the Leader can amend the Constitution."
-	if state.leader_type == GameStateScript.LeaderType.COMMANDER:
+	var type: int = state.vice_type if player_id != state.leader_id else state.leader_type   # the Vice has a Leader card of their own
+	if type == GameStateScript.LeaderType.COMMANDER:
 		return "A Commander can't amend."
 	if state.sick.get(player_id, false):
 		return "A sick Leader can't amend."
@@ -28,11 +29,18 @@ static func can_amend(state: GameStateScript, player_id: int, window: GameStateS
 	var problem: String = leader_powers_problem(state, player_id)
 	if problem != "":
 		return problem
-	if state.windows_used[window]:
+	if window_used_by(state, player_id, window):
 		return "This amendment window has already been used."
 	if not window_open(state, window):
 		return "This amendment window isn't open yet."
 	return ""
+
+
+# The Leader and the Vice each have their own windows.
+static func window_used_by(state: GameStateScript, player_id: int, window: GameStateScript.AmendWindow) -> bool:
+	if player_id != state.leader_id and player_id == state.vice_id:
+		return state.vice_windows_used[window]
+	return state.windows_used[window]
 
 
 # Mid-term opens once half the players (rounded up) have played; Farewell once all have.

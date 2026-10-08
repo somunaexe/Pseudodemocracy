@@ -26,6 +26,8 @@ const PopularityScript = preload("res://scripts/popularity.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const RoundEndScript = preload("res://scripts/round_end.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
+const ViceScript = preload("res://scripts/vice.gd")
+const LeaderCardsScript = preload("res://scripts/leader_cards.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 # Only the server may skip the exam (it knows the Leader ran out of time).
@@ -52,6 +54,9 @@ static func begin(state: GameStateScript, reason: String) -> Array:
 		events.append_array(RoundEndScript.run(state))   # the round is over: sickness counts down, charges come back
 	if reason == "term_ended" and leader != -1:
 		state.half_rounds[leader] = int(state.half_rounds.get(leader, 0)) + 2
+		if state.vice_id != -1:
+			state.half_rounds[state.vice_id] = int(state.half_rounds.get(state.vice_id, 0)) + 1   # a term as Vice is half a round
+	ViceScript.clear(state)   # the Vice serves until the end of the term
 
 	state.election = {"phase": GameStateScript.ElectionPhase.NONE, "reason": reason, "runoff": 0}
 	var exam: bool = reason == "term_ended" and leader != -1 and _can_use_pledges(state, leader)
@@ -85,9 +90,10 @@ static func recheck(state: GameStateScript) -> Array:
 # coup will use (a coup skips the exam and the vote).
 static func install_leader(state: GameStateScript, winner: int, how: String) -> Array:
 	var reason: String = str(state.election.get("reason", "coup"))
-	var leader_type: int = _draw_leader_type(state)
+	var leader_type: int = LeaderCardsScript.draw(state)
 	state.leader_id = winner
 	state.leader_type = leader_type
+	ViceScript.clear(state)
 	state.turns_played = 0
 	state.leader_goes_first = (how == "coup" or reason == "first")   # after a coup, and in the very first term, the Leader goes first
 	state.amend = {}
@@ -395,25 +401,6 @@ static func _eligible_voters(state: GameStateScript) -> Array:
 
 static func _eligible_candidates(state: GameStateScript, voters: Array) -> Array:
 	return voters.filter(func(id): return _can_stand(state, id))
-
-
-# --- the role card draw --------------------------------------------------------------------
-
-# The Leader role cards (Dictator, President, President, President, Commander) are drawn at
-# random, one per new Leader. Assumption: the card is put back, so every draw is independent.
-static func _draw_leader_type(state: GameStateScript) -> int:
-	var cards: Dictionary = GameDataScript.values()["components"]["leaderCards"]
-	var names: Array = cards.keys()
-	names.sort()
-	var total: int = 0
-	for name in names:
-		total += int(cards[name])
-	var roll: int = RngScript.below(state, total)
-	for name in names:
-		roll -= int(cards[name])
-		if roll < 0:
-			return GameStateScript.LeaderType[str(name).to_upper()]
-	return GameStateScript.LeaderType.PRESIDENT   # unreachable
 
 
 static func _reject(player_id: int, reason: String) -> Dictionary:

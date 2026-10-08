@@ -73,12 +73,15 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 
 
 static func _pass_window(state: GameStateScript, player_id: int, phase: int) -> Array:
-	if player_id != state.leader_id:
+	if player_id != state.leader_id and player_id != state.vice_id:
 		return [_reject(player_id, "Only the Leader decides whether to amend.")]
 	if not state.amend.is_empty():
 		return [_reject(player_id, "An amendment is already under way.")]
 	var window: int = GameStateScript.AmendWindow.INAUGURATION if phase == GameStateScript.TermPhase.INAUGURATION else GameStateScript.AmendWindow.FAREWELL
-	state.windows_used[window] = true   # a window that is passed is gone
+	if player_id == state.leader_id:
+		state.windows_used[window] = true   # a window that is passed is gone
+	else:
+		state.vice_windows_used[window] = true   # the Vice's own
 	return [_log(state, "window_passed", {"leader": player_id, "window": window})]
 
 
@@ -159,7 +162,9 @@ static func _step(state: GameStateScript) -> Array:
 static func _window_finished(state: GameStateScript, window: int) -> bool:
 	if not state.amend.is_empty():
 		return false
-	return state.windows_used[window] or PermissionsScript.leader_powers_problem(state, state.leader_id) != ""
+	var leader_done: bool = state.windows_used[window] or PermissionsScript.leader_powers_problem(state, state.leader_id) != ""
+	var vice_done: bool = state.vice_id == -1 or state.vice_windows_used[window] or PermissionsScript.leader_powers_problem(state, state.vice_id) != ""
+	return leader_done and vice_done
 
 
 static func _start_term(state: GameStateScript) -> Array:

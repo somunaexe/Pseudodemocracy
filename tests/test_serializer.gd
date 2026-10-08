@@ -251,6 +251,9 @@ func rich_state() -> GameStateScript:
 	s.sick[4] = true
 	DebtScript.charge(s, 3, 2, 3000)   # more than they have: part becomes debt
 	s.debt_terms[3] = 1
+	s.vice_id = 6   # not one of the voters: the Vice does not vote on amendments
+	s.vice_type = GameStateScript.LeaderType.DICTATOR
+	s.vice_windows_used = {GameStateScript.AmendWindow.INAUGURATION: true, GameStateScript.AmendWindow.MID_TERM: false, GameStateScript.AmendWindow.FAREWELL: false}
 	return s
 
 

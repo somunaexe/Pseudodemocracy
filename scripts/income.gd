@@ -1,7 +1,7 @@
 class_name Income
 
 # Income, paid from the treasury at the start of a player's own turn, with tax taken from it:
-#   - the Leader earns leaderIncome (100)
+#   - the Leader earns leaderIncome (100), the Vice viceIncome (90)
 #   - each role card earns its roleIncome (Doctor 70, Lawyer 50, Secret Agent 80; Activists and
 #     Agberos earn nothing). Roles stack, so a Doctor who is also a Lawyer earns both.
 #   - tax is the tax rate (Article 2, so it follows amendments) of what was paid, rounded down,
@@ -25,6 +25,8 @@ static func gross(state: GameStateScript, player_id: int) -> int:
 	var total: int = 0
 	if player_id == state.leader_id:
 		total += GameDataScript.get_int("leaderIncome")
+	elif player_id == state.vice_id:
+		total += GameDataScript.get_int("viceIncome")
 	if not RolesScript.is_cancelled(state, player_id) and not state.frozen.has(player_id):   # CANCELLED or frozen players have no roles; the Leader's pay stays
 		for role in RolesScript.held(state, player_id):
 			total += GameDataScript.get_nested_int("roleIncome", str(role))

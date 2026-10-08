@@ -31,6 +31,7 @@ const NepoScript = preload("res://scripts/nepo.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
+const ViceScript = preload("res://scripts/vice.gd")
 const EventsScript = preload("res://scripts/events.gd")
 const FlowScript = preload("res://scripts/amendment_flow.gd")
 const ElectionScript = preload("res://scripts/election.gd")
@@ -51,6 +52,12 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 	CorruptionScript.release(state, player_id)
 	RivalsScript.remove_player(state, player_id)
 	LoyalistsScript.remove_player(state, player_id)
+	if ViceScript.remove_player(state, player_id):
+		events.append(EventsScript.make("vice_vacant", {"player": player_id}))
+		if not state.amend.is_empty() and int(state.amend.get("by", -1)) == player_id and player_id != state.leader_id:
+			state.amendment_record.append({"round": state.current_round, "leader": player_id, "article_id": state.amend["article_id"], "outcome": "abandoned", "for": 0, "against": 0, "text": ""})
+			state.amend = {}
+			events.append(EventsScript.make("amendment_abandoned", {"reason": "the Vice was eliminated"}))
 
 	var will: Dictionary = state.wills.get(player_id, {})
 	var heir: int = 0   # 0 = nobody (0 is the treasury's id, never a player)
@@ -154,7 +161,7 @@ static func _vacate_seat(state: GameStateScript) -> Array:
 	var events: Array = []
 	if not state.amend.is_empty():
 		state.amendment_record.append({
-			"round": state.current_round, "leader": state.leader_id, "article_id": state.amend["article_id"],
+			"round": state.current_round, "leader": int(state.amend.get("by", state.leader_id)), "article_id": state.amend["article_id"],
 			"outcome": "abandoned", "for": 0, "against": 0, "text": "",
 		})
 		state.amend = {}

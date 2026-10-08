@@ -219,7 +219,7 @@ Round order from the handbook: Exam, Vote, Role card draw, then the Inauguration
 
 Random numbers: `Rng` is a small seedable generator whose whole state is one whole number (`rng_state`), so a save restores it exactly and tests are repeatable. `rng_state` is server-only: whoever knew it could predict every draw. `Rng.seed_from_clock` must be called when a real game is created.
 
-Not built yet: the exam's effect cards (skip an exam, rig the marking), Loyalists voting with you, "can't run for 2 terms" (Scandal 20), and the trigger that starts `Election.begin("term_ended")` when the Farewell window closes.
+Not built yet: the exam's effect cards (skip an exam, rig the marking), "can't run for 2 terms" (Scandal 20), and the trigger that starts `Election.begin("term_ended")` when the Farewell window closes.
 
 Handbook to update: how ties, self-votes and the "running" step work, and that the Leader keeps their role card until the next draw.
 
@@ -518,6 +518,26 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | "An extra 5 for each male Loyalist you have". | Counts the drawer's own Loyalists (direct) who are male. | **Built** |
 | Elimination. | A player who leaves follows nobody and nobody follows them. | **Built** |
 
+## The Vice (built: scripts/vice.gd, leader_cards.gd)
+
+"A second Leader created by a card. A Vice is a Leader in every way, but each term served as Vice scores 1/2 round." The card is the keys to the city. The handbook is thin here, so most of this is assumed and wants your yes or no.
+
+| Question | Decision | Status |
+|---|---|---|
+| The keys to the city. | The drawer takes the Leader's role outright if their popularity is higher (the Leader is demoted to Vice, the new Leader keeps the Leader card of the role they took). Otherwise the drawer becomes Vice. The Leader drawing it, or a Vice who isn't more popular, gets nothing. | Confirmed (card text), details assumed |
+| Equal popularity. | Not "higher", so Vice. | Assumed |
+| How many Vices? | One. A new Vice replaces the old (a displaced Vice is just a player again). | Assumed |
+| The Vice's Leader card. | Drawn like a Leader's (Dictator, President x3, Commander) and decides what the Vice's amendments need. | Assumed |
+| What does the Vice earn? | 90 PSD at the start of their own turn (the Leader 100), plus role income, taxed as usual. | Confirmed (90) |
+| Amendments. | The Vice amends like the Leader but with windows of their own: each can use or pass each window. The Inauguration and Farewell wait for both. A Commander (or sick, or CANCELLED) Vice can't and isn't waited for. | Assumed |
+| Who votes on an amendment? | Neither the Leader nor the Vice, on either's amendment. Popularity, fines and unions' confront payments go to whoever proposed it. | Assumed |
+| Unions. | A union or mob can't recruit the Vice (as with the Leader). | Assumed |
+| Scoring. | The Vice scores 1 half-round for a term served (the Leader 2). A term cut short by a coup or by the Leader leaving scores the Vice nothing. A game stopped mid-term credits the Vice 1 as well. | Confirmed (1/2), the rest assumed |
+| "The ousted Leader scores 1/2 for this term." | They serve the rest of the term as Vice, so they score 1 half-round; the new Leader scores the full 2 at the end. | Assumed |
+| When does the Vice end? | At the end of the term. Also if the Leader is couped or eliminated, or the Vice is eliminated (an amendment of theirs under way is abandoned). | Assumed |
+| Can a Vice coup? | Yes, as any player who isn't the Leader. | Assumed |
+| Does the Vice succeed a Leader who leaves? | No: there is an election. | Assumed |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.
@@ -542,7 +562,7 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | The heir already holds that role. | They can't hold it twice, so that card goes back in the box. | Assumed |
 | How are roles gained? | From Settlement cards: choose any role, swap roles, gain the Lawyer role (all built, see Choices). Others (found a union, become a Doctor/Lawyer if you hold neither) wait for their mechanics. | **Built** (3 cards) |
 
-Not built yet, and the next steps: the Vice, choices of several players, the other kept cards, and a first Godot screen. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
+Not built yet, and the next steps: choices of several players, the other kept cards, and a first Godot screen. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

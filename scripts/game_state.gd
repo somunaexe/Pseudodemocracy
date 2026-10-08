@@ -17,6 +17,16 @@ var windows_used: Dictionary = {    # AmendWindow -> bool
 	AmendWindow.FAREWELL: false,
 }
 
+# The Vice: a second Leader for the rest of a term (see Vice). -1 when there is none. The Vice has a Leader card of their
+# own (vice_type) and their own set of amendment windows.
+var vice_id: int = -1
+var vice_type: LeaderType = LeaderType.PRESIDENT
+var vice_windows_used: Dictionary = {    # AmendWindow -> bool
+	AmendWindow.INAUGURATION: false,
+	AmendWindow.MID_TERM: false,
+	AmendWindow.FAREWELL: false,
+}
+
 # Money and debt. Player ids start at 1 (0 means the treasury, see Debt.TREASURY_ID).
 var treasury: int = 0
 var psd: Dictionary = {}            # player id -> cash (never negative)

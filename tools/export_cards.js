@@ -37,7 +37,7 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 }
 
 function validate(deck, prefix, text, effect) {
-  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband', 'loyalist', 'target_role', 'popularity_per_loyalist', 'defect'];
+  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband', 'loyalist', 'target_role', 'popularity_per_loyalist', 'defect', 'keys'];
   if ('popularity_per_loyalist' in effect) {
     const spec = effect.popularity_per_loyalist;
     if (!GENDERS.includes(spec.gender)) fail(deck, prefix, `unknown gender "${spec.gender}"`);
@@ -50,7 +50,7 @@ function validate(deck, prefix, text, effect) {
   }
   if ('target_role' in effect && (effect.target_role !== 'random' || !effect.choose || effect.choose.kind !== 'player')) fail(deck, prefix, '"target_role" must be "random" and needs a player choice');
   if ('defect' in effect && effect.defect !== true) fail(deck, prefix, '"defect" must be true');
-  for (const flag of ['truce', 'skip_draw', 'disband']) if (flag in effect && effect[flag] !== true) fail(deck, prefix, `"${flag}" must be true`);
+  for (const flag of ['truce', 'skip_draw', 'disband', 'keys']) if (flag in effect && effect[flag] !== true) fail(deck, prefix, `"${flag}" must be true`);
   if ('accord' in effect) {
     checkAmounts(deck, prefix, text, { psd: effect.accord.rounds, popularity: effect.accord.loss }, ['psd', 'popularity']);
     if (effect.accord.rounds <= 0 || effect.accord.loss <= 0) fail(deck, prefix, 'an accord needs positive rounds and loss');

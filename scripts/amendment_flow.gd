@@ -94,8 +94,11 @@ static func _propose(state: GameStateScript, player_id: int, command: Dictionary
 	if structural.is_empty():
 		structural = LawScript.check_levy_band(state, article_id, old_words, cleaned)
 
-	# Accepted. From here the attempt uses up the window whatever happens next.
-	state.windows_used[window] = true
+	# Accepted. From here the attempt uses up the window whatever happens next (the Vice has windows of their own).
+	if player_id != state.leader_id:
+		state.vice_windows_used[window] = true
+	else:
+		state.windows_used[window] = true
 	var events: Array = [EventsScript.make("amendment_proposed", {
 		"leader": player_id,
 		"window": window,
@@ -105,7 +108,7 @@ static func _propose(state: GameStateScript, player_id: int, command: Dictionary
 		"proposed": cleaned,
 	})]
 	if not structural.is_empty():
-		events.append_array(_fail(state, article_id, structural))
+		events.append_array(_fail(state, player_id, article_id, structural))
 		return events
 	state.amend = {
 		"phase": GameStateScript.AmendPhase.PROPOSED,
@@ -114,6 +117,8 @@ static func _propose(state: GameStateScript, player_id: int, command: Dictionary
 		"new_words": _apply_texts(old_words, cleaned),
 		"votes": {},           # voter id -> bool. Secret until the vote is resolved.
 		"activists": [],       # ids of Activist unions that have confronted
+		"by": player_id,       # who proposed it: the Leader, or the Vice, whose Leader card (by_type) decides if it stands
+		"by_type": state.leader_type if player_id == state.leader_id else state.vice_type,
 	}
 	return events
 
@@ -149,7 +154,7 @@ static func _rule_grammar(state: GameStateScript, player_id: int, command: Dicti
 		return [_reject(player_id, "A grammar ruling must be true or false.")]
 	var events: Array = [EventsScript.make("grammar_ruled", {"ok": ok})]
 	if not ok:
-		events.append_array(_fail(state, state.amend["article_id"], "The new wording isn't correct English."))
+		events.append_array(_fail(state, _by(state), state.amend["article_id"], "The new wording isn't correct English."))
 		return events
 	state.amend["phase"] = GameStateScript.AmendPhase.VOTING
 	events.append_array(_maybe_resolve(state))   # in case nobody is left who can vote
@@ -158,15 +163,14 @@ static func _rule_grammar(state: GameStateScript, player_id: int, command: Dicti
 
 # A failed check: the article keeps its old wording, the window stays used, the Leader
 # pays the fine and loses (base swing x the other players) popularity.
-static func _fail(state: GameStateScript, article_id: int, reason: String) -> Array:
-	var leader: int = state.leader_id
+static func _fail(state: GameStateScript, leader: int, article_id: int, reason: String) -> Array:
 	var fine: int = GameDataScript.get_int("amendPenalty")
 	var became_debt: int = DebtScript.charge(state, leader, DebtScript.TREASURY_ID, fine)
 	var active: int = _active_players(state).size()
 	var lost: int = GameDataScript.base_swing(active) * (active - 1)
 	PopularityScript.change_base(state, leader, -lost)
 	state.amend = {}
-	_record(state, article_id, "failed_check", 0, 0, "")
+	_record(state, leader, article_id, "failed_check", 0, 0, "")
 	return [EventsScript.make("amendment_failed", {
 		"reason": reason,
 		"fine": fine,
@@ -190,7 +194,7 @@ static func _confront(state: GameStateScript, player_id: int, command: Dictionar
 		return [_reject(player_id, "The %s is too small to act." % UnionsScript.word(union))]
 	if union["confront_used"]:
 		return [_reject(player_id, "This %s has already confronted the Leader." % UnionsScript.word(union))]
-	if state.leader_id in union["members"]:
+	if _by(state) in union["members"]:
 		return [_reject(player_id, "A %s that includes the Leader can't confront (Article 17 is not built yet)." % UnionsScript.word(union))]
 
 	union["confront_used"] = true
@@ -213,10 +217,11 @@ static func _block(state: GameStateScript, union_id: int, union: Dictionary) -> 
 	var steal: int = LawScript.get_int(state, "agberoSteal")
 	var became_debt: int = 0
 	for member in union["members"]:
-		became_debt += DebtScript.charge(state, state.leader_id, member, steal)
+		became_debt += DebtScript.charge(state, _by(state), member, steal)
 	var article_id: int = state.amend["article_id"]
+	var actor: int = _by(state)
 	state.amend = {}
-	_record(state, article_id, "blocked", 0, 0, "")
+	_record(state, actor, article_id, "blocked", 0, 0, "")
 	var events: Array = [EventsScript.make("amendment_blocked", {
 		"union_id": union_id,
 		"stolen_each": steal,
@@ -259,7 +264,7 @@ static func _vote(state: GameStateScript, player_id: int, command: Dictionary) -
 static func _eligible_voters(state: GameStateScript) -> Array:
 	var result: Array = []
 	for id in state.player_ids:
-		if id == state.leader_id or state.eliminated.get(id, false) or state.sick.get(id, false):
+		if id == state.leader_id or id == state.vice_id or state.eliminated.get(id, false) or state.sick.get(id, false):
 			continue
 		result.append(id)
 	return result
@@ -331,10 +336,10 @@ static func _resolve(state: GameStateScript) -> Array:
 
 	var swing: int = GameDataScript.base_swing(_active_players(state).size())
 	var delta: int = (keep - against) * swing
-	PopularityScript.change_base(state, state.leader_id, delta)
+	PopularityScript.change_base(state, _by(state), delta)
 
 	var stands: bool = false
-	match state.leader_type:
+	match _by_type(state):
 		GameStateScript.LeaderType.DICTATOR:
 			stands = true          # a Dictator's amendment always stands
 		GameStateScript.LeaderType.PRESIDENT:
@@ -357,12 +362,21 @@ static func _resolve(state: GameStateScript) -> Array:
 			"title": ConstitutionScript.title(article_id),
 			"text": ConstitutionScript.to_text(new_words),
 		}))
-	_record(state, article_id, "stood" if stands else "rejected", keep, against, ConstitutionScript.to_text(new_words))
+	_record(state, _by(state), article_id, "stood" if stands else "rejected", keep, against, ConstitutionScript.to_text(new_words))
 	state.amend = {}
 	return events
 
 
 # --- helpers ---------------------------------------------------------------------------
+
+# Who proposed the amendment under way (the Leader, or the Vice), and the Leader card that decides if it stands.
+static func _by(state: GameStateScript) -> int:
+	return int(state.amend.get("by", state.leader_id))
+
+
+static func _by_type(state: GameStateScript) -> int:
+	return int(state.amend.get("by_type", state.leader_type))
+
 
 static func _active_players(state: GameStateScript) -> Array:
 	var result: Array = []
@@ -372,10 +386,10 @@ static func _active_players(state: GameStateScript) -> Array:
 	return result
 
 
-static func _record(state: GameStateScript, article_id: int, outcome: String, keep: int, against: int, text: String) -> void:
+static func _record(state: GameStateScript, leader: int, article_id: int, outcome: String, keep: int, against: int, text: String) -> void:
 	state.amendment_record.append({
 		"round": state.current_round,
-		"leader": state.leader_id,
+		"leader": leader,
 		"article_id": article_id,
 		"outcome": outcome,
 		"for": keep,

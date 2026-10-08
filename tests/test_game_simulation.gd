@@ -15,6 +15,7 @@ const SicknessScript = preload("res://scripts/sickness.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
+const PermissionsScript = preload("res://scripts/permissions.gd")
 const ScoringScript = preload("res://scripts/scoring.gd")
 
 const EXAM_WRITING = GameStateScript.ElectionPhase.EXAM_WRITING
@@ -153,7 +154,7 @@ func _init() -> void:
 		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
 
 	# Choices come up too (only some cards ask for one, so across all the ordinary games).
-	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded"]:
+	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed"]:
 		expect("the twelve ordinary games produced a '%s' event (%d times)" % [kind, all_types.count(kind)], all_types.has(kind), true)
 
 	# The same seed always plays out the same way, to the last byte.
@@ -213,6 +214,8 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		s.hands[5] = [{"deck": "settlement", "card": 9}]
 		RolesScript.grant(s, 3, "Agbero")
 		RolesScript.grant(s, 4, "Agbero")
+	if seed_value <= 12 and seed_value % 3 == 0:
+		s.decks["settlement"] = [11]   # the keys to the city are the first Settlement card drawn, so the Vice appears
 	if seed_value >= 300 and seed_value < 500 and seed_value % 2 == 1:
 		# Loyalty chains from the start (3 > 4 > 5, for the length of the game), so ballots of every kind are mirrored.
 		LoyalistsScript.appoint(s, 3, 4, 100)
@@ -327,6 +330,14 @@ func next_move(s: GameStateScript) -> Dictionary:
 		return amendment_move(s)
 	match s.term.get("phase", NONE):
 		INAUGURATION, FAREWELL:
+			# The Vice (if any) has windows of their own: they pass, or in some rounds amend the tax rate. They are asked
+			# once the Leader has used or passed theirs.
+			if s.vice_id != -1 and window_used(s):
+				var window: int = GameStateScript.AmendWindow.INAUGURATION if s.term["phase"] == INAUGURATION else GameStateScript.AmendWindow.FAREWELL
+				if not s.vice_windows_used[window] and PermissionsScript.leader_powers_problem(s, s.vice_id) == "":
+					if s.current_round % 3 == 0 and s.vice_type != GameStateScript.LeaderType.COMMANDER:
+						return {"player": s.vice_id, "command": tax_amendment(s)}
+					return {"player": s.vice_id, "command": {"type": "pass_window"}}
 			# Every other term the Leader tries to amend the tax rate; otherwise they pass.
 			if s.current_round % 2 == 0 and s.leader_type != GameStateScript.LeaderType.COMMANDER and not window_used(s):
 				return {"player": s.leader_id, "command": tax_amendment(s)}
@@ -466,7 +477,7 @@ func union_move(s: GameStateScript) -> Dictionary:
 				return {"player": union["owner"], "command": {"type": "union_disperse", "union_id": union_id}}
 			if recruits_this_term(s) < 3:
 				for candidate in s.player_ids:
-					if candidate != union["owner"] and not s.eliminated.get(candidate, false) and candidate != s.leader_id \
+					if candidate != union["owner"] and not s.eliminated.get(candidate, false) and candidate != s.leader_id and candidate != s.vice_id \
 							and UnionsScript.union_of(s, candidate) == -1 and not s.union_invites.has(candidate):
 						return {"player": union["owner"], "command": {"type": "union_recruit", "union_id": union_id, "target": candidate}}
 	return {}
@@ -730,7 +741,7 @@ func amendment_move(s: GameStateScript) -> Dictionary:
 		return {"player": SERVER, "command": {"type": "rule_grammar", "ok": true}}
 	var waiting: Array = []
 	for id in s.player_ids:
-		if id == s.leader_id or s.eliminated.get(id, false) or s.sick.get(id, false) or s.amend["votes"].has(id):
+		if id == s.leader_id or id == s.vice_id or s.eliminated.get(id, false) or s.sick.get(id, false) or s.amend["votes"].has(id):
 			continue
 		waiting.append(id)
 	if waiting.is_empty():
@@ -806,6 +817,13 @@ func check_rules(s: GameStateScript, step: int) -> void:
 	for id in s.skip_draw:
 		if s.eliminated.get(id, false):
 			problems.append(where + "an eliminated player %d still loses a draw" % id)
+	if s.vice_id != -1:
+		if s.eliminated.get(s.vice_id, false) or s.vice_id == s.leader_id or s.term.is_empty() or s.leader_id == -1:
+			problems.append(where + "malformed Vice %d (Leader %d)" % [s.vice_id, s.leader_id])
+	else:
+		for window in s.vice_windows_used:
+			if s.vice_windows_used[window]:
+				problems.append(where + "no Vice, but a Vice window is marked used")
 	for follower in s.loyalists:
 		var owner: int = s.loyalists[follower]["owner"]
 		if s.eliminated.get(follower, false) or s.eliminated.get(owner, false) or owner == follower or s.loyalists[follower]["left"] <= 0:

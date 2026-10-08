@@ -188,6 +188,8 @@ static func _recruit(state: GameStateScript, owner: int, command: Dictionary) ->
 static func _problem_recruiting(state: GameStateScript, target: int, union: Dictionary) -> String:
 	if target == state.leader_id:
 		return "A %s can't recruit the Leader." % word(union)
+	if target == state.vice_id:
+		return "A %s can't recruit the Vice." % word(union)
 	if union_of(state, target) != -1:
 		return "A %s can't recruit a member of another union or mob." % word(union)
 	if state.union_invites.has(target):
@@ -208,7 +210,7 @@ static func _respond(state: GameStateScript, player_id: int, command: Dictionary
 		return [_log(state, "union_invitation_refused", {"union_id": union_id, "player": player_id})]
 	if not state.unions.has(union_id):
 		return [_log(state, "union_invitation_void", {"union_id": union_id, "player": player_id, "reason": "the union or mob no longer exists"})]
-	if player_id == state.leader_id or union_of(state, player_id) != -1:
+	if player_id == state.leader_id or player_id == state.vice_id or union_of(state, player_id) != -1:
 		return [_log(state, "union_invitation_void", {"union_id": union_id, "player": player_id, "reason": "they can no longer join"})]
 	state.unions[union_id]["members"].append(player_id)
 	return [_log(state, "union_joined", {"union_id": union_id, "player": player_id})]

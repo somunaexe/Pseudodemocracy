@@ -158,6 +158,8 @@ static func _finish(state: GameStateScript, player_id: int) -> Array:
 		return [_reject(player_id, "Only the server can end the game.")]
 	if state.term.get("phase", GameStateScript.TermPhase.NONE) != GameStateScript.TermPhase.NONE and state.leader_id != -1:
 		state.half_rounds[state.leader_id] = int(state.half_rounds.get(state.leader_id, 0)) + 2
+		if state.vice_id != -1:
+			state.half_rounds[state.vice_id] = int(state.half_rounds.get(state.vice_id, 0)) + 1   # the Vice scores half a round
 	state.game_over = true
 	var event: Dictionary = EventsScript.make("game_over", {"winners": ScoringScript.final_winners(state)})
 	state.event_log.append(event)

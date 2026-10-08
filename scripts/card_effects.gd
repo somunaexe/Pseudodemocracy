@@ -14,6 +14,7 @@ class_name CardEffects
 #   collect_each   every other player of a gender pays the drawer an amount (what they can't pay becomes debt)
 #   marker       the player gets a corruption marker (see Corruption)
 #   popularity_per_loyalist   more popularity moved for each of the player's Loyalists of a gender (see Loyalists)
+#   keys         the keys to the city: take the Leader's role if more popular than them (they become Vice), else become Vice (see Vice)
 #   defect       one of the player's Loyalists, at random, leaves them
 #   disband      the player's union or mob disperses and its other members become the player's rivals (see Rivals)
 # A card with "keep" goes into the player's hand instead (state.hands), to be played later with the command
@@ -52,6 +53,7 @@ const UnionsScript = preload("res://scripts/unions.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
+const ViceScript = preload("res://scripts/vice.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const RngScript = preload("res://scripts/rng.gd")
@@ -83,6 +85,8 @@ static func apply(state: GameStateScript, player_id: int, deck: String, card: in
 		data["popularity"] = data.get("popularity", 0) + PopularityScript.effective(state, player_id) - before
 	if effect.has("defect"):
 		extra.append_array(LoyalistsScript.defect_one(state, player_id))
+	if effect.has("keys"):
+		extra.append_array(ViceScript.keys_to_the_city(state, player_id))
 	data["asks_choice"] = effect.has("choose")
 	var events: Array = [_log(state, "card_applied", data)]
 	events.append_array(_log_all(state, extra))
