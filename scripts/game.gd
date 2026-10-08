@@ -39,7 +39,7 @@ const SERVER_ID := 0
 
 const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
 const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
-const COMMAND_COMMANDS := ["union_command", "command_target", "command_finish", "command_vote"]
+const COMMAND_COMMANDS := ["union_command", "command_finish", "command_vote"]
 const GENDER_COMMANDS := ["set_gender"]
 const UNION_COMMANDS := ["union_recruit", "union_respond", "union_leave", "union_kick", "union_disperse", "union_reform"]
 const CARD_COMMANDS := ["choose", "play_card"]

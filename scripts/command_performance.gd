@@ -4,7 +4,6 @@ class_name CommandPerformance
 # player performs it, and the table judges them.
 #
 #   { "type": "union_command", "union_id": id, "scenario": text, "target": id }    the Unionizer or Capon
-#   { "type": "command_target", "target": id }                                    the Leader, when the Leader is a member
 #   { "type": "command_finish" }                                                  the performer is done early
 #   { "type": "command_vote", "good": bool }                                      everyone but the performer
 #
@@ -12,8 +11,7 @@ class_name CommandPerformance
 #     Unionizer's or Capon's OWN turn (not on the Leader's turn, even when the Leader is a member).
 #   - The scenario is free text written by the group's leader, 1 to scenarioMax characters.
 #   - The target is any player in the game who is not a member of the group, regular players and the Leader alike.
-#     (Article 17: if the Leader is a member, the actions target "a rival of the Leader's choice", so then the
-#     Leader chooses, within choiceSeconds; if they don't, the server chooses at random.)
+#     The Unionizer (or Capon) has the final say on the target, even when the Leader is a member of the group.
 #   - The commanding group's total popularity vote is DOUBLED: each of its members' votes counts commandVoteMultiplier
 #     (2) times, whether it is a union or a mob, even if the mob has dispersed by the time the votes are cast.
 #   - The target performs for performanceSeconds (60), they may finish early. Then everyone except the performer
@@ -32,10 +30,8 @@ const GameDataScript = preload("res://scripts/game_data.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const LawScript = preload("res://scripts/law.gd")
-const RngScript = preload("res://scripts/rng.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
-const TARGETING := GameStateScript.CommandPhase.TARGETING
 const PERFORMING := GameStateScript.CommandPhase.PERFORMING
 const VOTING := GameStateScript.CommandPhase.VOTING
 
@@ -46,8 +42,6 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 	match str(command.get("type", "")):
 		"union_command":
 			return _start(state, player_id, command)
-		"command_target":
-			return _choose_target(state, player_id, command)
 		"command_finish":
 			return _finish(state, player_id)
 		"command_vote":
@@ -86,50 +80,15 @@ static func _start(state: GameStateScript, leader: int, command: Dictionary) -> 
 	if candidates.is_empty():
 		return [_reject(leader, "There is no one to command.")]
 
-	# The Leader chooses the target if they are in the group (Article 17); otherwise the leader names one.
-	var leader_chooses: bool = state.leader_id in union["members"]
-	var target: int = 0
-	if not leader_chooses:
-		var named = command.get("target", null)
-		if typeof(named) != TYPE_INT or not named in candidates:
-			return [_reject(leader, "Choose a player outside your %s." % UnionsScript.word(union))]
-		target = named
+	var named = command.get("target", null)
+	if typeof(named) != TYPE_INT or not named in candidates:
+		return [_reject(leader, "Choose a player outside your %s." % UnionsScript.word(union))]
 	union["commanded"] = _turn_key(state)
-	var events: Array = []
-	state.command = {"union_id": union_id, "union_type": union["type"], "leader": leader, "scenario": scenario, "votes": {}, "target": target, "members": union["members"].duplicate()}
-	if leader_chooses:
-		var seconds: int = GameDataScript.get_int("choiceSeconds")
-		state.command["phase"] = TARGETING
-		state.command["chooser"] = state.leader_id
-		state.command["candidates"] = candidates
-		state.command["deadline"] = state.clock_ms + seconds * 1000
-		events.append(_log(state, "command_started", {"union_id": union_id, "union_type": union["type"], "leader": leader, "scenario": scenario, "target": 0, "chooser": state.leader_id, "candidates": candidates, "seconds": seconds, "ends_at_ms": state.command["deadline"]}))
-	else:
-		events.append(_log(state, "command_started", {"union_id": union_id, "union_type": union["type"], "leader": leader, "scenario": scenario, "target": target}))
-		events.append_array(_begin_performance(state))
+	state.command = {"union_id": union_id, "union_type": union["type"], "leader": leader, "scenario": scenario, "votes": {}, "target": named, "members": union["members"].duplicate()}
+	var events: Array = [_log(state, "command_started", {"union_id": union_id, "union_type": union["type"], "leader": leader, "scenario": scenario, "target": named})]
+	events.append_array(_begin_performance(state))
 	if union["type"] == GameStateScript.UnionType.AGBERO:
 		events.append_array(_log_all(state, UnionsScript.disperse(state, union_id, "the mob acted")))   # it disperses the instant it acts
-	return events
-
-
-# Article 17: the Leader, being a member, picks whom the group's action is used on.
-static func _choose_target(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
-	if state.command.is_empty() or state.command["phase"] != TARGETING:
-		return [_reject(player_id, "There is no target to choose.")]
-	if player_id != state.command["chooser"]:
-		return [_reject(player_id, "Only the Leader chooses the target.")]
-	var target = command.get("target", null)
-	if typeof(target) != TYPE_INT or not target in state.command["candidates"]:
-		return [_reject(player_id, "Choose one of the players offered.")]
-	return _target_chosen(state, target, false)
-
-
-static func _target_chosen(state: GameStateScript, target: int, auto: bool) -> Array:
-	state.command["target"] = target
-	state.command.erase("chooser")
-	state.command.erase("candidates")
-	var events: Array = [_log(state, "command_target_chosen", {"union_id": state.command["union_id"], "target": target, "auto": auto})]
-	events.append_array(_begin_performance(state))
 	return events
 
 
@@ -169,13 +128,10 @@ static func step(state: GameStateScript) -> Array:
 		return []
 	var cmd: Dictionary = state.command
 	# The term is gone (a coup, the Leader eliminated), or the performer has left the game: nothing to judge.
-	if state.term.is_empty() or (cmd["target"] != 0 and (not cmd["target"] in state.player_ids or state.eliminated.get(cmd["target"], false))):
+	if state.term.is_empty() or not cmd["target"] in state.player_ids or state.eliminated.get(cmd["target"], false):
 		state.command = {}
 		return [_log(state, "command_void", {"union_id": cmd["union_id"], "target": cmd["target"]})]
 	match cmd["phase"]:
-		TARGETING:
-			if state.clock_ms >= int(cmd["deadline"]):
-				return _target_chosen(state, RngScript.pick(state, cmd["candidates"]), true)   # the Leader never chose
 		PERFORMING:
 			if state.clock_ms >= int(cmd["deadline"]):
 				return _open_voting(state)

@@ -127,5 +127,5 @@ var genders: Dictionary = {}        # player id -> "female", "male" or "other"
 
 # A Command Performance in progress (see CommandPerformance): a union or mob scripts a scenario and a player performs it.
 # At most one at a time. {} when there is none. Public, except the votes, which are secret until the result.
-enum CommandPhase { TARGETING, PERFORMING, VOTING }
-var command: Dictionary = {}        # { "phase", "union_id", "union_type", "leader", "target" (0 until chosen), "chooser", "candidates", "scenario", "deadline", "votes" }
+enum CommandPhase { PERFORMING, VOTING }
+var command: Dictionary = {}        # { "phase", "union_id", "union_type", "leader", "target", "members", "scenario", "deadline", "votes" }

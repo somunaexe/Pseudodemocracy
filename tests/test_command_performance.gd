@@ -198,33 +198,19 @@ func acting_changes_the_group() -> void:
 
 
 func the_leader_in_the_group() -> void:
-	# Article 17: the Leader (player 2) is a member, so the Leader picks the target. The Unionizer (player 3) still
-	# commands on their own turn: never on the Leader's.
+	# The Leader (player 2) is a member of the group. The Unionizer still has the final say on the target, and
+	# commands on their own turn, never on the Leader's.
 	var s := with_union(ACTIVIST, [3, 2])
 	performance_done(s)   # it is the Leader's turn, and the Leader is a member
-	expect("even with the Leader in the group, a command can't be made on the Leader's turn", send(s, 3, {"type": "union_command", "union_id": 1, "scenario": "do a dance"})[0]["reason"], "A union can only command a performance on the Unionizer's own turn.")
+	expect("even with the Leader in the group, a command can't be made on the Leader's turn", send(s, 3, command(4, "do a dance"))[0]["reason"], "A union can only command a performance on the Unionizer's own turn.")
 	next_turn(s)
 	performance_done(s)   # now player 3's own turn
-	var ev := send(s, 3, {"type": "union_command", "union_id": 1, "scenario": "do a dance"})
-	expect("with the Leader in the group, the Leader chooses whom", [types(ev), s.command["phase"], s.command["chooser"], s.command["candidates"]], [["command_started"], GameStateScript.CommandPhase.TARGETING, 2, [1, 4, 5]])
-	expect("... only the Leader chooses", send(s, 3, {"type": "command_target", "target": 4})[0]["reason"], "Only the Leader chooses the target.")
-	for bad in [null, "4", true, 3, 2, 9]:
-		expect("target %s is refused" % str(bad), send(s, 2, {"type": "command_target", "target": bad})[0]["reason"], "Choose one of the players offered.")
-	var chosen := send(s, 2, {"type": "command_target", "target": 4})
-	expect("the Leader's choice starts the performance", [types(chosen), s.command["target"], s.command["phase"], chosen[0]["auto"]], [["command_target_chosen", "command_performance_started"], 4, GameStateScript.CommandPhase.PERFORMING, false])
-	expect("... and can't be changed", send(s, 2, {"type": "command_target", "target": 5})[0]["reason"], "There is no target to choose.")
-
-	# They don't choose: the server does, from the same list.
-	s = ready_union(ACTIVIST, [3, 2])
-	send(s, 3, {"type": "union_command", "union_id": 1, "scenario": "do a dance"})
-	expect("before the 10 seconds are up nothing happens", types(GameScript.tick(s, int(s.command["deadline"]) - 1)), [])
-	var auto := GameScript.tick(s, int(s.command["deadline"]))
-	expect("the server picks a valid target at random", [types(auto), auto[0]["auto"], s.command["target"] in [1, 4, 5]], [["command_target_chosen", "command_performance_started"], true, true])
-
-	# The Leader in a group never targets their own side.
-	s = ready_union(ACTIVIST, [3, 2, 4])
-	send(s, 3, {"type": "union_command", "union_id": 1, "scenario": "x"})
-	expect("the candidates are everyone outside the group", s.command["candidates"], [1, 5])
+	expect("the Unionizer names the target, not the Leader", send(s, 2, command(4, "do a dance"))[0]["reason"], "Only the Unionizer decides for a union.")
+	expect("... and a target is always needed", send(s, 3, {"type": "union_command", "union_id": 1, "scenario": "do a dance"})[0]["reason"], "Choose a player outside your union.")
+	expect("... outside the group, so not the Leader who is in it", send(s, 3, command(2, "do a dance"))[0]["reason"], "Choose a player outside your union.")
+	var ev := send(s, 3, command(4, "do a dance"))
+	expect("the Unionizer's choice stands", [types(ev), s.command["target"], s.command["phase"]], [["command_started", "command_performance_started"], 4, GameStateScript.CommandPhase.PERFORMING])
+	expect("there is no way for the Leader to change it", send(s, 2, {"type": "command_target", "target": 5})[0]["type"], "rejected")
 
 
 func when_it_cannot_go_on() -> void:

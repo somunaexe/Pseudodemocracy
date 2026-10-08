@@ -323,17 +323,13 @@ func hand_move(s: GameStateScript) -> Dictionary:
 	return {}
 
 
-# A Command Performance under way: the Leader picks a target (or doesn't), the performer finishes early (or doesn't),
-# voters vote (or don't), so every way it can end gets played.
+# A Command Performance under way: the performer finishes early (or doesn't), voters vote (or don't), so every way it
+# can end gets played.
 func command_move(s: GameStateScript) -> Dictionary:
 	if s.command.is_empty():
 		return {}
 	var cmd: Dictionary = s.command
 	match cmd["phase"]:
-		GameStateScript.CommandPhase.TARGETING:
-			if (s.turns_played + s.current_round) % 2 == 0:
-				return {"tick": int(cmd["deadline"])}   # the Leader never chooses
-			return {"player": cmd["chooser"], "command": {"type": "command_target", "target": cmd["candidates"][0]}}
 		GameStateScript.CommandPhase.PERFORMING:
 			if (cmd["target"] + s.turns_played) % 2 == 0:
 				return {"player": cmd["target"], "command": {"type": "command_finish"}}
@@ -386,9 +382,7 @@ func union_move(s: GameStateScript) -> Dictionary:
 					if not candidate in members and not s.eliminated.get(candidate, false):
 						outside.append(candidate)
 				if not outside.is_empty():
-					var order := {"type": "union_command", "union_id": union_id, "scenario": "scenario %d" % turn_number}
-					if not s.leader_id in members:
-						order["target"] = outside[turn_number % outside.size()]
+					var order := {"type": "union_command", "union_id": union_id, "scenario": "scenario %d" % turn_number, "target": outside[turn_number % outside.size()]}
 					return {"player": union["owner"], "command": order}
 			if members.size() >= 3 and turn_number % 4 == 0:
 				return {"player": union["owner"], "command": {"type": "union_kick", "union_id": union_id, "target": members[members.size() - 1]}}
