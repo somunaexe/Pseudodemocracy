@@ -134,9 +134,9 @@ Not built yet, and why:
 |---|---|---|
 | Which words does the game enforce? | A "binding" ties one highlighted word to one rule (data/source/articles.js). 12 of the 116 highlighted words are bound today. | **Built** |
 | What about the other 104 highlighted words? | Free text, enforced by the table as in the physical game. The Constitution shows them but the game does not apply them. | **Built** |
-| What may a Leader write in a bound word? | Only a word the game can read: a whole percentage (30%), a whole number in a range, or one of a fixed list of words (single, double, triple, quadruple; plus or minus). | **Built**, please confirm |
-| What happens if they write something else (e.g. "banana" as a tax rate)? | The proposal is refused. No fine, no popularity loss, the window is not used, and they can try again. | **Built**, please confirm |
-| What still costs the fine? | Breaking "one word for one word": changing a fixed word, writing two words, or leaving a word blank; or a bad grammar ruling. | Unchanged |
+| What may a Leader write in a bound word? | A word the game can read: a whole percentage (30%), a whole number in a range, or one of a fixed list of words (single, double, triple, quadruple; plus or minus). Anything else fails the check. | **Built**, please confirm |
+| What happens if they write something else (e.g. "banana" as a tax rate)? | It is a failed check, because they chose to write it: 100 PSD, popularity loss, window used. No free retry. | **Built** (rule changed by the designer) |
+| What else costs the fine? | Breaking "one word for one word": changing a fixed word, writing two words, or leaving a word blank; or a bad grammar ruling. | Unchanged |
 | When does an amended rule apply? | From the moment the amendment stands. While it is being voted on, the old law applies. | **Built** |
 | What stops the data and the text disagreeing? | The export fails if a bound word's starting text differs from game_data. | **Built** |
 

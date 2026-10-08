@@ -85,11 +85,9 @@ static func _propose(state: GameStateScript, player_id: int, command: Dictionary
 	var cleaned: Array = _normalise(old_words, texts)   # validate and store the same strings
 	var structural: String = AmendmentScript.validate_words(old_words, cleaned)
 	if structural.is_empty():
-		# A word the game can't apply as a rule is refused outright: no fine, the window is
-		# not used, and the Leader can try again.
-		var unreadable: String = LawScript.check_new_wording(article_id, old_words, cleaned)
-		if not unreadable.is_empty():
-			return [_reject(player_id, unreadable)]
+		# A word the game can't apply as a rule is a failed check like any other: the Leader
+		# chose to write it, so the fine, the popularity loss and the used window all apply.
+		structural = LawScript.check_new_wording(article_id, old_words, cleaned)
 
 	# Accepted. From here the attempt uses up the window whatever happens next.
 	state.windows_used[window] = true

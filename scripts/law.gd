@@ -9,8 +9,9 @@ class_name Law
 # to read it. Highlighted words with no binding are not enforced by the game; the table
 # enforces them, as in the physical game.
 #
-# A Leader may only write a bound word the game can read (check_new_wording), so the law can
-# always be applied. Reading a word that can't be read means the state was corrupted by hand.
+# A bound word the game can't read is a failed check (check_new_wording gives the reason), so
+# the Constitution only ever holds words the game can apply. Reading one that can't be read
+# means the state was corrupted by hand.
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")

@@ -19,6 +19,7 @@ const DISSOLVING := 11
 const ACTIVIST_CONFRONT := 14
 const AGBERO_CONFRONT := 15
 const SERVER := 0
+const TAX_20 := "Tax: 20% of income goes to the treasury every round."
 
 var failures: int = 0
 
@@ -34,38 +35,46 @@ func _init() -> void:
 
 
 func words_the_game_cannot_apply() -> void:
+	# The Leader chose to write a word the game can't apply, so it is a failed check.
 	for bad in ["banana", "150%", "30", "-5%", "thirty%", "٣٠%"]:
 		var s := make_state()
 		var ev := send(s, 1, amend(s, TAX, {0: bad}, INAUG))
-		expect("'%s' as a tax rate is refused" % bad, types(ev), ["rejected"])
-		expect("... no fine", s.psd[1], 1000)
-		expect("... no popularity lost", s.popularity[1], 0)
-		expect("... the window is not used up", s.windows_used[INAUG], false)
-		expect("... nothing logged, nothing in progress", [s.event_log.size(), s.amend.size()], [0, 0])
+		expect("'%s' as a tax rate fails the check" % bad, types(ev), ["amendment_proposed", "amendment_failed"])
+		expect("... 100 PSD fine", s.psd[1], 900)
+		expect("... popularity -6 x 4", s.popularity[1], -24)
+		expect("... the window is used up", s.windows_used[INAUG], true)
+		expect("... the old wording stays, nothing in progress", [tax_text(s), s.amend.size()], [TAX_20, 0])
 
 	var s := make_state()
 	var ev := send(s, 1, amend(s, TAX, {0: "banana"}, INAUG))
-	expect("the Leader is told why", ev[0]["reason"].contains("whole percentage"), true)
-	expect("... and can try again", types(send(s, 1, amend(s, TAX, {0: "30%"}, INAUG))), ["amendment_proposed"])
+	expect("the Leader is told what the game could have read", ev[1]["reason"].contains("whole percentage"), true)
+	expect("... and the word they wrote", ev[1]["reason"].contains("'banana'"), true)
+	expect("the window is gone: no second try", types(send(s, 1, amend(s, TAX, {0: "30%"}, INAUG))), ["rejected"])
 
 	s = make_state()
-	expect("a word the game doesn't enforce can be anything", types(send(s, 1, amend(s, TAX, {3: "banana"}, INAUG))), ["amendment_proposed"])
+	expect("a word the game doesn't enforce can be anything, with no fine", types(send(s, 1, amend(s, TAX, {3: "banana"}, INAUG))), ["amendment_proposed"])
+	expect("... nothing was charged", s.psd[1], 1000)
 
 	s = make_state()
-	expect("a fixed word still costs the fine (existing rule)", types(send(s, 1, {"type": "propose", "window": INAUG, "article_id": TAX, "new_texts": changed_texts(s, TAX, 0, "Duty:")})), ["amendment_proposed", "amendment_failed"])
+	expect("a fixed word still costs the fine", types(send(s, 1, {"type": "propose", "window": INAUG, "article_id": TAX, "new_texts": changed_texts(s, TAX, 0, "Duty:")})), ["amendment_proposed", "amendment_failed"])
 	s = make_state()
 	expect("two words in one place still cost the fine", types(send(s, 1, amend(s, TAX, {0: "30 %"}, INAUG))), ["amendment_proposed", "amendment_failed"])
 	s = make_state()
-	expect("a blank word breaks 'one word for one word' and costs the fine", types(send(s, 1, amend(s, TAX, {0: ""}, INAUG))), ["amendment_proposed", "amendment_failed"])
+	expect("a blank word costs the fine", types(send(s, 1, amend(s, TAX, {0: ""}, INAUG))), ["amendment_proposed", "amendment_failed"])
 
 	s = make_state()
-	expect("a union can't be made to need 0 members", types(send(s, 1, amend(s, UNION_SIZE, {1: "0"}, INAUG))), ["rejected"])
+	expect("a union that needs 0 members fails the check", types(send(s, 1, amend(s, UNION_SIZE, {1: "0"}, INAUG))), ["amendment_proposed", "amendment_failed"])
 	s = make_state()
 	expect("... but 1 is fine", types(send(s, 1, amend(s, UNION_SIZE, {1: "1"}, INAUG))), ["amendment_proposed"])
 	s = make_state()
-	expect("'quintuple' is not a multiplier", types(send(s, 1, amend(s, ACTIVIST_CONFRONT, {0: "quintuple"}, INAUG))), ["rejected"])
+	expect("'quintuple' is not a multiplier", types(send(s, 1, amend(s, ACTIVIST_CONFRONT, {0: "quintuple"}, INAUG))), ["amendment_proposed", "amendment_failed"])
 	s = make_state()
-	expect("a sign must be a sign", types(send(s, 1, amend(s, 31, {0: "x"}, INAUG))), ["rejected"])
+	expect("a sign must be a sign", types(send(s, 1, amend(s, 31, {0: "x"}, INAUG))), ["amendment_proposed", "amendment_failed"])
+
+	# A bad word never reaches the vote or the Constitution.
+	s = make_state()
+	send(s, 1, amend(s, TAX, {0: "banana"}, INAUG))
+	expect("the phase is back to NONE and the law is unchanged", [s.amend.is_empty(), LawScript.get_int(s, "taxRate")], [true, 20])
 
 
 func amendments_change_the_game() -> void:
@@ -158,6 +167,10 @@ func an_eliminated_leader() -> void:
 
 
 # --- helpers ---------------------------------------------------------------------------
+
+func tax_text(s: GameStateScript) -> String:
+	return ConstitutionScript.to_text(s.articles[TAX])
+
 
 func make_state() -> GameStateScript:
 	var s: GameStateScript = GameStateScript.new()
