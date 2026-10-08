@@ -37,6 +37,7 @@ const IncomeScript = preload("res://scripts/income.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const CommandPerformanceScript = preload("res://scripts/command_performance.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
+const SecretAgentScript = preload("res://scripts/secret_agent.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const DoctorScript = preload("res://scripts/doctor.gd")
 const PerformanceTurnScript = preload("res://scripts/performance.gd")
@@ -122,6 +123,9 @@ static func _step(state: GameStateScript) -> Array:
 	var dose: Array = DoctorScript.step(state)   # a dose in progress moves on with the clock, whatever the term is doing
 	if not dose.is_empty():
 		return dose
+	var hires: Array = SecretAgentScript.step(state)   # and a request to hire a Secret Agent
+	if not hires.is_empty():
+		return hires
 	var wills: Array = WillsScript.step(state)   # so does a will nobody signed in time
 	if not wills.is_empty():
 		return wills

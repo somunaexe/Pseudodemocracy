@@ -23,6 +23,9 @@ func _init() -> void:
 	checking_the_bead()
 	once_a_round()
 	secrecy()
+	hiring_an_agent()
+	answering_a_hire()
+	a_hire_that_goes_stale()
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -165,6 +168,161 @@ func secrecy() -> void:
 	var errors: Array = []
 	var restored: GameStateScript = SerializerScript.state_from_json(SerializerScript.state_to_json(s), errors)
 	expect("a saved game remembers who has checked", [errors, restored.agent_used], [[], {AGENT: true}])
+
+
+func hiring_an_agent() -> void:
+	var s := game()
+	RolesScript.grant(s, 5, "Doctor")
+	expect("a valid request is accepted", types(hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})), ["agent_requested"])
+	var ev: Dictionary = last_of(s, "agent_requested")
+	expect("... only the asker and the Agent hear of it, and it says what is wanted and for how much", [ev["audience"], ev["kind"], ev["target"], ev["role"], ev["price"], ev["seconds"]], [[4, 2], "coup", 5, "Doctor", 40, 30])
+	expect("... nobody else is shown it", ViewsScript.visible_events(s.event_log, 1).filter(func(e): return e["type"] == "agent_requested"), [])
+	expect("an Agent can have only one request waiting", hire(s, 1, {"kind": "will", "target": 5, "price": 10})[0]["reason"], "That Agent already has a request waiting.")
+	expect("the request stays on the server", [ViewsScript.state_view(s, 1).has("agent_offers"), ViewsScript.state_view_json(s, 4).contains("agent_offers")], [false, false])
+
+	s = game()
+	RolesScript.grant(s, 5, "Doctor")
+	expect("a stranger can't hire", send(s, 9, hire_command(2, {"kind": "will", "target": 5, "price": 10}))[0]["reason"], "You are not in the game.")
+	for bad in [null, "2", true, 2.0, 0, 9]:
+		expect("agent %s is refused" % str(bad), send(s, 4, hire_command(bad, {"kind": "will", "target": 5, "price": 10}))[0]["reason"], "Choose an Agent who is in the game.")
+	expect("you can't hire yourself", send(s, 2, hire_command(2, {"kind": "will", "target": 5, "price": 10}))[0]["reason"], "You can't hire yourself.")
+	expect("the Agent must be an Agent", send(s, 4, hire_command(5, {"kind": "will", "target": 1, "price": 10}))[0]["reason"], "That player is not a Secret Agent.")
+	expect("... and it must be their own turn: player 3 is an Agent but it is player 2's turn", send(s, 4, hire_command(3, {"kind": "will", "target": 5, "price": 10}))[0]["reason"], "You can only hire an Agent on their own turn.")
+	for bad in [null, "bead", "Coup", 1]:
+		expect("kind %s is refused (the bead is not for hire)" % str(bad), hire(s, 4, {"kind": bad, "target": 5, "price": 10})[0]["reason"], "Choose coup or will.")
+	for bad in [null, "5", true, 99]:
+		expect("target %s is refused" % str(bad), hire(s, 4, {"kind": "will", "target": bad, "price": 10})[0]["reason"], "Choose a player who is in the game.")
+	expect("a card the target doesn't hold can't be asked about", hire(s, 4, {"kind": "coup", "target": 5, "role": "Lawyer", "price": 10})[0]["reason"], "That player doesn't hold that role.")
+	expect("a will that doesn't exist can't be asked about", hire(s, 4, {"kind": "will", "target": 5, "price": 10})[0]["reason"], "That player has no will.")
+	for bad in [null, -1, 5001, 1.5, "10", true]:
+		expect("price %s is refused" % str(bad), hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": bad})[0]["reason"], "The price must be a whole number from 0 to 5000.")
+	expect("a price of 0 is allowed", types(hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 0})), ["agent_requested"])
+
+	s = game()
+	s.sick[2] = true
+	expect("a sick Agent can't be hired", hire(s, 4, {"kind": "will", "target": 5, "price": 10})[0]["reason"], "Sick players can't use pledges.")
+	s = game()
+	s.agent_used[2] = true
+	expect("an Agent who has already checked this round can't be hired", hire(s, 4, {"kind": "will", "target": 5, "price": 10})[0]["reason"], "That Agent has already used their power this round.")
+
+
+func answering_a_hire() -> void:
+	var s := game()
+	RolesScript.grant(s, 5, "Doctor")
+	hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})
+	expect("only the Agent asked can answer", send(s, 3, respond(4, true))[0]["reason"], "There is no request waiting for you from that player.")
+	expect("... and about that player", send(s, 2, respond(1, true))[0]["reason"], "There is no request waiting for you from that player.")
+	for bad in [null, "4", true, 4.0]:
+		expect("client %s is refused" % str(bad), send(s, 2, {"type": "agent_respond", "client": bad, "accept": true})[0]["reason"], "There is no request waiting for you from that player.")
+	for bad in [null, "yes", 1]:
+		expect("answer %s is refused" % str(bad), send(s, 2, {"type": "agent_respond", "client": 4, "accept": bad})[0]["reason"], "Accept or refuse.")
+	var cash: int = s.psd[4]
+	var agent_cash: int = s.psd[2]
+	var total: int = total_money(s)
+	var ev := send(s, 2, respond(4, true))
+	expect("accepting makes the check and sends the result to both of them", [types(ev), ev[0]["audience"], ev[0]["kind"], ev[0]["target"], ev[0]["role"], ev[0]["sticker"]], [["agent_report"], [2, 4], "coup", 5, "Doctor", RolesScript.has_sticker(s, 5, "Doctor")])
+	expect("... the asker pays the price to the Agent", [s.psd[4] - cash, s.psd[2] - agent_cash, ev[0]["paid"]], [-40, 40, 40])
+	expect("... that was the Agent's one check this round", [s.agent_used.has(2), s.agent_offers.has(2), send(s, 2, check("coup", {"target": 5, "role": "Doctor"}))[0]["reason"]], [true, false, "You have already used your power this round."])
+	expect("... nobody else is shown the result, and money is conserved", [ViewsScript.visible_events(s.event_log, 1).filter(func(e): return e["type"] == "agent_report"), total_money(s)], [[], total])
+
+	# A will can be hired too.
+	s = game()
+	s.wills[5] = {"psd_heir": 1, "role_heir": 4, "on_hold": false, "lawyer": 3, "upkeep": 10, "arrears": 0}
+	hire(s, 4, {"kind": "will", "target": 5, "price": 25})
+	var will_report := send(s, 2, respond(4, true))
+	expect("a hired will check reveals the contents to the asker and the Agent", [will_report[0]["will"]["psd_heir"], will_report[0]["will"]["role_heir"], will_report[0]["audience"]], [1, 4, [2, 4]])
+
+	# Refusing costs nothing.
+	s = game()
+	RolesScript.grant(s, 5, "Doctor")
+	hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})
+	cash = s.psd[4]
+	var no := send(s, 2, respond(4, false))
+	expect("a refusal costs nothing and leaves the Agent's check for later", [types(no), no[0]["audience"], s.psd[4] - cash, s.agent_used.has(2), s.agent_offers.has(2)], [["agent_refused"], [4, 2], 0, false, false])
+
+	# Silence is a refusal.
+	s = game()
+	RolesScript.grant(s, 5, "Doctor")
+	hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})
+	expect("before the 30 seconds are up nothing happens", types(GameScript.tick(s, int(s.agent_offers[2]["deadline"]) - 1)), [])
+	var late := GameScript.tick(s, int(s.agent_offers[2]["deadline"]))
+	expect("silence for 30 seconds is a refusal", [types(late), late[0]["audience"], s.agent_offers.has(2)], [["agent_request_expired"], [4, 2], false])
+
+	# A client who can't afford it goes into debt to the Agent.
+	s = game()
+	RolesScript.grant(s, 5, "Doctor")
+	s.psd[1] += s.psd[4] - 10
+	s.psd[4] = 10
+	hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})
+	var poor := send(s, 2, respond(4, true))
+	expect("a client who can't afford the price owes the Agent the rest", [s.psd[4], poor[0]["new_debt"], s.debts[4][0]["creditor"]], [0, 30, 2])
+
+
+func a_hire_that_goes_stale() -> void:
+	var s := game()
+	RolesScript.grant(s, 5, "Doctor")
+	hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})
+	s.term["waiting"].pop_front()   # the Agent's turn ends before they answer (the clock has not moved)
+	s.term["played"].append(2)
+	GameScript.tick(s)
+	expect("when the Agent's turn ends the request is void, not expired", [s.agent_offers.has(2), count(s.event_log, "agent_request_void"), count(s.event_log, "agent_request_expired")], [false, 1, 0])
+
+	s = game()
+	RolesScript.grant(s, 5, "Doctor")
+	hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})
+	RolesScript.remove(s, 5, "Doctor")
+	var cash: int = s.psd[4]
+	var ev := send(s, 2, respond(4, true))
+	expect("if what was asked about has changed by the time the Agent accepts, nothing is paid", [types(ev), ev[0]["reason"], s.psd[4] - cash, s.agent_used.has(2)], [["agent_request_void"], "That player doesn't hold that role.", 0, false])
+
+	s = game()
+	RolesScript.grant(s, 5, "Doctor")
+	hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})
+	s.sick[2] = true
+	expect("if the Agent has fallen sick, the hire is void", types(send(s, 2, respond(4, true))), ["agent_request_void"])
+	s = game()
+	RolesScript.grant(s, 5, "Doctor")
+	hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})
+	s.eliminated[4] = true
+	expect("or if the asker has left the game", send(s, 2, respond(4, true))[0]["reason"], "the asker left the game")
+
+	s = game()
+	RolesScript.grant(s, 5, "Doctor")
+	hire(s, 4, {"kind": "coup", "target": 5, "role": "Doctor", "price": 40})
+	var errors: Array = []
+	var restored: GameStateScript = SerializerScript.state_from_json(SerializerScript.state_to_json(s), errors)
+	for g in [s, restored]:
+		send(g, 2, respond(4, true))
+	expect("a saved game with a request waiting answers it the same way", [errors, SerializerScript.state_to_json(s) == SerializerScript.state_to_json(restored)], [[], true])
+
+
+func hire_command(agent: Variant, extra: Dictionary) -> Dictionary:
+	var command := {"type": "agent_hire", "agent": agent}
+	for key in extra:
+		command[key] = extra[key]
+	return command
+
+
+func hire(s: GameStateScript, client: int, extra: Dictionary) -> Array:
+	return send(s, client, hire_command(2, extra))
+
+
+func respond(client: int, accept: Variant) -> Dictionary:
+	return {"type": "agent_respond", "client": client, "accept": accept}
+
+
+func total_money(s: GameStateScript) -> int:
+	var total: int = s.treasury
+	for id in s.psd:
+		total += s.psd[id]
+	return total
+
+
+func last_of(s: GameStateScript, type: String) -> Dictionary:
+	for i in range(s.event_log.size() - 1, -1, -1):
+		if s.event_log[i]["type"] == type:
+			return s.event_log[i]
+	return {}
 
 
 # --- helpers -----------------------------------------------------------------------------

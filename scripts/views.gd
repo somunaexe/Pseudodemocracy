@@ -28,7 +28,7 @@ const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills", "my_hand", "ha
 
 # Never leave the server. A will is secret until its owner is eliminated; then it is read out
 # in an event. rng_state is secret because whoever knew it could predict every random draw. (Exam keys will go here when they exist.) dose_secret is the bead in the Doctor's hand.
-const SERVER_ONLY_FIELDS = ["wills", "will_offers", "rng_state", "decks", "dose_secret", "role_cards", "agent_used", "hands"]
+const SERVER_ONLY_FIELDS = ["wills", "will_offers", "rng_state", "decks", "dose_secret", "role_cards", "agent_used", "agent_offers", "hands"]
 
 
 # Fields of GameState that are in none of the three lists.

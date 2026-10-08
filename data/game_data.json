@@ -121,6 +121,8 @@
  "doseOfferSeconds": 30,
  "doseGuessSeconds": 10,
  "commandVoteMultiplier": 2,
+ "agentOfferSeconds": 30,
+ "agentPriceMax": 5000,
  "scenarioMax": 280,
  "unionInviteSeconds": 30,
  "willOfferSeconds": 30,

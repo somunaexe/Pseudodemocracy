@@ -71,6 +71,8 @@ func _init() -> void:
 		expect("Doctor game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
 		expect("Doctor game %d: no rule was ever broken" % seed_value, run["problems"], [])
 	expect("the Secret Agent checked in the Doctor games (%d reports)" % dose_types.count("agent_report"), dose_types.has("agent_report"), true)
+	for kind in ["agent_requested", "agent_refused", "agent_request_expired"]:
+		expect("... and was hired: a '%s' event (%d times)" % [kind, dose_types.count(kind)], dose_types.has(kind), true)
 	for kind in ["dose_offered", "dose_accepted", "dose_rejected", "dose_expired", "sabotage_guessed", "dose_given", "sickened", "sickness_lengthened", "sickness_shortened", "recovered", "licence_lost", "dose_void"]:
 		expect("the Doctor games produced a '%s' event (%d times)" % [kind, dose_types.count(kind)], dose_types.has(kind) or kind in ["dose_void"], true)
 	var doc_straight := play(5, 303, 6, 0, 0, 3, 0, 4)
@@ -233,6 +235,9 @@ func next_move(s: GameStateScript) -> Dictionary:
 	var played := hand_move(s)
 	if not played.is_empty():
 		return played
+	var hiring := hire_move(s)
+	if not hiring.is_empty():
+		return hiring
 	var commanding := command_move(s)
 	if not commanding.is_empty():
 		return commanding
@@ -414,6 +419,53 @@ func recruits_this_term(s: GameStateScript) -> int:
 		if kind == "term_started":
 			break
 		if kind == "union_invited":
+			n += 1
+	return n
+
+
+# Hiring a Secret Agent: on the Agent's own turn another player asks for a card or a will to be checked; the Agent
+# accepts, refuses or says nothing. Limited per term, since a refused request costs nothing.
+func hire_move(s: GameStateScript) -> Dictionary:
+	if s.game_over or s.term.is_empty():
+		return {}
+	var agents: Array = s.agent_offers.keys()
+	agents.sort()
+	for agent in agents:
+		var number: int = count_events(s, "agent_requested")
+		if number % 5 == 2:
+			return {"tick": int(s.agent_offers[agent]["deadline"])}   # the Agent never answers
+		return {"player": agent, "command": {"type": "agent_respond", "client": s.agent_offers[agent]["client"], "accept": number % 3 != 0}}
+	var waiting: Array = s.term.get("waiting", [])
+	if s.term.get("phase", 0) != GameStateScript.TermPhase.TURNS or waiting.is_empty():
+		return {}
+	var now: int = waiting[0]
+	if not RolesScript.has(s, now, "Secret Agent") or s.agent_used.get(now, false) or RolesScript.can_use_pledge(s, now, "Secret Agent") != "":
+		return {}
+	if hires_this_term(s) >= 2:
+		return {}
+	var client: int = 0
+	for id in s.player_ids:
+		if id != now and not s.eliminated.get(id, false):
+			client = id
+			break
+	if client == 0:
+		return {}
+	for testator in s.wills:
+		if not s.eliminated.get(testator, false):
+			return {"player": client, "command": {"type": "agent_hire", "agent": now, "kind": "will", "target": testator, "price": 15}}
+	for holder in s.roles:
+		if not s.eliminated.get(holder, false) and not s.roles[holder].is_empty():
+			return {"player": client, "command": {"type": "agent_hire", "agent": now, "kind": "coup", "target": holder, "role": s.roles[holder][0], "price": 15}}
+	return {}
+
+
+func hires_this_term(s: GameStateScript) -> int:
+	var n: int = 0
+	for i in range(s.event_log.size() - 1, -1, -1):
+		var kind: String = s.event_log[i]["type"]
+		if kind == "term_started":
+			break
+		if kind == "agent_requested":
 			n += 1
 	return n
 

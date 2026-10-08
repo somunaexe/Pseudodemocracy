@@ -404,6 +404,10 @@ From the handbook (Part 6): "Can check one role card for coup-sticker status and
 | When? | Cards and wills on the Agent's own turn; the bead whenever a heal is under way (the Doctor can't look at their own bead). | Confirmed (handbook says "on their turn" for cards and wills); the bead timing is assumed |
 | How often? | Once per round in total, of any kind. A refused check does not use it up. | Confirmed (handbook) |
 | Who learns the result? | Only the Agent, in an event sent to nobody else. | **Built** |
+| Can a player hire an Agent? | Yes (your rule): on the Agent's own turn, another player asks them to check a card or a will of the asker's choosing for an agreed price (0 to 5,000). The Agent accepts or refuses; 30 seconds of silence is a refusal. If they accept, the asker pays at once (debt if they can't) and both learn the result. | Confirmed (the rule); the limits and the timer are mine |
+| What can be hired? | Cards (sticker or not) and wills. The bead is not for hire. | Assumed |
+| Does a hire use the Agent's power? | Yes: it is their one check for the round, whoever it is for. A request that can't be fulfilled when the Agent answers (the target changed, the turn moved on, the Agent fell sick) is void and costs nothing. | Assumed |
+| Who knows about a hire? | Only the asker and the Agent: the request, the refusal and the report go to them alone. The requests themselves are server-only. | **Built** |
 | "Not being caught sharing". | For the table: the game can't hear what players say. There is no command to accuse an Agent yet. | Left to the table |
 | Own cards and own will. | An Agent may check their own. | Assumed |
 | Can sick, CANCELLED or eliminated Agents check? | No (the shared role rule). | Confirmed |

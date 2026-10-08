@@ -129,3 +129,6 @@ var genders: Dictionary = {}        # player id -> "female", "male" or "other"
 # At most one at a time. {} when there is none. Public, except the votes, which are secret until the result.
 enum CommandPhase { PERFORMING, VOTING }
 var command: Dictionary = {}        # { "phase", "union_id", "union_type", "leader", "target", "members", "scenario", "deadline", "votes" }
+
+# Requests to hire a Secret Agent, by the Agent asked (see SecretAgent). SECRET: they hold what is to be checked.
+var agent_offers: Dictionary = {}   # agent id -> { "client", "kind", "target", "role", "price", "deadline" }
