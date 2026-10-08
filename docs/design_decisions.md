@@ -688,3 +688,17 @@ What it says, and what it cannot say:
 - Nothing runs away: nobody sits in debt at the end, wealth stays within 2 to 4.5 times between richest and poorest, and the game's money is conserved.
 - The simulated players are scripted, not strategic (they follow fixed rules, never scheme), so these numbers show that the rules are stable, not that they are fun. Real tuning needs real tables: leave `game_data.js` as it is until a playtest.
 - Found by the run: with everyone else eliminated, the last player sat in a game nobody could play. The game now ends when fewer than two players are standing (the survivor wins).
+
+## The server (phase 2, built: server/)
+
+| Question | Decision | Status |
+|---|---|---|
+| Structure | `server/server_core.gd` holds everything (rooms, seats, tokens, who is told what) and knows nothing of sockets; `server/ws_server.gd` only moves bytes (WebSocket, ws://, put a TLS proxy in front for wss://). | **Built** |
+| Who is a player? | The connection's seat, never a field in the message. A command naming another player is ignored. | **Built** |
+| What a client receives | Only events it may see (`Views.deliver`) and its own `state_view`; the long event log only on join, resume and `sync`. A refusal goes only to whoever asked. | **Built** |
+| Rooms | 4-letter code (no I or O), 3 to 10 players, host starts, seats are fixed in join order when it starts, names 1 to 24 characters and unique in the room, at most 200 rooms. | Assumed |
+| Reconnecting | A 128-bit random token from the operating system is the key to a seat; `resume` returns the seat and the full picture; the newest connection wins. A dropped player stays seated and the game's clocks carry on without them. | **Built** |
+| Abuse | Messages over 64 KB, bad JSON, unknown types and floods (20 at once, 8 more per second) get an error and change nothing. Clients can't end the game or rule on grammar (server only). | **Built** |
+| Not yet | Saving to disk and a clock that survives restarts (item 9), accounts and hosting (item 10). | Next |
+
+Checks: `tests/test_server_core.gd` (pretend connections) and `tools/smoke_server.sh` (the real WebSocket server, one client).
