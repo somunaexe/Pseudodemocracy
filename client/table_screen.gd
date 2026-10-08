@@ -16,6 +16,7 @@ const TABLE_COLOUR := Color(0.10, 0.34, 0.24)
 const RIM_COLOUR := Color(0.36, 0.22, 0.10)
 const BADGE_COLOUR := Color(0.13, 0.14, 0.17)
 const TURN_COLOUR := Color(0.95, 0.75, 0.15)
+const VOTED_FOR_COLOUR := Color(1.0, 0.9, 0.1)   # a thick yellow outline: this is who the table is voting on
 const YOU_COLOUR := Color(0.35, 0.65, 0.95)
 const GONE_COLOUR := Color(0.35, 0.35, 0.35)
 
@@ -78,7 +79,7 @@ func _build() -> void:
 
 func _build_dock() -> void:
 	dock = Panel.new()
-	var area: Rect2 = TableLayoutScript.right_dock()
+	var area: Rect2 = TableLayoutScript.centre_dock()
 	dock.position = area.position
 	dock.size = area.size
 	var style := StyleBoxFlat.new()
@@ -109,6 +110,7 @@ func _build_dock() -> void:
 	dock_card = Label.new()
 	dock_card.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dock_card.max_lines_visible = 4
+	dock_card.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dock_card.add_theme_font_size_override("font_size", 15)
 	column.add_child(dock_card)
 	dock_topic = LineEdit.new()
@@ -117,6 +119,7 @@ func _build_dock() -> void:
 	dock_topic.text_changed.connect(func(text): dock_input["topic"] = text; _refresh_dock())
 	column.add_child(dock_topic)
 	dock_buttons = HFlowContainer.new()
+	dock_buttons.alignment = FlowContainer.ALIGNMENT_CENTER
 	dock_buttons.add_theme_constant_override("h_separation", 10)
 	dock_buttons.add_theme_constant_override("v_separation", 6)
 	column.add_child(dock_buttons)
@@ -243,8 +246,9 @@ func refresh() -> void:
 	var centre: Dictionary = TableModelScript.centre(view, model.members)
 	top_label.text = "Round %d     Treasury %s PSD%s" % [centre["round"], _money(centre["treasury"]), ("     Leader: " + centre["leader_name"]) if centre["leader_name"] != "" else ""]
 	centre_label.text = centre["headline"]
-	centre_label.size = Vector2(420, 120)
-	centre_label.position = TableLayoutScript.table_area().get_center() - centre_label.size / 2.0
+	var headline_box: Rect2 = TableLayoutScript.headline_rect()
+	centre_label.size = headline_box.size
+	centre_label.position = headline_box.position
 	for seat in badges.keys():
 		if not seat in order:
 			badges[seat].queue_free()
@@ -278,8 +282,8 @@ func _fill_badge(badge: Panel, info: Dictionary) -> void:
 	var style := StyleBoxFlat.new()
 	style.bg_color = BADGE_COLOUR if not info["eliminated"] else GONE_COLOUR
 	style.set_corner_radius_all(14)
-	style.set_border_width_all(4 if (info["turn"] or info["you"]) else 1)
-	style.border_color = TURN_COLOUR if info["turn"] else (YOU_COLOUR if info["you"] else Color(0.5, 0.5, 0.5))
+	style.set_border_width_all(7 if info["voted_for"] else (4 if (info["turn"] or info["you"]) else 1))
+	style.border_color = VOTED_FOR_COLOUR if info["voted_for"] else (Color.WHITE if info["turn"] else (YOU_COLOUR if info["you"] else Color(0.5, 0.5, 0.5)))
 	badge.add_theme_stylebox_override("panel", style)
 	var label: Label = badge.get_node("Text")
 	label.size = badge.size - Vector2(16, 8)

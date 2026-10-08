@@ -12,6 +12,7 @@ const TermPhase = GameStateScript.TermPhase
 static func seats(view: Dictionary, members: Array, me: int, order: Array) -> Array:
 	var result: Array = []
 	var performer: int = performing(view)
+	var being_voted_on: Array = voted_for(view)
 	for seat in order:
 		var debts: Array = view.get("debts", {}).get(seat, [])
 		var owed: int = 0
@@ -34,6 +35,7 @@ static func seats(view: Dictionary, members: Array, me: int, order: Array) -> Ar
 			"union": union_of(view, seat),
 			"away": away(members, seat),
 			"turn": seat == performer,
+			"voted_for": seat in being_voted_on,
 			"has_voted": voted(view, seat),
 			"missed": int(view.get("missed_turns", {}).get(seat, 0)),
 		})
@@ -69,6 +71,24 @@ static func performing(view: Dictionary) -> int:
 	if int(term.get("phase", TermPhase.NONE)) == TermPhase.TURNS and not term.get("waiting", []).is_empty():
 		return int(term["waiting"][0])
 	return -1
+
+
+# Who the table is voting FOR right now: the performer while the table judges the performance (and their rival in a debate),
+# or every candidate in an election ballot. They get a yellow outline.
+static func voted_for(view: Dictionary) -> Array:
+	var election: Dictionary = view.get("election", {})
+	if not election.is_empty():
+		if int(election.get("phase", ElectionPhase.NONE)) == ElectionPhase.VOTING:
+			return election.get("candidates", []).duplicate()
+		return []
+	var act: Dictionary = view.get("term", {}).get("act", {})
+	if act.is_empty() or int(act["phase"]) != GameStateScript.ActPhase.VOTING:
+		return []
+	var seats: Array = [int(act["player"])]
+	var rival: int = int(act.get("debate", {}).get("rival", 0))
+	if rival != 0:
+		seats.append(rival)
+	return seats
 
 
 # Has this seat already voted in whatever vote is open (election, performance)? Their choice is never in the view.

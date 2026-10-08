@@ -37,12 +37,13 @@ func layout() -> void:
 		var clear: bool = true
 		for i in count:
 			var box := Rect2(spots[i] - size / 2.0, size)
-			clear = clear and not box.intersects(LayoutScript.right_dock()) and not box.intersects(LayoutScript.left_dock())
-		expect("%d players: nobody sits in the docks beside your badge" % count, clear, true)
+			clear = clear and not box.intersects(LayoutScript.centre_dock()) and not box.intersects(LayoutScript.headline_rect())
+		expect("%d players: nobody sits in the middle where the card and buttons go" % count, clear, true)
 		expect("%d players: you sit at the bottom middle" % count, [absf(spots[0].x - 640.0) < 0.01, spots[0].y > area.get_center().y], [true, true])
 	var one: Array = LayoutScript.positions(4)
 	expect("the next seat clockwise is on your left, and the one opposite is at the top", [one[1].x < 640.0, one[2].y < one[0].y, absf(one[2].x - 640.0) < 0.01, one[3].x > 640.0], [true, true, true, true])
-	expect("the docks are the bottom corners, either side of you", [LayoutScript.right_dock().position.x > 640.0, LayoutScript.left_dock().end.x < 640.0, LayoutScript.right_dock().end.y <= 720.0], [true, true, true])
+	var middle: Rect2 = LayoutScript.centre_dock()
+	expect("the card and buttons are centred on the table, with the headline just above", [absf(middle.get_center().x - 640.0) < 0.01, area.encloses(middle), LayoutScript.headline_rect().end.y <= middle.position.y], [true, true, true])
 	expect("everyone sees the same order from their own place", [LayoutScript.order_from([1, 2, 3, 4, 5], 3), LayoutScript.order_from([1, 2, 3, 4, 5], 1), LayoutScript.order_from([1, 2, 3], 99)], [[3, 4, 5, 1, 2], [1, 2, 3, 4, 5], [1, 2, 3]])
 
 
@@ -78,6 +79,20 @@ func model() -> void:
 	var election_view := ViewsScript.state_view(GameScript.new_game([1, 2, 3], 3), 1)
 	expect("the first election is announced", TableModelScript.centre(election_view, members().slice(0, 3))["headline"], "Election: vote for a Leader")
 	expect("the Constitution is listed article by article with its wording", [TableModelScript.articles(view).size() > 20, TableModelScript.articles(view)[0]["text"].length() > 0], [true, true])
+	var s0 := GameScript.new_game([1, 2, 3, 4, 5], 7)
+	expect("while the first ballot is open every candidate is being voted for", TableModelScript.voted_for(ViewsScript.state_view(s0, 1)), ViewsScript.state_view(s0, 1)["election"]["candidates"])
+	var judged := GameScript.new_game([1, 2, 3, 4, 5], 7)
+	for id in [1, 2, 3, 4, 5]:
+		GameScript.handle(judged, id, {"type": "cast_vote", "candidate": 2})
+	judged.decks["performance"] = [20, 20, 20, 20, 20]
+	GameScript.handle(judged, 2, {"type": "pass_window"})
+	expect("nobody is voted on while a performance is still going", TableModelScript.voted_for(ViewsScript.state_view(judged, 1)), [])
+	GameScript.handle(judged, 2, {"type": "finish_performance"})
+	expect("when the table votes on a performance, the performer is who is voted for", TableModelScript.voted_for(ViewsScript.state_view(judged, 1)), [2])
+	judged.term["act"]["debate"] = {"rival": 4, "topic": "x", "side": 1}
+	expect("in a debate both debaters are", TableModelScript.voted_for(ViewsScript.state_view(judged, 1)), [2, 4])
+	var seats_judged: Array = TableModelScript.seats(ViewsScript.state_view(judged, 1), members(), 1, [1, 2, 3, 4, 5])
+	expect("the seat list marks exactly them", seats_judged.map(func(x): return x["voted_for"]), [false, true, false, true, false])
 	var s := GameScript.new_game([1, 2, 3, 4, 5], 7)
 	GameScript.handle(s, 1, {"type": "cast_vote", "candidate": 2})
 	expect("who has voted shows, never for whom", [TableModelScript.voted(ViewsScript.state_view(s, 3), 1), TableModelScript.voted(ViewsScript.state_view(s, 3), 2)], [true, false])
@@ -101,6 +116,18 @@ func screen() -> void:
 	expect("the Constitution opens as a panel, and closes again", [table.overlay.visible, table.overlay_text.text.begins_with("Article 1")], [true, true])
 	table.constitution_button.pressed.emit()
 	expect("... closed", table.overlay.visible, false)
+	var outline: StyleBoxFlat = table.badges[2].get_theme_stylebox("panel")
+	expect("with no vote open nobody has the yellow outline", outline.border_color != Color(1.0, 0.9, 0.1), true)
+	var open_vote := started_view(3)
+	open_vote["term"]["act"]["phase"] = GameStateScript.ActPhase.VOTING
+	open_vote["term"]["act"]["voted"] = []
+	table.model.view = open_vote
+	table.refresh()
+	var yellow: StyleBoxFlat = table.badges[2].get_theme_stylebox("panel")
+	var plain: StyleBoxFlat = table.badges[4].get_theme_stylebox("panel")
+	expect("while the table votes on a performance, the performer's badge has a thick yellow outline and others don't", [yellow.border_color, yellow.border_width_left > 4, plain.border_color != Color(1.0, 0.9, 0.1)], [Color(1.0, 0.9, 0.1), true, true])
+	table.model.view = started_view(3)
+	table.refresh()
 	table.model.view["eliminated"] = {2: true}
 	table.refresh()
 	expect("an eliminated player's badge says so", table.badges[2].get_node("Text").text.contains("out"), true)
