@@ -65,3 +65,20 @@ var leader_goes_first: bool = false # set by a coup, used up by the next term's 
 # The levy band (Articles 4 and 5): the lowest and highest levy the Constitution allows. It moves
 # at the end of a term (see LevyBand). The levy itself is a word of Article 3.
 var levy_band: Dictionary = {"low": 0, "high": 0}
+
+# The server's clock, in whole milliseconds. Only Game.tick moves it, so every deadline is an
+# absolute time on this clock and a saved game picks up where it stopped (see PerformanceTurn).
+var clock_ms: int = 0
+
+# The draw piles of the Performance, Settlement and Scandal decks (see Cards). SECRET: whoever
+# knew the order would know the next cards.
+var decks: Dictionary = {}          # deck name -> shuffled list of card numbers, drawn from the end
+
+# Where a player is in their performance: PERFORMING (acting out the card), VOTING (the others vote
+# Good or Bad), DONE (resolved; the player may now end their turn).
+enum ActPhase { PERFORMING, VOTING, DONE }
+
+# The role cards each player holds (Doctor, Lawyer, Secret Agent, Activist, Agbero). A player can hold
+# several, and each earns its own income. SECRET: role cards can be peeked at (see Views). Nothing
+# deals roles yet.
+var roles: Dictionary = {}          # player id -> list of role names; absent = no roles

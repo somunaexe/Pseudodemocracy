@@ -31,7 +31,9 @@ const V = {
   corruption: { limit: 3, pop: 30, fine: 200, wait: 3 },   // corruption markers (card glossary)
 
   // Votes
-  discussionMinutes: 1, malpracticeFine: 25,                // fine is an article
+  discussionMinutes: 1, malpracticeFine: 25,
+  performanceSeconds: 60,         // (digital version) a player performs their card for this long
+  performanceVoteSeconds: 15,     // then everyone else has this long to vote Good or Bad; no vote, no count                // fine is an article
   amendPenalty: 100,                                        // failed amendment check
   swing: [['3', 10], ['4', 7], ['5', 6], ['6', 5], ['7', 4], ['8–10', 3], ['11+', 1]],
 
@@ -41,6 +43,10 @@ const V = {
     roleCards: ['Doctor', 'Lawyer', 'Secret Agent', 'Activist', 'Agbero'], roleCopies: 5,
     willCards: 8, corruptionTokens: 15, coupStickers: 10,
   },
+
+  // Income, paid from the treasury on the player's own turn (tax is taken from it, rounded down). Roles stack.
+  leaderIncome: 100,
+  roleIncome: { 'Doctor': 70, 'Lawyer': 50, 'Secret Agent': 80, 'Activist': 0, 'Agbero': 0 },   // Activists and Agberos earn nothing
 
   // Health
   beads: { cure: 'blue', poison: 'red' },                   // Doctor's Cure/Poison beads (replace prescription cards)
@@ -76,6 +82,7 @@ if (V.startMoney !== EXPECTED_START_MONEY)
   throw new Error(`Starting money is ${V.startMoney} PSD, expected ${EXPECTED_START_MONEY}. Check the note counts, or update EXPECTED_START_MONEY if the change is intentional.`);
 if (V.cancelledAt < V.popMin || V.cancelledAt >= V.popMax) throw new Error('CANCELLED threshold must be inside the popularity range');
 if (V.coupCost > V.startMoney) throw new Error('Coup cost is more than a player starts with');
+for (const role of V.components.roleCards) if (typeof V.roleIncome[role] !== 'number') throw new Error(`The role ${role} has no income (use 0 for none)`);
 if (V.levy.start < V.levy.bandLow || V.levy.start > V.levy.bandHigh) throw new Error('Starting levy is outside the levy band');
 
 // ---- Formatting helpers ----

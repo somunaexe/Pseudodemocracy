@@ -5,6 +5,7 @@ const LawScript = preload("res://scripts/law.gd")
 const LevyBandScript = preload("res://scripts/levy_band.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
+const PlayScript = preload("res://tests/play.gd")
 
 const PRESIDENT = GameStateScript.LeaderType.PRESIDENT
 const INAUG = GameStateScript.AmendWindow.INAUGURATION
@@ -36,7 +37,7 @@ func the_levy_must_stay_in_the_band() -> void:
 	var s := new_term()
 	var fine_before: int = s.psd[2]
 	var ev := send(s, 2, propose(s, INAUG, "60"))
-	expect("a levy above the band fails the check, and the term moves on", types(ev), ["amendment_proposed", "amendment_failed", "levy_collected", "turn_started"])
+	expect("a levy above the band fails the check, and the term moves on", types(ev), ["amendment_proposed", "amendment_failed", "levy_collected", "turn_started", "income_paid", "performance_started"])
 	expect("... with the reason", ev[1]["reason"], "The levy must stay within the levy band, 25 to 50 PSD.")
 	expect("... the fine was paid", s.psd[2] < fine_before, true)
 	expect("... the window is used and the levy unchanged", [s.windows_used[INAUG], LawScript.get_int(s, "levy")], [true, 25])
@@ -123,7 +124,7 @@ func a_term_ending_moves_the_band() -> void:
 	var s := new_term()
 	send(s, 2, {"type": "pass_window"})
 	for id in [2, 3, 4, 5, 1]:
-		send(s, id, {"type": "end_turn"})
+		PlayScript.take_turn(s, id)
 	s.popularity[2] = -40
 	var ended := send(s, 2, {"type": "pass_window"})
 	expect("the band shifts between the term ending and the election", types(ended), ["window_passed", "term_ended", "levy_band_shifted", "election_started"])

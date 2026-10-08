@@ -72,7 +72,7 @@ step that needs no decision from a player (start the term, collect the levy, ann
 the Farewell, end the term and start the election). It can be called at any time, as often as you like.
 
 ```
-election --> Leader installed --> INAUGURATION --(amend or pass)--> levy --> TURNS --(each end_turn)--> FAREWELL
+election --> Leader installed --> INAUGURATION --(amend or pass)--> levy --> TURNS --(each turn: perform, vote, result, end_turn)--> FAREWELL
                   ^                                                                     |
                   +------------------------ term ends: Election.begin("term_ended") <---+
 ```
@@ -96,7 +96,7 @@ JSON gets three things wrong, and the serializer fixes each:
 | Problem | Fix |
 |---|---|
 | Dictionary keys turn into text (`{1: x}` comes back as `{"1": x}`) | A dictionary with any non-text key is written as `{"$pairs": [[key, value], ...]}`, so keys keep their type. |
-| Every number comes back as a float | Whole numbers are turned back into ints on loading. (The state holds no real fractions.) |
+| Every number comes back as a float | Whole numbers are turned back into ints on loading. (The state holds no real fractions: time is kept in whole milliseconds.) |
 | Clients can send anything | `parse_command` checks size (64 KB), depth (32), and shape, and returns the command with ints restored. |
 
 - `state_to_json` / `state_from_json` save and load the **whole** state. It lists the fields by

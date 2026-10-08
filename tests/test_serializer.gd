@@ -198,6 +198,9 @@ func rich_state() -> GameStateScript:
 	s.game_over = true
 	s.last_turn_player = 4
 	s.levy_band = {"low": 35, "high": 60}
+	s.clock_ms = 123456
+	s.roles = {2: ["Doctor", "Lawyer"], 4: ["Activist"]}
+	s.decks = {"performance": [4, 0, 2], "settlement": [1], "scandal": []}
 	s.leader_goes_first = true
 	s.election = {
 		"phase": GameStateScript.ElectionPhase.VOTING, "reason": "term_ended", "runoff": 1,

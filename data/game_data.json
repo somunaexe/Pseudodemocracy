@@ -45,6 +45,8 @@
  },
  "discussionMinutes": 1,
  "malpracticeFine": 25,
+ "performanceSeconds": 60,
+ "performanceVoteSeconds": 15,
  "amendPenalty": 100,
  "swing": [
   [
@@ -93,6 +95,14 @@
   "willCards": 8,
   "corruptionTokens": 15,
   "coupStickers": 10
+ },
+ "leaderIncome": 100,
+ "roleIncome": {
+  "Doctor": 70,
+  "Lawyer": 50,
+  "Secret Agent": 80,
+  "Activist": 0,
+  "Agbero": 0
  },
  "beads": {
   "cure": "blue",

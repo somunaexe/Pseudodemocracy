@@ -15,18 +15,18 @@ const PopularityScript = preload("res://scripts/popularity.gd")
 const PUBLIC_FIELDS = [
 	"player_count", "turns_played", "leader_id", "leader_type", "sick",
 	"windows_used", "treasury", "psd", "debts", "debt_terms", "eliminated", "player_ids",
-	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "term", "game_over", "last_turn_player", "leader_goes_first", "levy_band",
+	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "last_turn_player", "leader_goes_first", "levy_band",
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).
-const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election"]
+const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term"]
 
 # Extra keys a view carries that are not GameState fields.
 const DERIVED_KEYS = ["popularity_base"]
 
 # Never leave the server. A will is secret until its owner is eliminated; then it is read out
 # in an event. rng_state is secret because whoever knew it could predict every random draw. (Role cards, exam keys and the Doctor's beads will go here when they exist.)
-const SERVER_ONLY_FIELDS = ["wills", "rng_state"]
+const SERVER_ONLY_FIELDS = ["wills", "rng_state", "decks", "roles"]
 
 
 # Fields of GameState that are in none of the three lists.
@@ -72,6 +72,7 @@ static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
 	view["popularity_base"] = PopularityScript.bases(state)
 	view["amend"] = _amend_view(state.amend, player_id)
 	view["election"] = _election_view(state.election, player_id)
+	view["term"] = _term_view(state.term, player_id)
 	view["event_log"] = visible_events(state.event_log, player_id)
 	return view
 
@@ -117,6 +118,21 @@ static func _election_view(election: Dictionary, player_id: int) -> Dictionary:
 		view["my_answers"] = answers[player_id]
 	if votes.has(player_id):
 		view["my_vote"] = votes[player_id]
+	return view
+
+
+# The term, without how anyone voted on the performance. Everyone sees WHO has voted; you also
+# see your own vote.
+static func _term_view(term: Dictionary, player_id: int) -> Dictionary:
+	var view: Dictionary = term.duplicate(true)
+	if view.has("act"):
+		var votes: Dictionary = view["act"]["votes"]
+		var voted: Array = votes.keys()
+		voted.sort()
+		view["act"].erase("votes")
+		view["act"]["voted"] = voted
+		if votes.has(player_id):
+			view["act"]["my_vote"] = votes[player_id]
 	return view
 
 

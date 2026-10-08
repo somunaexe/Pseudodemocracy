@@ -31,7 +31,7 @@ const SERVER_ID := 0
 
 const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
 const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
-const TERM_COMMANDS := ["pass_window", "end_turn"]
+const TERM_COMMANDS := ["pass_window", "end_turn", "finish_performance", "performance_vote"]
 
 
 # A new game for 3 to 10 players with ids 1, 2, 3, ... in seat order. Everyone starts with the
@@ -81,8 +81,12 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 	return events
 
 
-# Let the game move on after something the server did itself.
-static func tick(state: GameStateScript) -> Array:
+# Let the game move on after something the server did itself. A server with a clock passes the
+# time in milliseconds; the game's clock only ever moves forward. Deadlines (a performance, a vote)
+# are checked against it here and nowhere else.
+static func tick(state: GameStateScript, now_ms: int = -1) -> Array:
+	if now_ms > state.clock_ms:
+		state.clock_ms = now_ms
 	return TermLoopScript.settle(state)
 
 

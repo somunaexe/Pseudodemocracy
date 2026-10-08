@@ -4,7 +4,7 @@ class_name TermLoop
 #
 #   INAUGURATION  the Leader may amend one article, or pass
 #      |          then the levy is collected from every player
-#   TURNS         every player takes one turn, carrying on round the table from where the last
+#   TURNS         every player takes one turn (income, then a performance), carrying on round the table from where the last
 #      |          term stopped (after a coup the new Leader goes first instead)
 #      |          the Mid-term amendment opens once half have played (see Permissions)
 #   FAREWELL      the Leader may amend one article, or pass
@@ -15,12 +15,14 @@ class_name TermLoop
 # itself in settle(), which looks at the state and advances as far as it can, so it is safe to
 # call at any time and as often as you like. A step that needs a decision waits for a command:
 #   { "type": "pass_window" }   the Leader, at the Inauguration or the Farewell, chooses not to amend
-#   { "type": "end_turn" }      the player whose turn it is
+#   { "type": "end_turn" }      the player whose turn it is, once their performance is over
+#   { "type": "finish_performance" } / { "type": "performance_vote", "good": bool }   see PerformanceTurn
 #
 # A Leader who can't amend (a Commander, or sick, or CANCELLED) has both windows skipped.
 # Sick players still take their turn. Eliminated players are skipped.
 #
-# Not built yet: what a turn contains (Performance cards), income and tax, coups.
+# Each turn starts with the player's income (see Income), then is a performance (see PerformanceTurn).
+# Not built yet: dealing roles, the effects of Settlement and Scandal cards, coups.
 #
 # Every event this file creates is logged here, once. Events from the modules it calls are
 # logged by those modules.
@@ -31,6 +33,8 @@ const DebtScript = preload("res://scripts/debt.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const ElectionScript = preload("res://scripts/election.gd")
 const LevyBandScript = preload("res://scripts/levy_band.gd")
+const IncomeScript = preload("res://scripts/income.gd")
+const PerformanceTurnScript = preload("res://scripts/performance.gd")
 const TurnEndScript = preload("res://scripts/turn_end.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
@@ -40,7 +44,7 @@ const MAX_STEPS := 50
 const ALLOWED_COMMANDS = {
 	GameStateScript.TermPhase.NONE: [],
 	GameStateScript.TermPhase.INAUGURATION: ["pass_window"],
-	GameStateScript.TermPhase.TURNS: ["end_turn"],
+	GameStateScript.TermPhase.TURNS: ["end_turn", "finish_performance", "performance_vote"],
 	GameStateScript.TermPhase.FAREWELL: ["pass_window"],
 }
 
@@ -57,6 +61,8 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 			return _pass_window(state, player_id, phase)
 		"end_turn":
 			return _end_turn(state, player_id)
+		"finish_performance", "performance_vote":
+			return PerformanceTurnScript.handle(state, player_id, command)
 	return [_reject(player_id, "Unknown command.")]
 
 
@@ -74,6 +80,9 @@ static func _end_turn(state: GameStateScript, player_id: int) -> Array:
 	var waiting: Array = state.term["waiting"]
 	if waiting.is_empty() or player_id != waiting[0]:
 		return [_reject(player_id, "It isn't your turn.")]
+	if state.term.get("act", {}).get("phase", -1) != GameStateScript.ActPhase.DONE:
+		return [_reject(player_id, "Finish your performance first.")]
+	state.term.erase("act")
 	waiting.pop_front()
 	state.term["played"].append(player_id)
 	_sync_counts(state)
@@ -181,7 +190,12 @@ static func _advance_turns(state: GameStateScript) -> Array:
 	if state.term["announced"] != waiting[0]:
 		state.term["announced"] = waiting[0]
 		return [_log(state, "turn_started", {"player": waiting[0]})]
-	return []
+	var events: Array = []
+	if state.term.get("paid", -1) != waiting[0]:
+		state.term["paid"] = waiting[0]
+		events.append_array(IncomeScript.pay(state, waiting[0]))   # logs its own event
+	events.append_array(PerformanceTurnScript.step(state, waiting[0]))   # the performance: start, vote, result; logs its own events
+	return events
 
 
 # The term is over: the Leader is credited and the next election begins.

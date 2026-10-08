@@ -238,7 +238,7 @@ A term: **Inauguration** (the Leader may amend, or `pass_window`) then the **lev
 | When can each amendment be made? | Inauguration window: only at the Inauguration. Mid-term: once half the players (rounded up) have played, until the term ends. Farewell: only at the Farewell. None between terms or during an election. | **Built** |
 | Does the term wait for an amendment? | At the Inauguration and the Farewell, yes: the term moves on only when the amendment has been decided. The Mid-term amendment doesn't pause the turns. | **Built** |
 | A Leader who can't amend (Commander, sick, CANCELLED). | Both windows are skipped automatically. | **Built** |
-| Do sick players take their turn? | Yes. (A turn has no content yet.) | Assumed |
+| Do sick players take their turn? | Yes, and they perform and vote like anyone else. | Assumed |
 | A player eliminated mid-term. | Leaves the turn order, and the counts that open the Mid-term and Farewell windows follow. | **Built** |
 | The Leader eliminated mid-term. | The term ends, a vacancy election starts, and a new term begins by itself when a Leader is installed. | **Built** |
 | How does a term end? | The Leader is credited 2 half-rounds and the election begins (with an exam if the Leader can write one). | **Built** |
@@ -258,7 +258,38 @@ A term: **Inauguration** (the Leader may amend, or `pass_window`) then the **lev
 | What happens to the levy? | If it is outside the new band, the game rewrites Article 3's word to the closest value inside it. | **Built** |
 | What can Leaders amend in Article 5? | The two X numbers (`levyRaiseBelow`, `levyLowerAbove`, both 20) are bound rules, so an amended number is obeyed. The shift (10), the floor (25), the minus and plus signs and the verbs are not bound; the table enforces them. | Assumed |
 
-Not built yet, and the next steps: what a turn contains (Performance cards), income and tax, coups.
+## The performance, a player's turn (built: scripts/performance.gd, cards.gd, income.gd)
+
+A turn: the levy has already been paid (at the start of the term). The player draws a **Performance card** at random, everyone is told what it says, and the player has **60 seconds** to perform it. Then everyone else votes **Good or Bad** for **15 seconds**. Popularity moves, a result card may be drawn, and the player ends their turn.
+
+| Question | Decision | Status |
+|---|---|---|
+| When are the levy and income paid? | The levy at the start of the term, from everyone, as before. Income, and the tax on it, on the player's own turn, before their performance. It feels more personal that way: a Doctor's turn is when they get their 70. | Confirmed |
+| Who votes? | Everyone still in the game except the performer. Sick players vote. | Confirmed |
+| How does the vote end? | When the 15 seconds are up, or earlier when every voter has voted. A vote that never comes doesn't count. | Confirmed (ending early is assumed) |
+| What does the vote do to popularity? | A win is exactly +swing and a loss exactly -swing, however many voted each way (the swing for the table: 6 for five players). A tie changes nothing. This is NOT the amendment rule, which counts every vote. | Confirmed |
+| What does the vote do to cards? | More Good: the player draws a Settlement card. More Bad: a Scandal card. A tie, or nobody voting: no change and no card. | Confirmed |
+| What starts the voting? | The 60 seconds running out, or the performer finishing early. | Confirmed (finishing early is assumed) |
+| Who keeps the time? | The server. `Game.tick(state, now_ms)` moves the game's clock forward and never back. Every deadline is an absolute time on that clock, so a saved game carries on correctly. Time is whole milliseconds because saves hold only whole numbers. | **Built** |
+| Are the votes secret? | Yes until the result. Everyone sees WHO has voted, you see your own vote, and the result reveals all of them. | **Built** |
+| Are the decks secret? | Yes. The draw piles are server-only, shuffled with the game's own random generator, and reshuffled when empty. | **Built** |
+| Does the Activist doubling apply to a performance vote? | No. It applies only when a confrontation is triggered. | Confirmed |
+| What do Settlement, Scandal and Performance cards DO? | For now the card is drawn and read out to everyone, and the table carries out its effect. The game applies only the popularity from the vote. | Assumed, please confirm |
+| Can a turn end before the result? | No. `end_turn` is refused until the performance is done. | **Built** |
+
+### Income (built: scripts/income.gd)
+
+| Question | Decision | Status |
+|---|---|---|
+| Who pays income? | The treasury. If it can't cover it, it pays what it has. Total money never changes. | Confirmed |
+| Who earns what? | The Leader 100. Secret Agent 80, Doctor 70, Lawyer 50. Activists and Agberos earn nothing. | Confirmed |
+| Can roles stack? | Yes, and each role earns its own income, on top of the Leader's 100 if they lead. | Confirmed |
+| What is the tax? | The tax rate in Article 2 (so it follows amendments) of what was paid, rounded down, in the player's favour. The tax goes back to the treasury; the player gets the rest. | Confirmed |
+| Is income collected against debts? | Yes. It goes through `Debt.receive`, so the oldest debts are paid first. A Leader's income can therefore pull them out of debt. | **Built** |
+| Does the event show where the income came from? | No. It shows the amounts only, because role cards are secret and "70" would give away a Doctor. The balances are public anyway, so careful players can still guess; whether to hide more is open. | Assumed, please confirm |
+| Are role cards secret? | Yes. The `roles` field never leaves the server. Nothing deals roles yet, and a player seeing their own roles comes with that. | **Built** (secrecy), roles not dealt yet |
+
+Not built yet, and the next steps: dealing and gaining roles, the effects of the cards, coups.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

@@ -35,27 +35,34 @@ func _init() -> void:
 		expect("%d players: 5 terms ran to the end (%d moves)" % [count, run["steps"]], run["finished"], true)
 		expect("%d players: no rule was ever broken" % count, run["problems"], [])
 
-	# A poor player drifts into debt, is eliminated, and their heir becomes a Nepo Baby.
+	# A poor player drifts into debt, is eliminated, and their heir becomes a Nepo Baby. The one thing
+	# that can save them is leading: a Leader earns 100 PSD a turn, which pays the levy and the debt.
 	var poor_runs: int = 0
 	var eliminations: int = 0
 	var nepo_babies: int = 0
 	var leaders_lost: int = 0
-	for seed_value in range(1, 9):
+	var rescued: int = 0
+	for seed_value in range(1, 13):
 		var run := play(5, 200 + seed_value, 8, 3)
-		poor_runs += 1
 		expect("poor game %d: ran to the end" % seed_value, run["finished"], true)
 		expect("poor game %d: no rule was ever broken" % seed_value, run["problems"], [])
+		if run["leaders"].has(3):
+			rescued += 1
+			continue
+		poor_runs += 1
 		eliminations += 1 if run["eliminated"].has(3) else 0
 		nepo_babies += 1 if run["types"].has("nepo_baby") else 0
 		leaders_lost += 1 if run["types"].has("leader_vacant") else 0
-	expect("the poor player was eliminated in every game (%d of %d)" % [eliminations, poor_runs], eliminations, poor_runs)
+	expect("some poor players never led (%d of 12), so the test means something" % poor_runs, poor_runs >= 4, true)
+	expect("a poor player who never led was eliminated, every time (%d of %d)" % [eliminations, poor_runs], eliminations, poor_runs)
 	expect("... and their heir became a Nepo Baby each time", nepo_babies, poor_runs)
 
 	# Everything that can happen did happen somewhere.
 	var seen := play(5, 7, 6)
 	for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
 			"term_started", "levy_collected", "turn_started", "turn_ended", "farewell_opened", "term_ended", "window_passed",
-			"amendment_proposed", "amendment_resolved", "article_changed", "ballot_cast", "exam_answered"]:
+			"amendment_proposed", "amendment_resolved", "article_changed", "ballot_cast", "exam_answered",
+			"performance_started", "performance_voting_opened", "performance_vote_cast", "performance_resolved", "income_paid"]:
 		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
 
 	# The same seed always plays out the same way, to the last byte.
@@ -97,19 +104,26 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 	problems = []
 	var steps: int = 0
 	var types_seen: Array = []
+	var leaders: Array = []
 	var log_size: int = 0
 	while s.current_round <= terms and not s.game_over and steps < 4000:
 		var move := next_move(s)
 		if move.is_empty():
 			problems.append("stuck at step %d: %s" % [steps, describe(s)])
 			break
-		var events := GameScript.handle(s, move["player"], move["command"])
+		var events: Array = []
+		if move.has("tick"):
+			events = GameScript.tick(s, move["tick"])
+		else:
+			events = GameScript.handle(s, move["player"], move["command"])
 		steps += 1
 		if events.size() > 0 and events[0]["type"] == "rejected":
 			problems.append("step %d: a scripted move was refused (%s): %s" % [steps, str(move), events[0]["reason"]])
 			break
 		for event in events:
 			types_seen.append(event["type"])
+			if event["type"] == "leader_installed":
+				leaders.append(event["leader"])
 		check_rules(s, steps)
 		if s.event_log.size() < log_size:
 			problems.append("step %d: the event log shrank" % steps)
@@ -132,7 +146,7 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		if s.eliminated[id]:
 			eliminated.append(id)
 	return {"steps": steps, "finished": s.current_round > terms, "problems": problems.duplicate(), "types": types_seen,
-		"eliminated": eliminated, "final": SerializerScript.state_to_json(s)}
+		"eliminated": eliminated, "leaders": leaders, "final": SerializerScript.state_to_json(s)}
 
 
 # What a sensible player does next, in the order the game needs it: an election first, then an
@@ -149,8 +163,30 @@ func next_move(s: GameStateScript) -> Dictionary:
 				return {"player": s.leader_id, "command": tax_amendment(s)}
 			return {"player": s.leader_id, "command": {"type": "pass_window"}}
 		TURNS:
-			return {"player": s.term["waiting"][0], "command": {"type": "end_turn"}}
+			return performance_move(s)
 	return {}
+
+
+# A turn is a performance. Some run out of time instead of being finished, some votes are
+# Good and some Bad, and some votes never come, so every way the clock and the ballots
+# can end a performance gets played.
+func performance_move(s: GameStateScript) -> Dictionary:
+	var act: Dictionary = s.term["act"]
+	var performer: int = act["player"]
+	match act["phase"]:
+		GameStateScript.ActPhase.PERFORMING:
+			if act["card"] % 3 == 0:
+				return {"tick": int(act["deadline"])}
+			return {"player": performer, "command": {"type": "finish_performance"}}
+		GameStateScript.ActPhase.VOTING:
+			var waiting: Array = []
+			for id in s.player_ids:
+				if id != performer and not s.eliminated.get(id, false) and not act["votes"].has(id):
+					waiting.append(id)
+			if act["votes"].size() >= 2 and act["card"] % 2 == 0:
+				return {"tick": int(act["deadline"])}   # the rest never voted
+			return {"player": waiting[0], "command": {"type": "performance_vote", "good": (waiting[0] * 7 + act["card"]) % 3 != 0}}
+	return {"player": performer, "command": {"type": "end_turn"}}
 
 
 func window_used(s: GameStateScript) -> bool:
