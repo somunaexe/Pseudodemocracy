@@ -3,6 +3,7 @@ class_name Scoring
 const GameDataScript = preload("res://scripts/game_data.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
 const DebtScript = preload("res://scripts/debt.gd")
+const PopularityScript = preload("res://scripts/popularity.gd")
 
 
 # Tie-break score. Higher wins.
@@ -67,7 +68,7 @@ static func final_winners(state: GameStateScript) -> Array:
 		entries.append({
 			"id": id,
 			"half_rounds": int(state.half_rounds.get(id, 0)),
-			"popularity": int(state.popularity.get(id, 0)),
+			"popularity": PopularityScript.effective(state, id),
 			"net_psd": DebtScript.net_psd(state, id),
 		})
 	return winners(entries)

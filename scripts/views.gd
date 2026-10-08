@@ -9,16 +9,20 @@ class_name Views
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const SerializerScript = preload("res://scripts/serializer.gd")
+const PopularityScript = preload("res://scripts/popularity.gd")
 
 # Everyone at the table may see these.
 const PUBLIC_FIELDS = [
-	"player_count", "turns_played", "leader_id", "leader_type", "popularity", "sick",
+	"player_count", "turns_played", "leader_id", "leader_type", "sick",
 	"windows_used", "treasury", "psd", "debts", "debt_terms", "eliminated", "player_ids",
-	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs",
+	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo",
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).
-const REDACTED_FIELDS = ["amend", "event_log"]
+const REDACTED_FIELDS = ["amend", "event_log", "popularity"]
+
+# Extra keys a view carries that are not GameState fields.
+const DERIVED_KEYS = ["popularity_base"]
 
 # Never leave the server. A will is secret until its owner is eliminated; then it is read out
 # in an event. (Role cards, exam keys and the Doctor's beads will go here when they exist.)
@@ -60,6 +64,12 @@ static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
 	var view: Dictionary = {}
 	for name in PUBLIC_FIELDS:
 		view[name] = _copy(state.get(name))
+	# "popularity" in a view is what counts (base plus the Nepo Baby change); the base is alongside.
+	var effective: Dictionary = {}
+	for id in state.player_ids:
+		effective[id] = PopularityScript.effective(state, id)
+	view["popularity"] = effective
+	view["popularity_base"] = PopularityScript.bases(state)
 	view["amend"] = _amend_view(state.amend, player_id)
 	view["event_log"] = visible_events(state.event_log, player_id)
 	return view

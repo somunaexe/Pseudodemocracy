@@ -80,7 +80,7 @@ func every_field_is_classified() -> void:
 	var total: int = ViewsScript.PUBLIC_FIELDS.size() + ViewsScript.REDACTED_FIELDS.size() + ViewsScript.SERVER_ONLY_FIELDS.size()
 	expect("no field is listed twice, none is stale", total, fields.size())
 	var view: Dictionary = ViewsScript.state_view(GameStateScript.new(), 1)
-	expect("the view has every field except the server-only ones", view.keys().size(), fields.size() - ViewsScript.SERVER_ONLY_FIELDS.size())
+	expect("the view has every field except the server-only ones, plus the derived keys", view.keys().size(), fields.size() - ViewsScript.SERVER_ONLY_FIELDS.size() + ViewsScript.DERIVED_KEYS.size())
 	expect("the view has no wills", view.has("wills"), false)
 
 

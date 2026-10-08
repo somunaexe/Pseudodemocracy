@@ -18,6 +18,7 @@ class_name AmendmentFlow
 const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const LawScript = preload("res://scripts/law.gd")
+const PopularityScript = preload("res://scripts/popularity.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const AmendmentScript = preload("res://scripts/amendment.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")
@@ -159,7 +160,7 @@ static func _fail(state: GameStateScript, article_id: int, reason: String) -> Ar
 	var became_debt: int = DebtScript.charge(state, leader, DebtScript.TREASURY_ID, fine)
 	var active: int = _active_players(state).size()
 	var lost: int = GameDataScript.base_swing(active) * (active - 1)
-	_change_popularity(state, leader, -lost)
+	PopularityScript.change_base(state, leader, -lost)
 	state.amend = {}
 	_record(state, article_id, "failed_check", 0, 0, "")
 	return [EventsScript.make("amendment_failed", {
@@ -297,7 +298,7 @@ static func _resolve(state: GameStateScript) -> Array:
 
 	var swing: int = GameDataScript.base_swing(_active_players(state).size())
 	var delta: int = (keep - against) * swing
-	_change_popularity(state, state.leader_id, delta)
+	PopularityScript.change_base(state, state.leader_id, delta)
 
 	var stands: bool = false
 	match state.leader_type:
@@ -336,12 +337,6 @@ static func _active_players(state: GameStateScript) -> Array:
 		if not state.eliminated.get(id, false):
 			result.append(id)
 	return result
-
-
-static func _change_popularity(state: GameStateScript, player_id: int, delta: int) -> void:
-	var low: int = GameDataScript.get_int("popMin")
-	var high: int = GameDataScript.get_int("popMax")
-	state.popularity[player_id] = clampi(int(state.popularity.get(player_id, 0)) + delta, low, high)
 
 
 static func _record(state: GameStateScript, article_id: int, outcome: String, keep: int, against: int, text: String) -> void:

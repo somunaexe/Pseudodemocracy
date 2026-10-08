@@ -38,7 +38,7 @@ func cash_estates() -> void:
 	s = make_state()
 	s.wills[3] = will(4)
 	ev = ElimScript.eliminate(s, 3, "test")
-	expect("will: the events", types(ev), ["player_eliminated", "will_read", "estate_settled"])
+	expect("will: the events", types(ev), ["player_eliminated", "will_read", "estate_settled", "nepo_baby"])
 	expect("will: the heir gets the cash", s.psd[4], 2000)
 	expect("will: the treasury gets nothing", s.treasury, 0)
 	expect("will: the heir is recorded", s.heirs[3], 4)
@@ -219,7 +219,7 @@ func through_the_turn_end() -> void:
 	expect("turn 1 in debt: nothing happens", ElimScript.end_turn(s, 3), [])
 	expect("turn 2 in debt: nothing happens", ElimScript.end_turn(s, 3), [])
 	var ev := ElimScript.end_turn(s, 3)
-	expect("turn 3 in debt: eliminated", types(ev), ["player_eliminated", "will_read", "estate_settled"])
+	expect("turn 3 in debt: eliminated", types(ev), ["player_eliminated", "will_read", "estate_settled", "nepo_baby"])
 	expect("the reason is debt", ev[0]["reason"], "debt")
 	expect("the heir paid the 25 out of their own cash", s.psd[4], 975)
 

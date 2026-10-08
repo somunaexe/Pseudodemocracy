@@ -26,6 +26,10 @@ func _init() -> void:
 			var top: String = str(source).split(".")[0]
 			expect("%s: source '%s' exists in game_data" % [rule, source], GameDataScript.values().has(top), true)
 
+	# Popularity has a base and a modifier. Only popularity.gd may read the raw table.
+	expect("catches a raw popularity read", reads_popularity_directly("if state.popularity.get(id, 0) < 0:"), true)
+	expect("leaves Popularity calls alone", reads_popularity_directly("PopularityScript.effective(state, id)"), false)
+
 	var dir := DirAccess.open("res://scripts")
 	var scanned: int = 0
 	for file in dir.get_files():
@@ -34,10 +38,18 @@ func _init() -> void:
 		var text: String = FileAccess.get_file_as_string("res://scripts/" + file)
 		scanned += 1
 		expect("%s reads no governed number from the data" % file, violations(text, bindings), [])
+		if file != "popularity.gd":
+			expect("%s doesn't read raw popularity (use Popularity)" % file, reads_popularity_directly(text), false)
 	expect("scanned the scripts", scanned > 10, true)
 
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
+
+
+# Raw popularity is only the BASE. What counts also includes temporary modifiers (the Nepo Baby
+# debuff), so code must ask Popularity.effective, or Popularity.base when it means the base.
+func reads_popularity_directly(text: String) -> bool:
+	return text.contains("state.popularity")
 
 
 # The names of governed rules whose starting number is read straight from game_data in this text.

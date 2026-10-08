@@ -38,7 +38,7 @@ Open:
 
 Open debt questions:
 - All income must go through `Debt.receive()` (roles, cards, treasury payouts), or it will skip collection.
-- Elimination is built for cash, debt, wills and unions. Roles and the Nepo Baby debuff are not (see Elimination below).
+- Elimination is built for cash, debt, wills, unions and the Nepo Baby debuff. Roles are not (see Elimination below).
 - A round cut short by a coup gives some players no turn that round. By the "own turn" definition, no debt term is counted for them.
 
 ## Other
@@ -115,7 +115,7 @@ Handbook sentences that now contradict "an heir cannot refuse":
 - Article 30: "An heir who **accepts** an inheritance becomes a Nepo Baby." (`accepts` is a highlighted, amendable word.)
 
 Decided, not built yet:
-- **Nepo Baby debuff.** A temporary reduction that is lifted afterwards (not three permanent hits). It needs a base popularity plus modifiers; see the answer in the chat history, and `docs/architecture.md` once built.
+- **Nepo Baby debuff.** Built; see the Nepo Baby section below.
 - **The Leader is eliminated.** The seat is vacant and a new Leader is voted for. Built: the seat is vacated and an amendment in progress is abandoned (its window stays used). Not built: the election itself.
 
 Not built yet, and why:
@@ -162,3 +162,27 @@ Open:
 - **Is narrowing amendments acceptable?** In the physical game a Leader can write any grammatical word. In the digital game a bound word must be one the game understands. Which of the 104 unenforced words matter for gameplay (for example "the treasury" in Tax, or "can't" in Sickness) and need a vocabulary next?
 - The vocabulary limits (for example a whole number up to 99,999, a union must keep at least 1 member) are my choices.
 - **Handbook:** Part 4 should say that in the digital version a highlighted word that controls a rule must be a word the game understands.
+
+## Nepo Babies (built: scripts/nepo.gd and popularity.gd, 42 + 46 checks)
+
+An heir becomes a Nepo Baby (Article 30). Their popularity is reduced by 30, then 20, then 10, and then the reduction is lifted (Article 31).
+
+| Question | Decision | Status |
+|---|---|---|
+| Permanent hits or a temporary reduction? | A temporary reduction that is lifted afterwards. | Decided, **built** |
+| How is popularity stored now? | `popularity` is the BASE (what votes and cards do). The Nepo Baby change is a modifier on top. **Effective popularity** = base + modifier, kept on the -50..+50 track. | **Built** (`Popularity`) |
+| What counts as effective popularity? | Being CANCELLED, the final ranking and what players see. Votes and fines change the base only. | **Built** |
+| How is the debuff stored? | Only the step (1, 2 or 3) per Nepo Baby. The size is worked out when needed: the magnitudes (30, 20, 10) come from the game data (they are fixed text in the article), the signs from the law as it stands. | **Built** |
+| Can a Leader change it? | Yes: the three "-" words of Article 31 are bound. Writing "+" turns that step into a bonus, at once. | **Built** |
+| When does it move to the next step? | At the end of the Nepo Baby's own turn (the same "term" as debt). Step 1 starts the moment they inherit. | Assumed, please confirm |
+| Who becomes one? | Every heir, because an heir cannot refuse. A debt-only estate counts. | **Built** |
+| Inheriting again while already a Nepo Baby. | Restarts at step 1 (no stacking). | Assumed, please confirm |
+| Eliminated while a Nepo Baby. | The debuff ends with them. | **Built** |
+
+Why a modifier instead of subtracting from popularity: a subtraction can't be undone, because votes in the meantime changed the number, so "lifted afterwards" would be impossible to compute.
+
+Rule for the code: nothing outside `Popularity` reads `state.popularity` (a test enforces it). Use `Popularity.effective` for what counts and `Popularity.base` only when the base is meant.
+
+The end of a player's turn is now `TurnEnd.end_turn` (debt term, possible elimination, then the Nepo step).
+
+Handbook wording to check: Article 31 says "over the next 3 rounds" and the handbook says "removed in the 4th round"; the digital version counts the Nepo Baby's own turns, not table rounds.

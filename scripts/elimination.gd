@@ -14,12 +14,15 @@ class_name Elimination
 #
 # If the eliminated player is the Leader the seat becomes vacant (a new Leader is voted for).
 #
-# Not built yet: roles, the Nepo Baby debuff, and the election itself.
+# Every heir becomes a Nepo Baby (see Nepo).
+#
+# Not built yet: roles, and the election itself.
 # See docs/design_decisions.md.
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const LawScript = preload("res://scripts/law.gd")
+const NepoScript = preload("res://scripts/nepo.gd")
 const EventsScript = preload("res://scripts/events.gd")
 const FlowScript = preload("res://scripts/amendment_flow.gd")
 
@@ -35,6 +38,7 @@ static func end_turn(state: GameStateScript, player_id: int) -> Array:
 static func eliminate(state: GameStateScript, player_id: int, reason: String) -> Array:
 	var events: Array = [EventsScript.make("player_eliminated", {"player": player_id, "reason": reason})]
 	state.eliminated[player_id] = true
+	state.nepo.erase(player_id)
 
 	var will: Dictionary = state.wills.get(player_id, {})
 	var heir: int = 0   # 0 = nobody (0 is the treasury's id, never a player)
@@ -88,6 +92,8 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 		"debt_cleared": debt_cleared,
 		"claims_cleared": claims_cleared,
 	}))
+	if heir != 0:
+		events.append_array(NepoScript.become(state, heir))   # an heir cannot refuse, so every heir is one (Article 30)
 	events.append_array(_leave_unions(state, player_id))
 	if player_id == state.leader_id:
 		events.append_array(_vacate_seat(state))

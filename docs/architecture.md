@@ -43,7 +43,16 @@ it (data/source/articles.js). A Leader may only write a bound word the game can 
 words are refused for free. Unbound highlighted words stay free text for the table to enforce.
 `test_law_guard.gd` fails if any script reads a governed number from game_data directly.
 
+## Popularity (scripts/popularity.gd)
+
+`GameState.popularity` is only the **base**. A temporary modifier (today the Nepo Baby debuff) sits on
+top and lifts by itself. What counts for being CANCELLED, for ranking and for what players see is the
+**effective** popularity: base + modifier, kept on the track. `Popularity.change_base` is how votes
+and fines move it. `TurnEnd.end_turn` is the single call for the end of a player's own turn.
+
 ## Rules of the codebase
+
+- **Never read `state.popularity` directly. Use `Popularity.effective` (or `.base`).**
 
 - **Never read a Constitution-governed number from game_data. Use `Law`.**
 

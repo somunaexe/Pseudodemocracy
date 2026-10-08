@@ -41,3 +41,6 @@ var heirs: Dictionary = {}          # eliminated player id -> the heir who is ow
 
 # Wills are SECRET until their owner is eliminated, then carried out. Server only (see Views).
 var wills: Dictionary = {}          # player id -> { "psd_heir": int, "on_hold": bool }
+
+# Nepo Babies: the heirs whose popularity is temporarily reduced (Articles 30 and 31).
+var nepo: Dictionary = {}           # player id -> step 1, 2 or 3 of the debuff; absent = not a Nepo Baby

@@ -192,6 +192,7 @@ func rich_state() -> GameStateScript:
 	s.unions[11] = {"type": GameStateScript.UnionType.AGBERO, "owner": 4, "members": [4, 5], "confront_used": true}
 	s.heirs[6] = 4
 	s.wills[2] = {"psd_heir": 4, "on_hold": false}
+	s.nepo[4] = 2
 
 	# 1) an amendment that is voted on (so the log holds a result with player ids as keys)
 	send(s, 1, propose(s, INAUG, {1: "30%"}))
