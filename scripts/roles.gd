@@ -115,6 +115,35 @@ static func _release_card(state: GameStateScript, player_id: int, role: String) 
 		state.role_cards[id]["holder"] = 0   # back in the box; the sticker stays on the card
 
 
+# The coup cards this player holds: the cards with a sticker among their role cards, lowest card number first.
+# Returns a list of [card id, role]. (A holder can see their own cards; nobody else can.)
+static func coup_cards(state: GameStateScript, player_id: int) -> Array:
+	var ids: Array = []
+	for id in state.role_cards:
+		if state.role_cards[id]["holder"] == player_id and state.role_cards[id]["sticker"]:
+			ids.append(id)
+	ids.sort()
+	var result: Array = []
+	for id in ids:
+		result.append([id, state.role_cards[id]["role"]])
+	return result
+
+
+# After a coup the sticker comes off the card that was used and is attached to another role card, chosen at random
+# without looking (handbook: "that way the option comes back into play at random"). Never the same card, and never
+# one that already has a sticker, so there are always exactly coupStickers of them.
+static func move_sticker(state: GameStateScript, card_id: int) -> void:
+	var choices: Array = []
+	for id in state.role_cards:
+		if id != card_id and not state.role_cards[id]["sticker"]:
+			choices.append(id)
+	if choices.is_empty():
+		return
+	choices.sort()
+	state.role_cards[card_id]["sticker"] = false
+	state.role_cards[RngScript.pick(state, choices)]["sticker"] = true
+
+
 # Does the card this player holds for the role carry a coup sticker? (Secret: only the server, and a
 # Secret Agent who checks, may know.) False when there is no such card.
 static func has_sticker(state: GameStateScript, player_id: int, role: String) -> bool:

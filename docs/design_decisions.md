@@ -322,6 +322,24 @@ Some Settlement cards say "keep this card" or "play anytime". They go into the p
 | Are role cards secret? | No. Everyone can see who holds which roles. (I wrongly assumed they were secret from the card text; you corrected this.) | Confirmed |
 | How are roles gained? | From Settlement cards. So dealing roles comes with the card effects. | Confirmed |
 
+## Coups (built: scripts/coup.gd)
+
+From the handbook (Part 3, Coups, and the setup and strategy notes). "A coup can happen at any point during any term."
+
+| Question | Decision | Status |
+|---|---|---|
+| What does a coup cost? | 300 PSD in hand, paid to the treasury, and a coup card. Cash only: a player in debt has no cash, so can't coup (your earlier ruling). | Confirmed; "to the treasury" is assumed |
+| What is a coup card? | A role card with a coup sticker. Only the holder can see which of their cards have one (their view lists them); a Secret Agent can check others. A Civilian has none. | Confirmed |
+| When does it succeed? | When the challenger's effective popularity (Nepo debuff included) is at least 20 points above the Leader's. So a Leader above +30 can't be couped at all. | Confirmed |
+| If they are not 20 ahead? | The attempt is refused and costs nothing. The handbook says a coup "succeeds if" they are 20 ahead and never says what a failed attempt costs. | Assumed, please confirm |
+| When can it happen? | During a term (the Inauguration, a turn, the Farewell), by anyone but the Leader. Not during an election. CANCELLED players have no roles, so no card. | Confirmed; the Leader and CANCELLED rules are assumed |
+| What happens on success? | The round stops at once. The couped Leader scores half a round (1 half-round, not 2). The levy band shifts on their popularity at that moment. Sickness and charges move on a round. An amendment under way is abandoned, and a performance or Command Performance ends with the term. | Confirmed |
+| Who is Leader next? | The challenger: no exam, no vote, straight to the Leader role card draw and the Inauguration. They take the first turn of the new term. | Confirmed |
+| The sticker. | After a coup (or a deal) it comes off the card that was used and goes onto another role card at random, so there are always exactly 10. | Confirmed |
+| A deal. | "The challenger may negotiate a deal instead and lose only the coup card": they keep their 300 PSD, the sticker moves, and there is no coup. It needs the same 300 PSD and a coup card, but not the popularity gap. The deal itself is the table's. | Confirmed; the requirements are assumed |
+| "You can't attempt a coup for 1 term" (Scandal) | A ban counted in rounds, ended by the round end. It applies to deals too. | **Built** (1 card) |
+| Not built | The cards that mention rivals ("neither of you can coup the other for the current term", the Peace Accord, a rival checking your coup status for free) need the Rival label. Vice is not built either (the "keys to the city" card). | Next step |
+
 ## Gender (built: scripts/genders.gd)
 
 The handbook's online-version note: "players enter their gender so gendered cards work."
@@ -474,7 +492,7 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | The heir already holds that role. | They can't hold it twice, so that card goes back in the box. | Assumed |
 | How are roles gained? | From Settlement cards: choose any role, swap roles, gain the Lawyer role (all built, see Choices). Others (found a union, become a Doctor/Lawyer if you hold neither) wait for their mechanics. | **Built** (3 cards) |
 
-Not built yet, and the next steps: Command Performance and shared or personal gains (once you answer), choices of several players, the other kept cards, then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
+Not built yet, and the next steps: the Vice, Rivals, Loyalists and corruption markers, choices of several players, the other kept cards, and a first Godot screen. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

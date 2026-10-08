@@ -10,6 +10,10 @@ const WillsScript = preload("res://scripts/wills.gd")
 
 
 static func run(state: GameStateScript) -> Array:
+	for id in state.coup_ban.keys():   # a coup ban counts down with each round
+		state.coup_ban[id] -= 1
+		if state.coup_ban[id] <= 0:
+			state.coup_ban.erase(id)
 	state.doctor_used = {}
 	state.agent_used = {}
 	var events: Array = WillsScript.end_of_round(state)   # upkeep first: a will on hold when the round ends

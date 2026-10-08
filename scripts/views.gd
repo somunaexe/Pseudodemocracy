@@ -17,14 +17,14 @@ const WillsScript = preload("res://scripts/wills.gd")
 const PUBLIC_FIELDS = [
 	"player_count", "turns_played", "leader_id", "leader_type", "sick",
 	"windows_used", "treasury", "psd", "debts", "debt_terms", "eliminated", "player_ids",
-	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "choice", "union_invites", "reform", "genders", "last_turn_player", "leader_goes_first", "levy_band",
+	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "choice", "union_invites", "reform", "genders", "coup_ban", "last_turn_player", "leader_goes_first", "levy_band",
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).
 const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term", "command"]
 
 # Extra keys a view carries that are not GameState fields.
-const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills", "my_hand", "hand_sizes"]
+const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills", "my_hand", "hand_sizes", "my_coup_roles"]
 
 # Never leave the server. A will is secret until its owner is eliminated; then it is read out
 # in an event. rng_state is secret because whoever knew it could predict every random draw. (Exam keys will go here when they exist.) dose_secret is the bead in the Doctor's hand.
@@ -83,6 +83,7 @@ static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
 	view["hand_sizes"] = {}
 	for id in state.hands:
 		view["hand_sizes"][id] = state.hands[id].size()
+	view["my_coup_roles"] = RolesScript.coup_cards(state, player_id).map(func(c): return c[1])   # only you can see which of your cards carry a sticker
 	view["kept_wills"] = {}
 	if RolesScript.has(state, player_id, "Lawyer"):
 		view["kept_wills"] = WillsScript.kept_by(state, player_id)

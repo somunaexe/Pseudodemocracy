@@ -10,6 +10,7 @@ class_name CardEffects
 #
 #   sick > 0     the player is sick for that many rounds (unless already sick or immune: skipped, and said)
 #   immune > 0   the player can't be sickened for that many rounds
+#   no_coup > 0  the player can't attempt a coup for that many rounds
 #   collect_each   every other player of a gender pays the drawer an amount (what they can't pay becomes debt)
 # A card with "keep" goes into the player's hand instead (state.hands), to be played later with the command
 # "play_card" (see play()). The union cards do that: playing one founds a union (see Unions).
@@ -114,6 +115,9 @@ static func _apply_status(state: GameStateScript, player_id: int, effect: Dictio
 		else:
 			events.append_array(SicknessScript.sicken(state, player_id, int(effect["sick"])))
 			data["sick"] = int(effect["sick"])
+	if effect.has("no_coup"):
+		state.coup_ban[player_id] = maxi(int(state.coup_ban.get(player_id, 0)), int(effect["no_coup"]))
+		data["no_coup"] = int(effect["no_coup"])
 	if effect.has("immune"):
 		events.append_array(SicknessScript.grant_immunity(state, player_id, int(effect["immune"])))
 		data["immune"] = int(effect["immune"])

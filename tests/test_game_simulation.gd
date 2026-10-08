@@ -9,6 +9,7 @@ const SerializerScript = preload("res://scripts/serializer.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
 const DoctorScript = preload("res://scripts/doctor.gd")
+const CoupScript = preload("res://scripts/coup.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
 const RolesScript = preload("res://scripts/roles.gd")
@@ -107,6 +108,19 @@ func _init() -> void:
 	var union_restarted := play(5, 503, 7, 0, 5, 0, 0, 0, true)
 	expect("a server restarting from its save every 5 moves, with invitations waiting or not, gives the same union game", [union_restarted["problems"], union_restarted["final"] == union_straight["final"]], [[], true])
 
+	# Coups at the table: real coups and deals, with the round stopping and the new Leader going first.
+	var coup_types: Array = []
+	for seed_value in range(1, 9):
+		var run := play(5, 600 + seed_value, 7, 0, 0, 0, 0, 0, false, true)
+		coup_types.append_array(run["types"])
+		expect("coup game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+		expect("coup game %d: no rule was ever broken" % seed_value, run["problems"], [])
+	for kind in ["coup_succeeded", "coup_deal", "leader_installed"]:
+		expect("the coup games produced a '%s' event (%d times)" % [kind, coup_types.count(kind)], coup_types.has(kind), true)
+	var coup_straight := play(5, 603, 7, 0, 0, 0, 0, 0, false, true)
+	var coup_restarted := play(5, 603, 7, 0, 5, 0, 0, 0, false, true)
+	expect("a server restarting from its save every 5 moves gives the same coup game", [coup_restarted["problems"], coup_restarted["final"] == coup_straight["final"]], [[], true])
+
 	# Everything that can happen did happen somewhere.
 	var seen := play(5, 7, 6)
 	for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
@@ -148,7 +162,7 @@ func _init() -> void:
 
 # Plays until `terms` terms have been completed. If `poor` is a player id, that player starts
 # with only 30 PSD (and names player 4 as their heir) and so drifts into debt.
-func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0, agent: int = 0, unions: bool = false) -> Dictionary:
+func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0, agent: int = 0, unions: bool = false, coups: bool = false) -> Dictionary:
 	var ids: Array = range(1, player_count + 1)
 	var s := GameScript.new_game(ids, seed_value)
 	if poor != 0:
@@ -157,6 +171,17 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		s.wills[poor] = {"psd_heir": 4, "on_hold": false}
 	if doctor != 0:
 		RolesScript.grant(s, doctor, "Doctor")   # a Doctor from the start, so doses are given all game
+	if coups:
+		# Two popular challengers, each holding a coup card (a role card with a sticker), so coups and deals happen.
+		for challenger in [4, 5]:
+			for role in RolesScript.names():
+				if RolesScript.has(s, challenger, role):
+					continue
+				RolesScript.grant(s, challenger, role)
+				if RolesScript.has_sticker(s, challenger, role):
+					break
+				RolesScript.remove(s, challenger, role)
+			PopularityScript.change_base(s, challenger, 35 if challenger == 4 else 28)
 	if unions:
 		# Union cards in hand (played as soon as possible) and two Agberos, so mobs form, recruit, shrink,
 		# disperse and re-form inside whole games.
@@ -235,6 +260,9 @@ func next_move(s: GameStateScript) -> Dictionary:
 	var played := hand_move(s)
 	if not played.is_empty():
 		return played
+	var coup := coup_move(s)
+	if not coup.is_empty():
+		return coup
 	var hiring := hire_move(s)
 	if not hiring.is_empty():
 		return hiring
@@ -421,6 +449,36 @@ func recruits_this_term(s: GameStateScript) -> int:
 		if kind == "union_invited":
 			n += 1
 	return n
+
+
+# Coups: a player who can attempt one does, now and then, and now and then makes a deal instead. Limited by counts so the
+# game goes on. Only moves the game would accept are made.
+func coup_move(s: GameStateScript) -> Dictionary:
+	if s.game_over or s.term.is_empty() or not s.election.is_empty():
+		return {}
+	var done: int = count_events(s, "coup_succeeded") + count_events(s, "coup_deal")
+	if done >= 6 or count_events(s, "turn_ended") % 5 != 3 or recently(s, ["coup_succeeded", "coup_deal"]):
+		return {}
+	for id in s.player_ids:
+		if CoupScript._problem_with(s, id) != "" or RolesScript.coup_cards(s, id).is_empty():
+			continue
+		var gap: int = PopularityScript.effective(s, id) - PopularityScript.effective(s, s.leader_id)
+		if done % 2 == 0 and gap >= 20:
+			return {"player": id, "command": {"type": "coup"}}
+		if done % 2 == 1:
+			return {"player": id, "command": {"type": "coup", "deal": true}}
+	return {}
+
+
+# Did one of these events happen since the last turn ended?
+func recently(s: GameStateScript, kinds: Array) -> bool:
+	for i in range(s.event_log.size() - 1, -1, -1):
+		var kind: String = s.event_log[i]["type"]
+		if kind == "turn_ended":
+			return false
+		if kind in kinds:
+			return true
+	return false
 
 
 # Hiring a Secret Agent: on the Agent's own turn another player asks for a card or a will to be checked; the Agent

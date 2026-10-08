@@ -132,3 +132,6 @@ var command: Dictionary = {}        # { "phase", "union_id", "union_type", "lead
 
 # Requests to hire a Secret Agent, by the Agent asked (see SecretAgent). SECRET: they hold what is to be checked.
 var agent_offers: Dictionary = {}   # agent id -> { "client", "kind", "target", "role", "price", "deadline" }
+
+# Players barred from attempting a coup, and for how many more rounds (a Scandal card). Public.
+var coup_ban: Dictionary = {}       # player id -> rounds left

@@ -175,7 +175,8 @@ const performance = [
 // EFFECTS the game applies by itself when a Settlement or Scandal card is drawn. A card is found by the
 // start of its text (the export fails if that matches no card or more than one). Only effects on the
 // drawer alone are listed: psd is money to (+) or from (-) the treasury, popularity moves the base,
-// sick makes the drawer sick for that many rounds and immune makes them immune to being sickened for that many.
+// sick makes the drawer sick for that many rounds and immune makes them immune to being sickened for that many,
+// no_coup bars the drawer from attempting a coup for that many rounds.
 // Cards not listed here are read out to the table and carried out by the table, as before.
 // The export also checks that every amount appears as a number in the card's own text.
 const effects = {
@@ -224,6 +225,7 @@ const effects = {
     ["You're forced to publicly refund a donor", { psd: -40, popularity: -5 }],
     ['You lose a bet made in confidence', { psd: -35 }],
     ["You're sickened by an unknown source", { sick: 1 }],
+    ["You can't attempt a coup", { no_coup: 1 }],
   ],
 };
 
