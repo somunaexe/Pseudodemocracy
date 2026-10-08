@@ -37,162 +37,189 @@ var votes_bad: bool = false   # every Good/Bad vote in the simulation is Bad, so
 var pay_fines: bool = false   # a frozen player in the simulation pays the fine as soon as they can
 
 
+# The groups of games this file plays: with no argument all of them; `-- name name` plays only those (the test runner runs the groups side by side).
+const GROUPS := ["ordinary", "poor", "doctor", "lawyer", "unions", "coups", "corruption", "scandals", "misc"]
+
+
+func want(group: String) -> bool:
+	var args: PackedStringArray = OS.get_cmdline_user_args()
+	return args.is_empty() or group in args
+
+
 func _init() -> void:
-	# Ordinary games of different sizes and seeds.
-	var all_types: Array = []
-	for seed_value in range(1, 13):
-		var run := play(5, seed_value, 6)
-		all_types.append_array(run["types"])
-		expect("seed %d: 6 terms of a 5-player game ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
-		expect("seed %d: no rule was ever broken" % seed_value, run["problems"], [])
-	for count in [3, 4, 7, 10]:
-		var run := play(count, 100 + count, 5)
-		expect("%d players: 5 terms ran to the end (%d moves)" % [count, run["steps"]], run["finished"], true)
-		expect("%d players: no rule was ever broken" % count, run["problems"], [])
+	if want("ordinary"):
+		# Ordinary games of different sizes and seeds.
+		var all_types: Array = []
+		for seed_value in range(1, 13):
+			var run := play(5, seed_value, 6)
+			all_types.append_array(run["types"])
+			expect("seed %d: 6 terms of a 5-player game ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+			expect("seed %d: no rule was ever broken" % seed_value, run["problems"], [])
+		for count in [3, 4, 7, 10]:
+			var run := play(count, 100 + count, 5)
+			expect("%d players: 5 terms ran to the end (%d moves)" % [count, run["steps"]], run["finished"], true)
+			expect("%d players: no rule was ever broken" % count, run["problems"], [])
 
-	# A poor player drifts into debt, is eliminated, and their heir becomes a Nepo Baby. The one thing
-	# that can save them is leading (a Leader earns 100 PSD a turn) or a Settlement card that pays them.
-	var poor_runs: int = 0
-	var eliminations: int = 0
-	var nepo_babies: int = 0
-	var leaders_lost: int = 0
-	var rescued: int = 0
-	for seed_value in range(1, 25):
-		var run := play(5, 200 + seed_value, 8, 3)
-		expect("poor game %d: ran to the end" % seed_value, run["finished"], true)
-		expect("poor game %d: no rule was ever broken" % seed_value, run["problems"], [])
-		if run["leaders"].has(3) or run["windfalls"] > 0:
-			rescued += 1
-			continue
-		poor_runs += 1
-		eliminations += 1 if run["eliminated"].has(3) else 0
-		nepo_babies += 1 if run["types"].has("nepo_baby") else 0
-		leaders_lost += 1 if run["types"].has("leader_vacant") else 0
-	expect("some poor players never led (%d of 24), so the test means something" % poor_runs, poor_runs >= 4, true)
-	expect("a poor player who never led or got a windfall was eliminated, every time (%d of %d)" % [eliminations, poor_runs], eliminations, poor_runs)
-	expect("... and their heir became a Nepo Baby each time", nepo_babies, poor_runs)
+		# Choices come up too (only some cards ask for one, so across all the ordinary games).
+		for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed", "amendment_offered", "debate_started", "debate_turn", "debate_vote_cast", "union_pitch_unavailable", "exam_skipped", "exam_timeout", "vote_timeout", "window_passed", "poll_opened", "poll_closed", "hospital_opened", "diaspora_set", "flyover_gave", "modifier_given", "stipend_set", "card_buried"]:
+			expect("the twelve ordinary games produced a '%s' event (%d times)" % [kind, all_types.count(kind)], all_types.has(kind), true)
 
-	# A Doctor at the table: doses, guesses, sabotage and cures, with every rule checked after every move.
-	var dose_types: Array = []
-	for seed_value in range(1, 9):
-		var run := play(5, 300 + seed_value, 6, 0, 0, 3, 0, 4)
-		dose_types.append_array(run["types"])
-		expect("Doctor game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
-		expect("Doctor game %d: no rule was ever broken" % seed_value, run["problems"], [])
-	expect("the Secret Agent checked in the Doctor games (%d reports)" % dose_types.count("agent_report"), dose_types.has("agent_report"), true)
-	for kind in ["agent_requested", "agent_refused", "agent_request_expired"]:
-		expect("... and was hired: a '%s' event (%d times)" % [kind, dose_types.count(kind)], dose_types.has(kind), true)
-	for kind in ["dose_offered", "dose_accepted", "dose_rejected", "dose_expired", "sabotage_guessed", "dose_given", "sickened", "sickness_lengthened", "sickness_shortened", "recovered", "licence_lost", "dose_void"]:
-		expect("the Doctor games produced a '%s' event (%d times)" % [kind, dose_types.count(kind)], dose_types.has(kind) or kind in ["dose_void"], true)
-	var doc_straight := play(5, 303, 6, 0, 0, 3, 0, 4)
-	var doc_restarted := play(5, 303, 6, 0, 5, 3, 0, 4)
-	expect("a server restarting from its save every 5 moves, mid-dose or not, gives the same Doctor game", [doc_restarted["problems"], doc_restarted["final"] == doc_straight["final"]], [[], true])
 
-	# A Lawyer at the table: wills proposed, signed, charged upkeep, put on hold and reactivated.
-	var will_types: Array = []
-	var mirrored_votes: int = 0
-	for seed_value in range(1, 9):
-		var run := play(5, 400 + seed_value, 7, 3, 0, 0, 2, 4)
-		will_types.append_array(run["types"])
-		mirrored_votes += run["mirrored"]
-		expect("Lawyer game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
-		expect("Lawyer game %d: no rule was ever broken" % seed_value, run["problems"], [])
-	expect("Loyalists voted with their owners in these games (%d votes)" % mirrored_votes, mirrored_votes > 0, true)
-	for kind in ["will_proposed", "will_signed", "will_terms", "will_refused", "will_expired", "will_upkeep_paid", "will_on_hold"]:
-		expect("the Lawyer games produced a '%s' event (%d times)" % [kind, will_types.count(kind)], will_types.has(kind), true)
-	expect("... and wills reached their end: read out or void (%d read, %d void)" % [will_types.count("will_read"), will_types.count("will_void")], will_types.has("will_read") or will_types.has("will_void"), true)
-	var will_straight := play(5, 403, 7, 3, 0, 0, 2, 4)
-	var will_restarted := play(5, 403, 7, 3, 6, 0, 2, 4)
-	expect("a server restarting from its save every 6 moves, with wills waiting or not, gives the same game", [will_restarted["problems"], will_restarted["final"] == will_straight["final"]], [[], true])
+	if want("poor"):
+		# A poor player drifts into debt, is eliminated, and their heir becomes a Nepo Baby. The one thing
+		# that can save them is leading (a Leader earns 100 PSD a turn) or a Settlement card that pays them.
+		var poor_runs: int = 0
+		var eliminations: int = 0
+		var nepo_babies: int = 0
+		var leaders_lost: int = 0
+		var rescued: int = 0
+		for seed_value in range(1, 25):
+			var run := play(5, 200 + seed_value, 8, 3)
+			expect("poor game %d: ran to the end" % seed_value, run["finished"], true)
+			expect("poor game %d: no rule was ever broken" % seed_value, run["problems"], [])
+			if run["leaders"].has(3) or run["windfalls"] > 0:
+				rescued += 1
+				continue
+			poor_runs += 1
+			eliminations += 1 if run["eliminated"].has(3) else 0
+			nepo_babies += 1 if run["types"].has("nepo_baby") else 0
+			leaders_lost += 1 if run["types"].has("leader_vacant") else 0
+		expect("some poor players never led (%d of 24), so the test means something" % poor_runs, poor_runs >= 4, true)
+		expect("a poor player who never led or got a windfall was eliminated, every time (%d of %d)" % [eliminations, poor_runs], eliminations, poor_runs)
+		expect("... and their heir became a Nepo Baby each time", nepo_babies, poor_runs)
 
-	# Unions at the table: founded, recruiting, refused, shrinking, kicking, dispersing and re-forming.
-	var union_types: Array = []
-	for seed_value in range(1, 9):
-		var run := play(5, 500 + seed_value, 7, 0, 0, 0, 0, 0, true)
-		union_types.append_array(run["types"])
-		expect("union game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
-		expect("union game %d: no rule was ever broken" % seed_value, run["problems"], [])
-	for kind in ["union_founded", "union_invited", "union_joined", "union_invitation_refused", "union_invitation_expired", "union_left", "union_dispersed",
-			"command_started", "command_performance_started", "command_voting_opened", "command_vote_cast", "command_performance_resolved", "union_pitched"]:
-		expect("the union games produced a '%s' event (%d times)" % [kind, union_types.count(kind)], union_types.has(kind), true)
-	var union_straight := play(5, 503, 7, 0, 0, 0, 0, 0, true)
-	var union_restarted := play(5, 503, 7, 0, 5, 0, 0, 0, true)
-	expect("a server restarting from its save every 5 moves, with invitations waiting or not, gives the same union game", [union_restarted["problems"], union_restarted["final"] == union_straight["final"]], [[], true])
 
-	# Coups at the table: real coups and deals, with the round stopping and the new Leader going first.
-	var coup_types: Array = []
-	for seed_value in range(1, 9):
-		var run := play(5, 600 + seed_value, 7, 0, 0, 0, 0, 0, false, true)
-		coup_types.append_array(run["types"])
-		expect("coup game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
-		expect("coup game %d: no rule was ever broken" % seed_value, run["problems"], [])
-	for kind in ["coup_succeeded", "coup_failed", "coup_deal", "leader_installed"]:
-		expect("the coup games produced a '%s' event (%d times)" % [kind, coup_types.count(kind)], coup_types.has(kind), true)
-	var coup_straight := play(5, 603, 7, 0, 0, 0, 0, 0, false, true)
-	var coup_restarted := play(5, 603, 7, 0, 5, 0, 0, 0, false, true)
-	expect("a server restarting from its save every 5 moves gives the same coup game", [coup_restarted["problems"], coup_restarted["final"] == coup_straight["final"]], [[], true])
+	if want("doctor"):
+		# A Doctor at the table: doses, guesses, sabotage and cures, with every rule checked after every move.
+		var dose_types: Array = []
+		for seed_value in range(1, 9):
+			var run := play(5, 300 + seed_value, 6, 0, 0, 3, 0, 4)
+			dose_types.append_array(run["types"])
+			expect("Doctor game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+			expect("Doctor game %d: no rule was ever broken" % seed_value, run["problems"], [])
+		expect("the Secret Agent checked in the Doctor games (%d reports)" % dose_types.count("agent_report"), dose_types.has("agent_report"), true)
+		for kind in ["agent_requested", "agent_refused", "agent_request_expired"]:
+			expect("... and was hired: a '%s' event (%d times)" % [kind, dose_types.count(kind)], dose_types.has(kind), true)
+		for kind in ["dose_offered", "dose_accepted", "dose_rejected", "dose_expired", "sabotage_guessed", "dose_given", "sickened", "sickness_lengthened", "sickness_shortened", "recovered", "licence_lost", "dose_void"]:
+			expect("the Doctor games produced a '%s' event (%d times)" % [kind, dose_types.count(kind)], dose_types.has(kind) or kind in ["dose_void"], true)
+		var doc_straight := play(5, 303, 6, 0, 0, 3, 0, 4)
+		var doc_restarted := play(5, 303, 6, 0, 5, 3, 0, 4)
+		expect("a server restarting from its save every 5 moves, mid-dose or not, gives the same Doctor game", [doc_restarted["problems"], doc_restarted["final"] == doc_straight["final"]], [[], true])
 
-	# Corruption at the table: a frozen player who pays the fine, and one who waits it out.
-	var corruption_types: Array = []
-	for seed_value in range(1, 9):
-		pay_fines = seed_value % 2 == 0
-		var run := play(5, 700 + seed_value, 7, 0, 0, 0, 0, 0, false, false, 5)
-		corruption_types.append_array(run["types"])
-		expect("corruption game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
-		expect("corruption game %d: no rule was ever broken" % seed_value, run["problems"], [])
-	pay_fines = false
-	for kind in ["marker_gained", "fine_paid", "freeze_expired"]:   # the freeze itself happens at set-up
-		expect("the corruption games produced a '%s' event (%d times)" % [kind, corruption_types.count(kind)], corruption_types.has(kind), true)
-	pay_fines = true
-	var corrupt_straight := play(5, 702, 7, 0, 0, 0, 0, 0, false, false, 5)
-	var corrupt_restarted := play(5, 702, 7, 0, 5, 0, 0, 0, false, false, 5)
-	pay_fines = false
-	expect("a server restarting from its save every 5 moves gives the same corruption game", [corrupt_restarted["problems"], corrupt_restarted["final"] == corrupt_straight["final"]], [[], true])
 
-	# Scandals: everyone votes Bad, so every Scandal card with a rule of its own is drawn.
-	var scandal_types: Array = []
-	votes_bad = true
-	for seed_value in range(1, 7):
-		var run := play(5, 800 + seed_value, 7, 0, 0, 0, 0, 0, seed_value % 2 == 0)
-		scandal_types.append_array(run["types"])
-		expect("scandal game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
-		expect("scandal game %d: no rule was ever broken" % seed_value, run["problems"], [])
-	votes_bad = false
-	for kind in ["seat_debt", "made_civilian", "reckoning_placed", "apology_owed", "transparency_fee", "satirised", "rally_failed", "modifier_given"]:
-		expect("the scandal games produced a '%s' event (%d times)" % [kind, scandal_types.count(kind)], scandal_types.has(kind), true)
+	if want("lawyer"):
+		# A Lawyer at the table: wills proposed, signed, charged upkeep, put on hold and reactivated.
+		var will_types: Array = []
+		var mirrored_votes: int = 0
+		for seed_value in range(1, 9):
+			var run := play(5, 400 + seed_value, 7, 3, 0, 0, 2, 4)
+			will_types.append_array(run["types"])
+			mirrored_votes += run["mirrored"]
+			expect("Lawyer game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+			expect("Lawyer game %d: no rule was ever broken" % seed_value, run["problems"], [])
+		expect("Loyalists voted with their owners in these games (%d votes)" % mirrored_votes, mirrored_votes > 0, true)
+		for kind in ["will_proposed", "will_signed", "will_terms", "will_refused", "will_expired", "will_upkeep_paid", "will_on_hold"]:
+			expect("the Lawyer games produced a '%s' event (%d times)" % [kind, will_types.count(kind)], will_types.has(kind), true)
+		expect("... and wills reached their end: read out or void (%d read, %d void)" % [will_types.count("will_read"), will_types.count("will_void")], will_types.has("will_read") or will_types.has("will_void"), true)
+		var will_straight := play(5, 403, 7, 3, 0, 0, 2, 4)
+		var will_restarted := play(5, 403, 7, 3, 6, 0, 2, 4)
+		expect("a server restarting from its save every 6 moves, with wills waiting or not, gives the same game", [will_restarted["problems"], will_restarted["final"] == will_straight["final"]], [[], true])
 
-	# Everything that can happen did happen somewhere.
-	var seen := play(5, 7, 6)
-	for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
-			"term_started", "levy_collected", "turn_started", "turn_ended", "farewell_opened", "term_ended", "window_passed",
-			"amendment_proposed", "amendment_resolved", "article_changed", "ballot_cast", "exam_answered",
-			"performance_started", "performance_voting_opened", "performance_vote_cast", "performance_resolved", "income_paid", "card_applied"]:
-		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
 
-	# Choices come up too (only some cards ask for one, so across all the ordinary games).
-	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed", "amendment_offered", "debate_started", "debate_turn", "debate_vote_cast", "union_pitch_unavailable", "exam_skipped", "exam_timeout", "vote_timeout", "window_passed", "poll_opened", "poll_closed", "hospital_opened", "diaspora_set", "flyover_gave", "modifier_given", "stipend_set", "card_buried"]:
-		expect("the twelve ordinary games produced a '%s' event (%d times)" % [kind, all_types.count(kind)], all_types.has(kind), true)
+	if want("unions"):
+		# Unions at the table: founded, recruiting, refused, shrinking, kicking, dispersing and re-forming.
+		var union_types: Array = []
+		for seed_value in range(1, 9):
+			var run := play(5, 500 + seed_value, 7, 0, 0, 0, 0, 0, true)
+			union_types.append_array(run["types"])
+			expect("union game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+			expect("union game %d: no rule was ever broken" % seed_value, run["problems"], [])
+		for kind in ["union_founded", "union_invited", "union_joined", "union_invitation_refused", "union_invitation_expired", "union_left", "union_dispersed",
+				"command_started", "command_performance_started", "command_voting_opened", "command_vote_cast", "command_performance_resolved", "union_pitched"]:
+			expect("the union games produced a '%s' event (%d times)" % [kind, union_types.count(kind)], union_types.has(kind), true)
+		var union_straight := play(5, 503, 7, 0, 0, 0, 0, 0, true)
+		var union_restarted := play(5, 503, 7, 0, 5, 0, 0, 0, true)
+		expect("a server restarting from its save every 5 moves, with invitations waiting or not, gives the same union game", [union_restarted["problems"], union_restarted["final"] == union_straight["final"]], [[], true])
 
-	# The same seed always plays out the same way, to the last byte.
-	var a := play(5, 42, 5)
-	var b := play(5, 42, 5)
-	expect("the same seed gives the same game, byte for byte", a["final"] == b["final"], true)
-	expect("... and a different seed gives a different one", a["final"] != play(5, 43, 5)["final"], true)
 
-	# A server that restarts from its save, again and again, plays exactly the same game.
-	for seed_value in [3, 17, 29]:
-		var straight := play(5, seed_value, 6)
-		var restarted := play(5, seed_value, 6, 0, 7)
-		expect("seed %d: restarting from a save every 7 moves changes nothing" % seed_value, [restarted["problems"], restarted["final"] == straight["final"]], [[], true])
-	var poor_straight := play(5, 205, 8, 3)
-	var poor_restarted := play(5, 205, 8, 3, 11)
-	expect("... even through debt and an elimination", [poor_restarted["problems"], poor_restarted["final"] == poor_straight["final"]], [[], true])
+	if want("coups"):
+		# Coups at the table: real coups and deals, with the round stopping and the new Leader going first.
+		var coup_types: Array = []
+		for seed_value in range(1, 9):
+			var run := play(5, 600 + seed_value, 7, 0, 0, 0, 0, 0, false, true)
+			coup_types.append_array(run["types"])
+			expect("coup game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+			expect("coup game %d: no rule was ever broken" % seed_value, run["problems"], [])
+		for kind in ["coup_succeeded", "coup_failed", "coup_deal", "leader_installed"]:
+			expect("the coup games produced a '%s' event (%d times)" % [kind, coup_types.count(kind)], coup_types.has(kind), true)
+		var coup_straight := play(5, 603, 7, 0, 0, 0, 0, 0, false, true)
+		var coup_restarted := play(5, 603, 7, 0, 5, 0, 0, 0, false, true)
+		expect("a server restarting from its save every 5 moves gives the same coup game", [coup_restarted["problems"], coup_restarted["final"] == coup_straight["final"]], [[], true])
 
-	# Stopping the game ends it with a winner who is still in it.
-	var game := GameScript.new_game([1, 2, 3, 4, 5], 11)
-	vote_everyone(game)
-	var over := GameScript.handle(game, SERVER, {"type": "finish_game"})
-	expect("a game stopped after one election has a winner", over[0]["winners"], [game.leader_id])
+
+	if want("corruption"):
+		# Corruption at the table: a frozen player who pays the fine, and one who waits it out.
+		var corruption_types: Array = []
+		for seed_value in range(1, 9):
+			pay_fines = seed_value % 2 == 0
+			var run := play(5, 700 + seed_value, 7, 0, 0, 0, 0, 0, false, false, 5)
+			corruption_types.append_array(run["types"])
+			expect("corruption game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+			expect("corruption game %d: no rule was ever broken" % seed_value, run["problems"], [])
+		pay_fines = false
+		for kind in ["marker_gained", "fine_paid", "freeze_expired"]:   # the freeze itself happens at set-up
+			expect("the corruption games produced a '%s' event (%d times)" % [kind, corruption_types.count(kind)], corruption_types.has(kind), true)
+		pay_fines = true
+		var corrupt_straight := play(5, 702, 7, 0, 0, 0, 0, 0, false, false, 5)
+		var corrupt_restarted := play(5, 702, 7, 0, 5, 0, 0, 0, false, false, 5)
+		pay_fines = false
+		expect("a server restarting from its save every 5 moves gives the same corruption game", [corrupt_restarted["problems"], corrupt_restarted["final"] == corrupt_straight["final"]], [[], true])
+
+
+	if want("scandals"):
+		# Scandals: everyone votes Bad, so every Scandal card with a rule of its own is drawn.
+		var scandal_types: Array = []
+		votes_bad = true
+		for seed_value in range(1, 7):
+			var run := play(5, 800 + seed_value, 7, 0, 0, 0, 0, 0, seed_value % 2 == 0)
+			scandal_types.append_array(run["types"])
+			expect("scandal game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+			expect("scandal game %d: no rule was ever broken" % seed_value, run["problems"], [])
+		votes_bad = false
+		for kind in ["seat_debt", "made_civilian", "reckoning_placed", "apology_owed", "transparency_fee", "satirised", "rally_failed", "modifier_given"]:
+			expect("the scandal games produced a '%s' event (%d times)" % [kind, scandal_types.count(kind)], scandal_types.has(kind), true)
+
+
+	if want("misc"):
+		# Everything that can happen did happen somewhere.
+		var seen := play(5, 7, 6)
+		for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
+				"term_started", "levy_collected", "turn_started", "turn_ended", "farewell_opened", "term_ended", "window_passed",
+				"amendment_proposed", "amendment_resolved", "article_changed", "ballot_cast", "exam_answered",
+				"performance_started", "performance_voting_opened", "performance_vote_cast", "performance_resolved", "income_paid", "card_applied"]:
+			expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
+
+		# The same seed always plays out the same way, to the last byte.
+		var a := play(5, 42, 5)
+		var b := play(5, 42, 5)
+		expect("the same seed gives the same game, byte for byte", a["final"] == b["final"], true)
+		expect("... and a different seed gives a different one", a["final"] != play(5, 43, 5)["final"], true)
+
+		# A server that restarts from its save, again and again, plays exactly the same game.
+		for seed_value in [3, 17, 29]:
+			var straight := play(5, seed_value, 6)
+			var restarted := play(5, seed_value, 6, 0, 7)
+			expect("seed %d: restarting from a save every 7 moves changes nothing" % seed_value, [restarted["problems"], restarted["final"] == straight["final"]], [[], true])
+		var poor_straight := play(5, 205, 8, 3)
+		var poor_restarted := play(5, 205, 8, 3, 11)
+		expect("... even through debt and an elimination", [poor_restarted["problems"], poor_restarted["final"] == poor_straight["final"]], [[], true])
+
+		# Stopping the game ends it with a winner who is still in it.
+		var game := GameScript.new_game([1, 2, 3, 4, 5], 11)
+		vote_everyone(game)
+		var over := GameScript.handle(game, SERVER, {"type": "finish_game"})
+		expect("a game stopped after one election has a winner", over[0]["winners"], [game.leader_id])
+
 
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
