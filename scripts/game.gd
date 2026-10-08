@@ -18,6 +18,8 @@ class_name Game
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const DoctorScript = preload("res://scripts/doctor.gd")
+const RolesScript = preload("res://scripts/roles.gd")
+const SecretAgentScript = preload("res://scripts/secret_agent.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")
@@ -33,6 +35,7 @@ const SERVER_ID := 0
 
 const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
 const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
+const AGENT_COMMANDS := ["agent_check"]
 const WILL_COMMANDS := ["will_propose", "will_respond", "will_catch_up", "will_revoke"]
 const DOSE_COMMANDS := ["dose_offer", "dose_respond", "dose_guess"]
 const TERM_COMMANDS := ["pass_window", "end_turn", "finish_performance", "performance_vote", "choose"]
@@ -60,6 +63,7 @@ static func new_game(player_ids: Array, seed_value: int = 0) -> GameStateScript:
 		RngScript.seed_from_clock(state)
 	else:
 		RngScript.seed_with(state, seed_value)
+	RolesScript.setup(state)   # the 25 role cards, with their coup stickers, are dealt out of sight
 	ElectionScript.begin(state, "first")
 	return state
 
@@ -75,6 +79,8 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 		events = ElectionScript.handle(state, player_id, command)
 	elif type in TERM_COMMANDS:
 		events = TermLoopScript.handle(state, player_id, command)
+	elif type in AGENT_COMMANDS:
+		events = SecretAgentScript.handle(state, player_id, command)
 	elif type in WILL_COMMANDS:
 		events = WillsScript.handle(state, player_id, command)
 	elif type in DOSE_COMMANDS:

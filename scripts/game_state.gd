@@ -98,3 +98,11 @@ var doctor_used: Dictionary = {}    # Doctor's player id -> charges spent this r
 
 # Wills waiting for their Lawyer to sign (see Wills), by testator. SECRET: they hold the heirs. Server only.
 var will_offers: Dictionary = {}    # testator id -> { "lawyer", "psd_heir", "role_heir", "fee", "upkeep", "deadline" }
+
+# The 25 physical role cards (5 copies of each of the 5 roles), by card number. SECRET: a card may carry a coup
+# sticker, and nobody knows which do (see Roles and the Secret Agent). "holder" is a player id, or 0 when the card
+# is in the box. state.roles (public) says who holds which role; this says which card, and its sticker.
+var role_cards: Dictionary = {}     # card id -> { "role": String, "sticker": bool, "holder": int }
+
+# Secret Agents who have used their power this round (they get one use a round). Server only.
+var agent_used: Dictionary = {}     # player id -> true

@@ -19,6 +19,7 @@ func _init() -> void:
 	income_follows_roles()
 	elimination_without_a_will()
 	elimination_with_a_will()
+	the_physical_cards()
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -191,6 +192,89 @@ func elimination_with_a_will() -> void:
 	inherited = find(ev, "roles_inherited")
 	expect("a role the heir already holds is not held twice", [inherited["roles"], inherited["returned_to_box"], RolesScript.held(s, 4)], [["Lawyer"], ["Doctor"], ["Doctor", "Lawyer"]])
 	expect("... so the Doctor cards still add up", RolesScript.holders(s, "Doctor"), [4])
+
+
+func the_physical_cards() -> void:
+	var s := table(5)
+	var cards: Dictionary = s.role_cards
+	expect("a new game has 25 role cards: 5 of each role", [cards.size(), count_role(cards, "Doctor"), count_role(cards, "Agbero")], [25, 5, 5])
+	var stickers: int = 0
+	for id in cards:
+		stickers += 1 if cards[id]["sticker"] else 0
+	expect("10 of them carry a coup sticker, and all start in the box", [stickers, cards.values().all(func(c): return c["holder"] == 0)], [10, true])
+	expect("the stickers are placed at random: another seed puts them elsewhere", sticker_ids(GameScript.new_game([1, 2, 3, 4, 5], 99).role_cards) != sticker_ids(cards), true)
+	expect("... and the same seed always the same", sticker_ids(GameScript.new_game([1, 2, 3, 4, 5], 3).role_cards), sticker_ids(cards))
+	expect("nobody's view shows a card", [ViewsScript.state_view(s, 1).has("role_cards"), ViewsScript.state_view_json(s, 1).contains("sticker")], [false, false])
+
+	RolesScript.grant(s, 3, "Doctor")
+	var card: int = RolesScript.card_of(s, 3, "Doctor")
+	expect("a granted role is a real card from the box, now held by the player", [card != -1, s.role_cards[card]["role"], s.role_cards[card]["holder"]], [true, "Doctor", 3])
+	var had_sticker: bool = s.role_cards[card]["sticker"]
+	expect("whether it has a sticker is just a fact the server knows", RolesScript.has_sticker(s, 3, "Doctor"), had_sticker)
+	expect("a role someone doesn't hold has no card and no sticker", [RolesScript.card_of(s, 3, "Lawyer"), RolesScript.has_sticker(s, 3, "Lawyer")], [-1, false])
+
+	RolesScript.remove(s, 3, "Doctor")
+	expect("a role taken away returns the card to the box, sticker and all", [s.role_cards[card]["holder"], s.role_cards[card]["sticker"]], [0, had_sticker])
+
+	# Swapping moves the actual cards.
+	RolesScript.grant(s, 1, "Agbero")
+	RolesScript.grant(s, 2, "Lawyer")
+	var agbero: int = RolesScript.card_of(s, 1, "Agbero")
+	var lawyer: int = RolesScript.card_of(s, 2, "Lawyer")
+	RolesScript.swap(s, 1, 2)
+	expect("a swap moves the cards, not just the names", [s.role_cards[agbero]["holder"], s.role_cards[lawyer]["holder"]], [2, 1])
+
+	# Inheritance moves the card, with its sticker.
+	RolesScript.grant(s, 4, "Secret Agent")
+	var agent: int = RolesScript.card_of(s, 4, "Secret Agent")
+	var agent_sticker: bool = s.role_cards[agent]["sticker"]
+	s.wills[4] = {"psd_heir": 5, "on_hold": false}
+	ElimScript.eliminate(s, 4, "debt")
+	expect("an inherited card goes to the heir with its sticker", [s.role_cards[agent]["holder"], s.role_cards[agent]["sticker"], RolesScript.has_sticker(s, 5, "Secret Agent")], [5, agent_sticker, agent_sticker])
+	RolesScript.grant(s, 3, "Activist")
+	var activist: int = RolesScript.card_of(s, 3, "Activist")
+	ElimScript.eliminate(s, 3, "debt")
+	expect("a rescinded card goes back in the box", s.role_cards[activist]["holder"], 0)
+
+	# The heir who already holds the role: that card goes back in the box.
+	s = table(5)
+	RolesScript.grant(s, 3, "Doctor")
+	RolesScript.grant(s, 5, "Doctor")
+	var dead_card: int = RolesScript.card_of(s, 3, "Doctor")
+	s.wills[3] = {"psd_heir": 5, "on_hold": false}
+	ElimScript.eliminate(s, 3, "debt")
+	expect("a duplicate inherited role returns that card to the box", [s.role_cards[dead_card]["holder"], RolesScript.card_of(s, 5, "Doctor") != dead_card], [0, true])
+
+	# All five cards of a role really are five different cards.
+	s = table(10)
+	var seen: Dictionary = {}
+	for id in [1, 2, 3, 4, 5]:
+		RolesScript.grant(s, id, "Lawyer")
+		seen[RolesScript.card_of(s, id, "Lawyer")] = true
+	expect("five Lawyers hold five different cards", seen.size(), 5)
+
+	# Roles set by hand (older saves, other tests) don't break anything.
+	s = GameStateScript.new()
+	s.player_ids = [1, 2]
+	s.roles = {1: ["Doctor"]}
+	expect("roles set by hand have no card, and removing one is harmless", [RolesScript.card_of(s, 1, "Doctor"), types(RolesScript.remove(s, 1, "Doctor"))], [-1, ["role_lost"]])
+
+
+func count_role(cards: Dictionary, role: String) -> int:
+	var n: int = 0
+	for id in cards:
+		if cards[id]["role"] == role:
+			n += 1
+	return n
+
+
+func sticker_ids(cards: Dictionary) -> Array:
+	var result: Array = []
+	for id in cards:
+		if cards[id]["sticker"]:
+			result.append(id)
+	result.sort()
+	return result
 
 
 # --- helpers -----------------------------------------------------------------------------

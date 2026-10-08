@@ -6,7 +6,9 @@ class_name Roles
 # the same. A player with no role is a Civilian: there is no Civilian card.
 #
 # Everyone can see who holds which roles (see Views). What stays hidden is whether a role card has a
-# coup sticker; that is for coups to keep, server-only.
+# coup sticker. Each of the 25 cards has an identity (GameState.role_cards): its role, a hidden sticker flag
+# (coupStickers of them are stickered at the start, at random) and who holds it. The card moves with the role
+# when it is granted, taken, swapped or inherited; the sticker stays on the card.
 #
 # This file only holds and moves the cards. What each role can DO is not built yet (see
 # docs/design_decisions.md): the one rule shared by all of them is can_use_power().
@@ -17,6 +19,7 @@ class_name Roles
 const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
+const RngScript = preload("res://scripts/rng.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 
@@ -56,6 +59,69 @@ static func copies_left(state: GameStateScript, role: String) -> int:
 
 # --- giving and taking cards -------------------------------------------------------------
 
+# --- the physical cards ------------------------------------------------------------------
+
+# Make the 25 role cards, all in the box, and put the coup stickers on coupStickers of them at random.
+# Cards already held (state.roles set by hand, older saves) are handed to those players.
+static func setup(state: GameStateScript) -> void:
+	state.role_cards = {}
+	var id: int = 0
+	for role in names():
+		for copy in copies():
+			state.role_cards[id] = {"role": role, "sticker": false, "holder": 0}
+			id += 1
+	var order: Array = range(id)
+	for i in range(id - 1, 0, -1):   # shuffle with the game's own generator
+		var j: int = RngScript.below(state, i + 1)
+		var held_id: int = order[i]
+		order[i] = order[j]
+		order[j] = held_id
+	var stickers: int = int(GameDataScript.values()["components"]["coupStickers"])
+	for i in mini(stickers, id):
+		state.role_cards[order[i]]["sticker"] = true
+	for player in state.roles:
+		for role in state.roles[player]:
+			_take_card(state, player, role)
+
+
+static func _ensure_cards(state: GameStateScript) -> void:
+	if state.role_cards.is_empty():
+		setup(state)
+
+
+# A random card of this role from the box goes to the player.
+static func _take_card(state: GameStateScript, player_id: int, role: String) -> void:
+	var choices: Array = []
+	for id in state.role_cards:
+		if state.role_cards[id]["role"] == role and state.role_cards[id]["holder"] == 0:
+			choices.append(id)
+	if choices.is_empty():
+		return   # roles set by hand beyond the 5 copies: no card to follow
+	choices.sort()
+	state.role_cards[RngScript.pick(state, choices)]["holder"] = player_id
+
+
+# The card of this role the player holds, or -1 (also when their roles were set by hand).
+static func card_of(state: GameStateScript, player_id: int, role: String) -> int:
+	for id in state.role_cards:
+		if state.role_cards[id]["role"] == role and state.role_cards[id]["holder"] == player_id:
+			return id
+	return -1
+
+
+static func _release_card(state: GameStateScript, player_id: int, role: String) -> void:
+	var id: int = card_of(state, player_id, role)
+	if id != -1:
+		state.role_cards[id]["holder"] = 0   # back in the box; the sticker stays on the card
+
+
+# Does the card this player holds for the role carry a coup sticker? (Secret: only the server, and a
+# Secret Agent who checks, may know.) False when there is no such card.
+static func has_sticker(state: GameStateScript, player_id: int, role: String) -> bool:
+	var id: int = card_of(state, player_id, role)
+	return id != -1 and state.role_cards[id]["sticker"]
+
+
 # Why this player can't be given this role right now, or "" if they can.
 static func problem_granting(state: GameStateScript, player_id: int, role: String) -> String:
 	if not role in names():
@@ -72,9 +138,11 @@ static func problem_granting(state: GameStateScript, player_id: int, role: Strin
 # Give the player the role card. The caller checks problem_granting first.
 static func grant(state: GameStateScript, player_id: int, role: String) -> Array:
 	assert(problem_granting(state, player_id, role) == "", "grant() needs a role that can be granted")
+	_ensure_cards(state)
 	if not state.roles.has(player_id):
 		state.roles[player_id] = []
 	state.roles[player_id].append(role)
+	_take_card(state, player_id, role)
 	return [EventsScript.make("role_gained", {"player": player_id, "role": role})]
 
 
@@ -82,6 +150,7 @@ static func grant(state: GameStateScript, player_id: int, role: String) -> Array
 static func remove(state: GameStateScript, player_id: int, role: String) -> Array:
 	if not has(state, player_id, role):
 		return []
+	_release_card(state, player_id, role)
 	state.roles[player_id].erase(role)
 	if state.roles[player_id].is_empty():
 		state.roles.erase(player_id)
@@ -101,6 +170,12 @@ static func swap(state: GameStateScript, a: int, b: int) -> Array:
 	assert(a != b, "a player can't swap with themselves")
 	var mine: Array = held(state, a)
 	var theirs: Array = held(state, b)
+	for id in state.role_cards:   # the cards change hands with the roles
+		var holder: int = state.role_cards[id]["holder"]
+		if holder == a:
+			state.role_cards[id]["holder"] = b
+		elif holder == b:
+			state.role_cards[id]["holder"] = a
 	state.roles.erase(a)
 	state.roles.erase(b)
 	if not theirs.is_empty():
@@ -120,13 +195,19 @@ static func settle_estate(state: GameStateScript, dead_id: int, heir: int) -> Ar
 		return []
 	state.roles.erase(dead_id)
 	if heir == 0:
+		for role in roles:
+			_release_card(state, dead_id, role)
 		return [EventsScript.make("roles_rescinded", {"player": dead_id, "roles": roles})]
 	var received: Array = []
 	var returned: Array = []
 	for role in roles:
 		if has(state, heir, role):
+			_release_card(state, dead_id, role)   # the heir can't hold two: that card goes back in the box
 			returned.append(role)
 		else:
+			var card: int = card_of(state, dead_id, role)
+			if card != -1:
+				state.role_cards[card]["holder"] = heir
 			if not state.roles.has(heir):
 				state.roles[heir] = []
 			state.roles[heir].append(role)

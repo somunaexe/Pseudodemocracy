@@ -366,6 +366,24 @@ From the handbook (Part 6, Wills & Inheritance, Articles 26 to 31).
 | Can the Lawyer write their own will? | Through another Lawyer, yes. Not through themselves. | Assumed |
 | Do other cards matter? | "Raise your Doctor/Lawyer fee by 20 for the next term" and "convince the Lawyer to draft your will for free" are left to the table. | Next step |
 
+## The Secret Agent and the role cards (built: scripts/secret_agent.gd, roles.gd)
+
+From the handbook (Part 6): "Can check one role card for coup-sticker status and will contents on their turn. Can check the Doctor's bead before it is handed over. Can not be caught sharing what they've discovered, or they lose the role. Can only use this power once per round."
+
+| Question | Decision | Status |
+|---|---|---|
+| Are the 25 role cards real cards? | Yes. Each of the five roles has five numbered cards. A role is held as a particular card, which moves with the role (granted from the box, taken back, swapped, inherited). | **Built** |
+| Where are the coup stickers? | 10 of the 25 cards, chosen at random at the start with the game's own generator, as "attached without looking at the cards' faces". The sticker stays on the card wherever it goes, including back in the box. Reattaching stickers after a coup comes with coups. | **Built** (placing); coups later |
+| Who can see a sticker? | Nobody, except a Secret Agent who checks. The cards are server-only; no view or event shows them. Everyone does see who holds which role. | **Built** |
+| What can an Agent check? | A card someone holds (is there a sticker?), a player's will (the heirs, the Lawyer, the upkeep and whether it is on hold), or the bead in the Doctor's hand while a heal is being offered or the guessing is open. | **Built** |
+| When? | Cards and wills on the Agent's own turn; the bead whenever a heal is under way (the Doctor can't look at their own bead). | Confirmed (handbook says "on their turn" for cards and wills); the bead timing is assumed |
+| How often? | Once per round in total, of any kind. A refused check does not use it up. | Confirmed (handbook) |
+| Who learns the result? | Only the Agent, in an event sent to nobody else. | **Built** |
+| "Not being caught sharing". | For the table: the game can't hear what players say. There is no command to accuse an Agent yet. | Left to the table |
+| Own cards and own will. | An Agent may check their own. | Assumed |
+| Can sick, CANCELLED or eliminated Agents check? | No (the shared role rule). | Confirmed |
+| The cards "a rival may check your coup-card status for free, once" and "peek at your role card once". | Left to the table until coups exist. | Next step |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.
@@ -374,7 +392,7 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 |---|---|---|---|---|
 | Doctor | 70 | Doses (Agbo, Concoction, Surgery), no fixed prices. Hidden bead: blue Cure, red Poison. A patient can reject a cure. Sabotage is guessed before the bead is taken. A right guess means the Doctor pays the guesser, gives a real Cure and loses their licence; a wrong guess means the guesser pays the Doctor what the patient paid. | Everything above (see The Doctor and Sickness) | Confirm my assumptions in The Doctor |
 | Lawyer | 50 | Signs wills for an agreed fee and collects upkeep every round (Article 26). | Everything in The Lawyer and wills | Confirm my assumptions |
-| Secret Agent | 80 | Stays (CHANGES.md); no power described. Cards mention checking coup status and role draws. | Holding and income only | What the Secret Agent does |
+| Secret Agent | 80 | Checks a card's coup sticker or a will on their turn, or the Doctor's bead; once per round. | Everything in The Secret Agent | Confirm my assumptions |
 | Activist | none | Founds an Activist union (a Settlement card, played any time). Unions exist: recruit, kick, confront the Leader. | The union rules built earlier | How a player becomes an Activist, and how a Settlement card founds a union |
 | Agbero | none | Founds an Agbero mob; its leader is the Capon. Can re-form straight away if they hold an Agbero card. | The union rules built earlier | The same |
 
@@ -390,7 +408,7 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | The heir already holds that role. | They can't hold it twice, so that card goes back in the box. | Assumed |
 | How are roles gained? | From Settlement cards: choose any role, swap roles, gain the Lawyer role (all built, see Choices). Others (found a union, become a Doctor/Lawyer if you hold neither) wait for their mechanics. | **Built** (3 cards) |
 
-Not built yet, and the next steps: each role's power (committed separately), sickness, the union-founding cards, choices of several players, then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That will be a server-only record when coups are built; one Scandal card lets a rival check it.
+Not built yet, and the next steps: the union cards (Activist and Agbero), choices of several players, then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

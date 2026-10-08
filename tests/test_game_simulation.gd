@@ -65,28 +65,29 @@ func _init() -> void:
 	# A Doctor at the table: doses, guesses, sabotage and cures, with every rule checked after every move.
 	var dose_types: Array = []
 	for seed_value in range(1, 9):
-		var run := play(5, 300 + seed_value, 6, 0, 0, 3)
+		var run := play(5, 300 + seed_value, 6, 0, 0, 3, 0, 4)
 		dose_types.append_array(run["types"])
 		expect("Doctor game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
 		expect("Doctor game %d: no rule was ever broken" % seed_value, run["problems"], [])
+	expect("the Secret Agent checked in the Doctor games (%d reports)" % dose_types.count("agent_report"), dose_types.has("agent_report"), true)
 	for kind in ["dose_offered", "dose_accepted", "dose_rejected", "dose_expired", "sabotage_guessed", "dose_given", "sickened", "sickness_lengthened", "sickness_shortened", "recovered", "licence_lost", "dose_void"]:
 		expect("the Doctor games produced a '%s' event (%d times)" % [kind, dose_types.count(kind)], dose_types.has(kind) or kind in ["dose_void"], true)
-	var doc_straight := play(5, 303, 6, 0, 0, 3)
-	var doc_restarted := play(5, 303, 6, 0, 5, 3)
+	var doc_straight := play(5, 303, 6, 0, 0, 3, 0, 4)
+	var doc_restarted := play(5, 303, 6, 0, 5, 3, 0, 4)
 	expect("a server restarting from its save every 5 moves, mid-dose or not, gives the same Doctor game", [doc_restarted["problems"], doc_restarted["final"] == doc_straight["final"]], [[], true])
 
 	# A Lawyer at the table: wills proposed, signed, charged upkeep, put on hold and reactivated.
 	var will_types: Array = []
 	for seed_value in range(1, 9):
-		var run := play(5, 400 + seed_value, 7, 3, 0, 0, 2)
+		var run := play(5, 400 + seed_value, 7, 3, 0, 0, 2, 4)
 		will_types.append_array(run["types"])
 		expect("Lawyer game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
 		expect("Lawyer game %d: no rule was ever broken" % seed_value, run["problems"], [])
 	for kind in ["will_proposed", "will_signed", "will_terms", "will_refused", "will_expired", "will_upkeep_paid", "will_on_hold"]:
 		expect("the Lawyer games produced a '%s' event (%d times)" % [kind, will_types.count(kind)], will_types.has(kind), true)
 	expect("... and wills reached their end: read out or void (%d read, %d void)" % [will_types.count("will_read"), will_types.count("will_void")], will_types.has("will_read") or will_types.has("will_void"), true)
-	var will_straight := play(5, 403, 7, 3, 0, 0, 2)
-	var will_restarted := play(5, 403, 7, 3, 6, 0, 2)
+	var will_straight := play(5, 403, 7, 3, 0, 0, 2, 4)
+	var will_restarted := play(5, 403, 7, 3, 6, 0, 2, 4)
 	expect("a server restarting from its save every 6 moves, with wills waiting or not, gives the same game", [will_restarted["problems"], will_restarted["final"] == will_straight["final"]], [[], true])
 
 	# Everything that can happen did happen somewhere.
@@ -130,7 +131,7 @@ func _init() -> void:
 
 # Plays until `terms` terms have been completed. If `poor` is a player id, that player starts
 # with only 30 PSD (and names player 4 as their heir) and so drifts into debt.
-func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0) -> Dictionary:
+func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0, agent: int = 0) -> Dictionary:
 	var ids: Array = range(1, player_count + 1)
 	var s := GameScript.new_game(ids, seed_value)
 	if poor != 0:
@@ -139,6 +140,8 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		s.wills[poor] = {"psd_heir": 4, "on_hold": false}
 	if doctor != 0:
 		RolesScript.grant(s, doctor, "Doctor")   # a Doctor from the start, so doses are given all game
+	if agent != 0:
+		RolesScript.grant(s, agent, "Secret Agent")   # a Secret Agent, who checks cards, wills and beads
 	if lawyer != 0:
 		RolesScript.grant(s, lawyer, "Lawyer")   # and a Lawyer, so wills are written all game
 		if seed_value % 2 == 0:
@@ -207,6 +210,9 @@ func next_move(s: GameStateScript) -> Dictionary:
 	var will := lawyer_move(s)
 	if not will.is_empty():
 		return will
+	var check := agent_move(s)
+	if not check.is_empty():
+		return check
 	if not s.amend.is_empty():
 		return amendment_move(s)
 	match s.term.get("phase", NONE):
@@ -229,9 +235,10 @@ func doctor_move(s: GameStateScript) -> Dictionary:
 	if not s.dose.is_empty():
 		var dose: Dictionary = s.dose
 		if dose["phase"] == GameStateScript.DosePhase.OFFERED:
-			if (dose["patient"] + s.turns_played) % 3 == 0:
+			var offer_number: int = count_events(s, "dose_offered")
+			if offer_number % 7 == 3:
 				return {"tick": int(dose["deadline"])}   # the patient never answers
-			return {"player": dose["patient"], "command": {"type": "dose_respond", "accept": (dose["patient"] + s.turns_played + s.current_round) % 4 != 0}}
+			return {"player": dose["patient"], "command": {"type": "dose_respond", "accept": offer_number % 4 != 0}}
 		if dose["guesser"] == 0 and (s.turns_played + dose["patient"]) % 2 == 0:
 			for id in s.player_ids:
 				if id != dose["doctor"] and not s.eliminated.get(id, false):
@@ -254,6 +261,28 @@ func doctor_move(s: GameStateScript) -> Dictionary:
 	return {}
 
 
+# The Secret Agent (if there is one) uses their one check a round: the bead if a heal is under way, else on their
+# own turn a will if there is one to read, else a role card somebody holds.
+func agent_move(s: GameStateScript) -> Dictionary:
+	if s.term.is_empty() or s.game_over:
+		return {}
+	for agent in RolesScript.holders(s, "Secret Agent"):
+		if s.agent_used.get(agent, false) or RolesScript.can_use_power(s, agent, "Secret Agent") != "":
+			continue
+		if not s.dose.is_empty() and s.dose["kind"] == "heal" and agent != s.dose["doctor"]:
+			return {"player": agent, "command": {"type": "agent_check", "kind": "bead"}}
+		var waiting: Array = s.term.get("waiting", [])
+		if s.term.get("phase", 0) != GameStateScript.TermPhase.TURNS or waiting.is_empty() or waiting[0] != agent:
+			continue
+		for testator in s.wills:
+			if not s.eliminated.get(testator, false):
+				return {"player": agent, "command": {"type": "agent_check", "kind": "will", "target": testator}}
+		for holder in s.roles:
+			if not s.eliminated.get(holder, false) and not s.roles[holder].is_empty():
+				return {"player": agent, "command": {"type": "agent_check", "kind": "coup", "target": holder, "role": s.roles[holder][0]}}
+	return {}
+
+
 # The Lawyer (if there is one) keeps wills: players propose, the Lawyer signs or lets the offer lapse, players
 # who missed their upkeep catch up when they can. Proposals are limited per term because a refused or lapsed
 # one costs nothing, and the script must not ask forever.
@@ -268,9 +297,10 @@ func lawyer_move(s: GameStateScript) -> Dictionary:
 	testators.sort()
 	for testator in testators:
 		if s.will_offers[testator]["lawyer"] == keeper:
-			if (testator + s.turns_played) % 5 == 0:
+			var proposal_number: int = count_events(s, "will_proposed")
+			if proposal_number % 5 == 2:
 				return {"tick": int(s.will_offers[testator]["deadline"])}   # the Lawyer never answers
-			return {"player": keeper, "command": {"type": "will_respond", "testator": testator, "accept": (testator + s.current_round) % 3 != 0}}
+			return {"player": keeper, "command": {"type": "will_respond", "testator": testator, "accept": proposal_number % 3 != 0}}
 	for id in s.player_ids:
 		if id == keeper or s.eliminated.get(id, false):
 			continue
@@ -306,6 +336,14 @@ func proposals_this_term(s: GameStateScript) -> int:
 		if kind == "term_started":
 			break
 		if kind == "will_proposed":
+			n += 1
+	return n
+
+
+func count_events(s: GameStateScript, type: String) -> int:
+	var n: int = 0
+	for event in s.event_log:
+		if event["type"] == type:
 			n += 1
 	return n
 
@@ -427,6 +465,21 @@ func check_rules(s: GameStateScript, step: int) -> void:
 			problems.append(where + "player %d has a malformed will" % id)
 		if will.get("on_hold", false) != (int(will.get("arrears", 0)) > 0) and will.has("lawyer"):
 			problems.append(where + "player %d's will: on hold and arrears disagree" % id)
+	if not s.role_cards.is_empty():
+		var stickers: int = 0
+		for card in s.role_cards:
+			stickers += 1 if s.role_cards[card]["sticker"] else 0
+			var holder: int = s.role_cards[card]["holder"]
+			if holder != 0 and not RolesScript.has(s, holder, s.role_cards[card]["role"]):
+				problems.append(where + "card %d (%s) is held by %d, who doesn't hold that role" % [card, s.role_cards[card]["role"], holder])
+			if holder != 0 and s.eliminated.get(holder, false):
+				problems.append(where + "an eliminated player %d holds card %d" % [holder, card])
+		if stickers != 10:
+			problems.append(where + "there are %d coup stickers, not 10" % stickers)
+		for id in s.roles:
+			for role in s.roles[id]:
+				if RolesScript.card_of(s, id, role) == -1:
+					problems.append(where + "player %d holds %s but no card says so" % [id, role])
 	for role in RolesScript.names():
 		if RolesScript.holders(s, role).size() > RolesScript.copies():
 			problems.append(where + "more than %d %s cards are held" % [RolesScript.copies(), role])
