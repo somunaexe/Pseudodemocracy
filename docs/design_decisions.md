@@ -245,7 +245,20 @@ A term: **Inauguration** (the Leader may amend, or `pass_window`) then the **lev
 | How does the game end? | The server sends `finish_game`. A running term counts as a full round, and the winners are worked out. The game is then closed. | **Built** |
 | Is every event in the log exactly once? | Yes: an event is logged by the module that creates it, and a test compares what the commands returned with the log. | **Built** |
 
-Not built yet, and the next steps: what a turn contains (Performance cards), income and tax, the Leader setting the levy within its band (Article 4) and the Levy Band Shift at the end of a term (Article 5, which also needs its numbers bound as rules), coups.
+### The levy band (built: scripts/levy_band.gd, law.gd; 43 checks)
+
+| Question | Decision | Status |
+|---|---|---|
+| How does the Leader set the levy (Article 4)? | By amending Article 3, like any other rule. There is no separate command. | Confirmed |
+| What if the new levy is outside the band? | A failed check (Article 3: "the levy must stay within the levy band"): the fine, the popularity loss and the used window all apply. | Confirmed |
+| Where is the band kept? | In `state.levy_band` (low, high), starting at 25 to 50 and public. The numbers printed in Article 4 are the starting band; the UI must show the live one. | **Built** |
+| When does the band shift (Article 5)? | When a term ends, after the Farewell. A term cut short by the Leader's elimination has no shift. | Confirmed |
+| Whose popularity? | The sitting Leader's effective popularity (Nepo debuff included). Below minus X raises the band by 10; above plus X lowers it by 10. Exactly X does nothing. | Confirmed |
+| What moves? | Both ends together. The low end never drops below 25; if the floor stops it, the high end moves by the same smaller amount, so the band keeps its width. At the floor with nothing to move, there is no event. | Confirmed |
+| What happens to the levy? | If it is outside the new band, the game rewrites Article 3's word to the closest value inside it. | **Built** |
+| What can Leaders amend in Article 5? | The two X numbers (`levyRaiseBelow`, `levyLowerAbove`, both 20) are bound rules, so an amended number is obeyed. The shift (10), the floor (25), the minus and plus signs and the verbs are not bound; the table enforces them. | Assumed |
+
+Not built yet, and the next steps: what a turn contains (Performance cards), income and tax, coups.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

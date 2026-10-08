@@ -9,7 +9,7 @@ class_name TermLoop
 #      |          the Mid-term amendment opens once half have played (see Permissions)
 #   FAREWELL      the Leader may amend one article, or pass
 #      |
-#   the term ends: the Leader is credited, and Election.begin("term_ended") starts the next election
+#   the term ends: the levy band may shift (LevyBand), the Leader is credited, and Election.begin("term_ended") starts the next election
 #
 # Nothing here waits on a timer. Every step that needs no decision from a player happens by
 # itself in settle(), which looks at the state and advances as far as it can, so it is safe to
@@ -20,8 +20,7 @@ class_name TermLoop
 # A Leader who can't amend (a Commander, or sick, or CANCELLED) has both windows skipped.
 # Sick players still take their turn. Eliminated players are skipped.
 #
-# Not built yet: what a turn contains (Performance cards), income and tax, the Leader setting the
-# levy within its band, the Levy Band Shift at the end of a term, coups.
+# Not built yet: what a turn contains (Performance cards), income and tax, coups.
 #
 # Every event this file creates is logged here, once. Events from the modules it calls are
 # logged by those modules.
@@ -31,6 +30,7 @@ const LawScript = preload("res://scripts/law.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const ElectionScript = preload("res://scripts/election.gd")
+const LevyBandScript = preload("res://scripts/levy_band.gd")
 const TurnEndScript = preload("res://scripts/turn_end.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
@@ -188,6 +188,7 @@ static func _advance_turns(state: GameStateScript) -> Array:
 static func _end_term(state: GameStateScript) -> Array:
 	var events: Array = [_log(state, "term_ended", {"leader": state.leader_id, "round": state.current_round})]
 	state.term = {}
+	events.append_array(LevyBandScript.shift_at_term_end(state))   # logs its own event
 	events.append_array(ElectionScript.begin(state, "term_ended"))   # credits the Leader; logs its own events
 	return events
 

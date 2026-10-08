@@ -626,6 +626,28 @@
        "amendable": false,
        "glue": false
       }
+     ],
+     "bindings": [
+      {
+       "name": "levyRaiseBelow",
+       "slot": 4,
+       "type": "int",
+       "label": "the popularity a Leader must be below (as a minus number) to raise the levy band",
+       "expect": 20,
+       "source": "levy.trigger",
+       "min": 0,
+       "max": 50
+      },
+      {
+       "name": "levyLowerAbove",
+       "slot": 11,
+       "type": "int",
+       "label": "the popularity a Leader must be above to lower the levy band",
+       "expect": 20,
+       "source": "levy.trigger",
+       "min": 0,
+       "max": 50
+      }
      ]
     },
     {

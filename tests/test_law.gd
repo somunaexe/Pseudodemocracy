@@ -19,7 +19,7 @@ func _init() -> void:
 func starting_law_matches_the_data() -> void:
 	var s := fresh()
 	var bindings: Dictionary = ConstitutionScript.bindings()
-	expect("13 rules are enforced", bindings.size(), 13)
+	expect("15 rules are enforced", bindings.size(), 15)
 	for rule in bindings:
 		var binding: Dictionary = bindings[rule]
 		var value: int = LawScript.get_int(s, rule)

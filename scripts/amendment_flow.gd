@@ -89,6 +89,8 @@ static func _propose(state: GameStateScript, player_id: int, command: Dictionary
 		# A word the game can't apply as a rule is a failed check like any other: the Leader
 		# chose to write it, so the fine, the popularity loss and the used window all apply.
 		structural = LawScript.check_new_wording(article_id, old_words, cleaned)
+	if structural.is_empty():
+		structural = LawScript.check_levy_band(state, article_id, old_words, cleaned)
 
 	# Accepted. From here the attempt uses up the window whatever happens next.
 	state.windows_used[window] = true

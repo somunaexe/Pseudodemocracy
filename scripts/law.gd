@@ -31,6 +31,20 @@ static func get_int(state: GameStateScript, rule: String) -> int:
 	return int(parsed.get("value", 0))
 
 
+# The game itself rewrites a rule's word (for example, moving the levy into the band). Only for
+# whole-number rules; the Constitution then reads exactly as if the Leader had written it.
+static func set_int(state: GameStateScript, rule: String, value: int) -> void:
+	var binding: Dictionary = ConstitutionScript.bindings()[rule]
+	assert(binding["type"] == "int", "set_int only writes whole-number rules")
+	var seen: int = 0
+	for word in state.articles[binding["article_id"]]:
+		if word["amendable"]:
+			if seen == int(binding["slot"]):
+				word["text"] = str(value)
+				return
+			seen += 1
+
+
 # The text of the n-th highlighted word (0 = the first) of an article's words.
 static func word_in_slot(words: Array, slot: int) -> String:
 	var seen: int = 0
@@ -76,6 +90,24 @@ static func check_new_wording(article_id: int, old_words: Array, new_texts: Arra
 		var parsed: Dictionary = parse(binding, new_texts[index_of_slot[int(binding["slot"])]])
 		if not parsed["ok"]:
 			return parsed["problem"]
+	return ""
+
+
+# Article 3: the levy must stay within the levy band. "" if the proposed wording keeps it there.
+# Called after check_new_wording, so the levy word is known to be readable.
+static func check_levy_band(state: GameStateScript, article_id: int, old_words: Array, new_texts: Array) -> String:
+	var binding: Dictionary = ConstitutionScript.bindings()["levy"]
+	if binding["article_id"] != article_id:
+		return ""
+	var index_of_slot: Array = []
+	for i in old_words.size():
+		if old_words[i]["amendable"]:
+			index_of_slot.append(i)
+	var levy: int = int(new_texts[index_of_slot[int(binding["slot"])]])
+	var low: int = state.levy_band["low"]
+	var high: int = state.levy_band["high"]
+	if levy < low or levy > high:
+		return "The levy must stay within the levy band, %d to %d PSD." % [low, high]
 	return ""
 
 

@@ -61,3 +61,7 @@ var game_over: bool = false
 # except after a coup, when the new Leader goes first (see TermLoop).
 var last_turn_player: int = 0       # the player who took the most recent turn; 0 before any turn
 var leader_goes_first: bool = false # set by a coup, used up by the next term's turn order
+
+# The levy band (Articles 4 and 5): the lowest and highest levy the Constitution allows. It moves
+# at the end of a term (see LevyBand). The levy itself is a word of Article 3.
+var levy_band: Dictionary = {"low": 0, "high": 0}

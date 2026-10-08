@@ -51,6 +51,7 @@ static func new_game(player_ids: Array, seed_value: int = 0) -> GameStateScript:
 		state.sick[id] = false
 	state.treasury = GameDataScript.get_int("boxTotal") - start * player_ids.size()
 	state.articles = ConstitutionScript.initial_articles()
+	state.levy_band = {"low": GameDataScript.get_nested_int("levy", "bandLow"), "high": GameDataScript.get_nested_int("levy", "bandHigh")}
 	if seed_value == 0:
 		RngScript.seed_from_clock(state)
 	else:
