@@ -51,7 +51,7 @@ const MAX_STEPS := 50
 const ALLOWED_COMMANDS = {
 	GameStateScript.TermPhase.NONE: [],
 	GameStateScript.TermPhase.INAUGURATION: ["pass_window"],
-	GameStateScript.TermPhase.TURNS: ["end_turn", "finish_performance", "performance_vote"],
+	GameStateScript.TermPhase.TURNS: ["end_turn", "finish_performance", "performance_vote", "debate_challenge", "debate_finish", "debate_vote"],
 	GameStateScript.TermPhase.FAREWELL: ["pass_window"],
 }
 
@@ -68,7 +68,7 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 			return _pass_window(state, player_id, phase)
 		"end_turn":
 			return _end_turn(state, player_id)
-		"finish_performance", "performance_vote":
+		"finish_performance", "performance_vote", "debate_challenge", "debate_finish", "debate_vote":
 			return PerformanceTurnScript.handle(state, player_id, command)
 	return [_reject(player_id, "Unknown command.")]
 

@@ -59,6 +59,8 @@ const V = {
   doseOfferSeconds: 30,           // (digital version) a patient has this long to accept or reject a dose; silence is a rejection
   doseGuessSeconds: 10,           // (digital version) after a cure is accepted, anyone may guess Sabotage for this long
   commandVoteMultiplier: 2,      // in a Command Performance the commanding union's or mob's total popularity vote is doubled (Article 16)
+  debateSeconds: 30,             // each side of a debate (a Performance card)
+  debateTopicMax: 140,           // longest topic a debate challenge may name
   amendCosignSeconds: 30,        // (digital version) the Leader or the Vice has this long to agree to the other's proposal to amend; silence is a refusal
   agentOfferSeconds: 30,         // (digital version) a Secret Agent has this long to accept a hire; silence is a refusal
   agentPriceMax: 5000,           // (digital version) the most a Secret Agent may charge for a check

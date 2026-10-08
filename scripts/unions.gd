@@ -39,6 +39,8 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const LawScript = preload("res://scripts/law.gd")
 const RolesScript = preload("res://scripts/roles.gd")
+const RivalsScript = preload("res://scripts/rivals.gd")
+const RngScript = preload("res://scripts/rng.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 const TYPES := {"activist": GameStateScript.UnionType.ACTIVIST, "agbero": GameStateScript.UnionType.AGBERO}
@@ -178,10 +180,45 @@ static func _recruit(state: GameStateScript, owner: int, command: Dictionary) ->
 	var problem: String = _problem_recruiting(state, target, state.unions[union_id])
 	if problem != "":
 		return [_reject(owner, problem)]
+	return [_log(state, "union_invited", _send_invite(state, union_id, owner, target))]
+
+
+# The invitation itself: the player has unionInviteSeconds to answer. Returns the data of the event.
+static func _send_invite(state: GameStateScript, union_id: int, owner: int, target: int) -> Dictionary:
 	var seconds: int = GameDataScript.get_int("unionInviteSeconds")
 	var ends_at: int = state.clock_ms + seconds * 1000
 	state.union_invites[target] = {"union_id": union_id, "deadline": ends_at}
-	return [_log(state, "union_invited", {"union_id": union_id, "unionizer": owner, "target": target, "seconds": seconds, "ends_at_ms": ends_at})]
+	return {"union_id": union_id, "unionizer": owner, "target": target, "seconds": seconds, "ends_at_ms": ends_at}
+
+
+# "A rival union wants your backing" (a Performance card): the Unionizer or Capon of a union that is not the player's pitches
+# them for unionInviteSeconds (30) and they decide, by answering the invitation (union_respond). The union is one led by one
+# of the player's rivals if there is one, otherwise any other union (chosen at random). Nothing happens, and it is said, if
+# there is no such union or the player can't join one (the Leader and the Vice can't, nor can a member of a union).
+# Returns the events (not yet logged).
+static func pitch(state: GameStateScript, target: int) -> Array:
+	var mine: int = union_of(state, target)
+	var rival_unions: Array = []
+	var other_unions: Array = []
+	var ids: Array = state.unions.keys()
+	ids.sort()
+	for union_id in ids:
+		var union: Dictionary = state.unions[union_id]
+		if union_id == mine or state.eliminated.get(union["owner"], false):
+			continue
+		other_unions.append(union_id)
+		if RivalsScript.is_rival(state, target, union["owner"]):
+			rival_unions.append(union_id)
+	var pool: Array = rival_unions if not rival_unions.is_empty() else other_unions
+	if pool.is_empty():
+		return [EventsScript.make("union_pitch_unavailable", {"player": target, "reason": "there is no other union or mob"})]
+	var picked: int = RngScript.pick(state, pool)
+	var problem: String = _problem_recruiting(state, target, state.unions[picked])
+	if mine != -1:
+		problem = "they are already in a union or mob"
+	if problem != "":
+		return [EventsScript.make("union_pitch_unavailable", {"player": target, "reason": problem})]
+	return [EventsScript.make("union_pitched", _send_invite(state, picked, state.unions[picked]["owner"], target))]
 
 
 # Why this player can't be recruited, or "" (Article 8).

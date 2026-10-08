@@ -53,7 +53,7 @@ const CARD_COMMANDS := ["choose", "play_card"]
 const AGENT_COMMANDS := ["agent_check", "agent_hire", "agent_respond"]
 const WILL_COMMANDS := ["will_propose", "will_respond", "will_catch_up", "will_revoke"]
 const DOSE_COMMANDS := ["dose_offer", "dose_respond", "dose_guess"]
-const TERM_COMMANDS := ["pass_window", "end_turn", "finish_performance", "performance_vote"]
+const TERM_COMMANDS := ["pass_window", "end_turn", "finish_performance", "performance_vote", "debate_challenge", "debate_finish", "debate_vote"]
 
 
 # A new game for 3 to 10 players with ids 1, 2, 3, ... in seat order. Everyone starts with the

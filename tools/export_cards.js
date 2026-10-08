@@ -7,7 +7,7 @@ const cards = require('../data/source/cards.js');
 const { V } = require('../data/source/game_data.js');
 
 const DECKS = ['performance', 'settlement', 'scandal'];
-const out = { performance: cards.performance, settlement: cards.settlement, scandal: cards.scandal, effects: { settlement: {}, scandal: {} } };
+const out = { performance: cards.performance, settlement: cards.settlement, scandal: cards.scandal, effects: { settlement: {}, scandal: {}, performance: {} } };
 for (const name of DECKS) {
   const list = out[name];
   if (!list.length || list.some((c) => typeof c !== 'string' || !c.trim())) throw new Error(`The ${name} deck has an empty card`);
@@ -115,6 +115,14 @@ function validate(deck, prefix, text, effect) {
 
 // Find each card by the start of its text and keep its number (position in the deck).
 let counted = 0;
+for (const [prefix, effect] of cards.effects.performance) {
+  const found = out.performance.map((t, i) => (t.startsWith(prefix) ? i : -1)).filter((i) => i >= 0);
+  if (found.length !== 1) fail('performance', prefix, `matches ${found.length} cards, expected exactly 1`);
+  for (const [key, value] of Object.entries(effect)) if (!['pitch', 'debate'].includes(key) || value !== true) fail('performance', prefix, `unknown or bad effect "${key}"`);
+  if (found[0] in out.effects.performance) fail('performance', prefix, 'this card is listed twice');
+  out.effects.performance[found[0]] = effect;
+  counted++;
+}
 for (const deck of ['settlement', 'scandal']) {
   for (const [prefix, effect] of cards.effects[deck]) {
     const found = out[deck].map((t, i) => (t.startsWith(prefix) ? i : -1)).filter((i) => i >= 0);

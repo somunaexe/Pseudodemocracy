@@ -8,7 +8,7 @@ const GameScript = preload("res://scripts/game.gd")
 
 
 static func take_turn(s, player_id: int) -> Array:
-	for i in 2:
+	for i in 8:   # a debate card takes more steps than a plain performance
 		var act: Dictionary = s.term.get("act", {})
 		if act.is_empty() or act["phase"] == s.ActPhase.DONE:
 			break
@@ -19,7 +19,7 @@ static func take_turn(s, player_id: int) -> Array:
 # The same, but returns every event of the whole turn: the ones the clock produced and the end of the turn.
 static func take_turn_all(s, player_id: int) -> Array:
 	var events: Array = []
-	for i in 2:
+	for i in 8:   # a debate card takes more steps than a plain performance
 		var act: Dictionary = s.term.get("act", {})
 		if act.is_empty() or act["phase"] == s.ActPhase.DONE:
 			break

@@ -483,6 +483,17 @@
      ]
     }
    }
+  },
+  "performance": {
+   "10": {
+    "pitch": true
+   },
+   "15": {
+    "debate": true
+   },
+   "37": {
+    "debate": true
+   }
   }
  }
 }

@@ -268,6 +268,14 @@ const effects = {
     ["You're sickened by an unknown source", { sick: 1 }],
     ["You can't attempt a coup", { no_coup: 1 }],
   ],
+  // Performance cards that change how the turn is played:
+  //   pitch   a rival union's Unionizer pitches the performer, who may join it (the performer decides)
+  //   debate  the performer challenges a rival to a debate that the table judges
+  performance: [
+    ['A rival union wants your backing', { pitch: true }],
+    ['Debate a rival', { debate: true }],
+    ['Choose a rival \u2014 publicly challenge them', { debate: true }],
+  ],
 };
 
 module.exports = {

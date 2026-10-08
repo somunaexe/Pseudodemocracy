@@ -484,7 +484,7 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | Does an eliminated player's marker go back? | Yes. | Assumed |
 | The embezzlement card: who decides? | The Leader chooses (stay quiet, split, expose), with `choiceSeconds` to answer, else the server picks at random. The embezzler's turn can't end until it is done. Splitting: the Leader takes half of the 200 from the embezzler (debt if short). Exposing: the embezzler keeps the money and gets a marker. If the embezzler is the Leader, or the seat is empty, nobody chooses. | Assumed |
 | "Collect 70 PSD from you as compensation". | The drawer pays the chosen player 70 (debt if short), the chosen player gets a marker, the drawer none. | Assumed |
-| "Snitch and split the punishment" (the embezzlement traced card). | Not built: it needs a second choice by a second player. The table plays it as before. | Known gap |
+| "Snitch and split the punishment" (the embezzlement traced card). | See Card families below. | **Built** |
 
 ## Rivals (built: scripts/rivals.gd)
 
@@ -497,8 +497,7 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | Peace Accord. | For 3 rounds, if either of you is successfully couped (overthrown as Leader), the other loses 10 popularity. A failed coup costs nothing. The round the Accord was made in does not count. | **Built** |
 | Lose the next Result card draw. | The chosen player's next Settlement or Scandal card is not drawn (they still perform and the popularity still moves). A tie draws no card, so the penalty waits. | **Built** |
 | Mob caught on camera. | The drawer's union or mob disperses (whoever is in it, not just the leader) and the other members become the drawer's rivals. | **Built** |
-| A rival may check your coup card, Doctor bead or role draw for free. | Not built: it needs a Secret-Agent-style peek for a rival. The table plays it as before. | Known gap |
-| Debate a rival, choose a rival to challenge (Performance cards). | The table plays them. | Known gap |
+| A rival may check your coup card, Doctor bead or role draw for free; debate a rival; a rival union's pitch. | See Card families below. | **Built** |
 
 ## Loyalists (built: scripts/loyalists.gd)
 
@@ -538,6 +537,18 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | The Leader is couped. | The Vice stays Vice in the new term, unless the new Leader draws a Dictator card (then there is no Vice), or the Vice is the one who couped (then they are Leader). | Confirmed |
 | The Vice is eliminated. | There is no Vice; a proposal waiting for them is dropped. | Assumed |
 | Can a Vice coup? | Yes, as any player who isn't the Leader. | Assumed |
+
+## Card families (built: card_effects.gd, peeks.gd, performance.gd, unions.gd)
+
+| Card | How it plays | Status |
+|---|---|---|
+| Embezzlement traced (Scandal) | The drawer chooses: take it alone (return 200, -20 popularity, one marker) or snitch and split, which asks a second question, whom (any other player). Then both return 100, lose 10 popularity and get a marker. The partner has no say. Slow answers are made at random by the server, both questions. | Assumed: no consent from the partner |
+| A rival now has your number (Scandal) | The drawer chooses a player, who gets one free check of the drawer until the round ends: the coup-card status or, while the drawer is handing over a cure, the bead. Using it is private; the drawer is not told. | **Built** |
+| "Role draw" in that card | Read as the same thing as coup-card status: roles are public, so the only secret about a role card is its sticker. | **To confirm** |
+| A rival gets to check your coup-card status (Scandal) | One player linked to the drawer by a rivalry (either has named the other), chosen at random, gets one free check of the drawer, with no time limit but use. Nothing happens, and it is said, if the drawer has no rival. | Assumed |
+| A Secret Agent owes you a favor (Settlement) | If another player holds the Secret Agent role, the drawer chooses a player with a role and is shown whether each of their role cards has a coup sticker (private). It uses nobody's once-a-round check. No Agent, no favor. | Assumed |
+| Debate a rival / Choose a rival and challenge them (Performance) | The performance becomes a debate. The performer challenges one of their rivals (anyone if they have none) with a topic. They speak 30 seconds each (either can end early), then everyone else votes for the winner (Loyalists vote with their owner). The winner moves +swing and the loser -swing, both. The performer draws a Settlement card if they win and a Scandal if they lose; a tie draws nothing; the rival draws nothing. A performer who doesn't challenge in time is given a rival at random. The rival can't refuse. | Assumed |
+| A rival union wants your backing (Performance) | A union or mob led by one of the performer's rivals (otherwise another union) pitches the performer through a 30-second invitation they answer with `union_respond`; silence is a refusal. The performance goes on as usual. Nothing happens, and it is said, if there is no such union or the performer can't join (the Leader, the Vice, a union member). | Assumed |
 
 ## Roles (skeleton built: scripts/roles.gd)
 

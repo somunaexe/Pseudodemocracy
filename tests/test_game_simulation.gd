@@ -14,6 +14,7 @@ const UnionsScript = preload("res://scripts/unions.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
+const RivalsScript = preload("res://scripts/rivals.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const ScoringScript = preload("res://scripts/scoring.gd")
@@ -109,7 +110,7 @@ func _init() -> void:
 		expect("union game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
 		expect("union game %d: no rule was ever broken" % seed_value, run["problems"], [])
 	for kind in ["union_founded", "union_invited", "union_joined", "union_invitation_refused", "union_invitation_expired", "union_left", "union_dispersed",
-			"command_started", "command_performance_started", "command_voting_opened", "command_vote_cast", "command_performance_resolved"]:
+			"command_started", "command_performance_started", "command_voting_opened", "command_vote_cast", "command_performance_resolved", "union_pitched"]:
 		expect("the union games produced a '%s' event (%d times)" % [kind, union_types.count(kind)], union_types.has(kind), true)
 	var union_straight := play(5, 503, 7, 0, 0, 0, 0, 0, true)
 	var union_restarted := play(5, 503, 7, 0, 5, 0, 0, 0, true)
@@ -154,7 +155,7 @@ func _init() -> void:
 		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
 
 	# Choices come up too (only some cards ask for one, so across all the ordinary games).
-	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed", "amendment_offered"]:
+	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed", "amendment_offered", "debate_started", "debate_turn", "debate_vote_cast", "union_pitch_unavailable"]:
 		expect("the twelve ordinary games produced a '%s' event (%d times)" % [kind, all_types.count(kind)], all_types.has(kind), true)
 
 	# The same seed always plays out the same way, to the last byte.
@@ -207,6 +208,7 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 				RolesScript.remove(s, challenger, role)
 			PopularityScript.change_base(s, challenger, 35 if challenger == 4 else 28)
 	if unions:
+		s.decks["performance"] = [10, 10, 10, 10, 10, 10]   # "A rival union wants your backing" comes up often, with unions about
 		# Union cards in hand (played as soon as possible) and two Agberos, so mobs form, recruit, shrink,
 		# disperse and re-form inside whole games.
 		s.hands[3] = [{"deck": "settlement", "card": 8}]
@@ -214,6 +216,8 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		s.hands[5] = [{"deck": "settlement", "card": 9}]
 		RolesScript.grant(s, 3, "Agbero")
 		RolesScript.grant(s, 4, "Agbero")
+	if seed_value <= 12 and seed_value % 4 == 1:
+		s.decks["performance"] = [37, 15, 10]   # a debate, another, then a rival union's pitch: they are the first cards drawn
 	if seed_value <= 12 and seed_value % 3 == 0:
 		s.decks["settlement"] = [11]   # the keys to the city are the first Settlement card drawn, so the Vice appears
 	if seed_value >= 300 and seed_value < 500 and seed_value % 2 == 1:
@@ -705,6 +709,8 @@ func offers_this_term(s: GameStateScript) -> int:
 func performance_move(s: GameStateScript) -> Dictionary:
 	var act: Dictionary = s.term["act"]
 	var performer: int = act["player"]
+	if act.has("debate"):
+		return debate_move(s, act)
 	match act["phase"]:
 		GameStateScript.ActPhase.PERFORMING:
 			if act["card"] % 3 == 0:
@@ -719,6 +725,33 @@ func performance_move(s: GameStateScript) -> Dictionary:
 				return {"tick": int(act["deadline"])}   # the rest never voted
 			var voter: int = first_free(s, waiting)
 			return {"player": voter, "command": {"type": "performance_vote", "good": (voter * 7 + act["card"]) % 3 != 0}}
+	return {"player": performer, "command": {"type": "end_turn"}}
+
+
+# A debate card: the performer challenges (or lets the time run out), each side speaks or runs out the clock, the table
+# votes for the winner (some never vote).
+func debate_move(s: GameStateScript, act: Dictionary) -> Dictionary:
+	var performer: int = act["player"]
+	var debate: Dictionary = act["debate"]
+	if act["phase"] == GameStateScript.ActPhase.PERFORMING:
+		if debate["rival"] == 0:
+			if (performer + s.current_round) % 3 == 0:
+				return {"tick": int(act["deadline"])}
+			var candidates: Array = RivalsScript.candidates(s, performer)
+			return {"player": performer, "command": {"type": "debate_challenge", "rival": candidates[0], "topic": "the price of garri"}}
+		var speaker: int = performer if debate["side"] == 0 else debate["rival"]
+		if (speaker + s.turns_played) % 2 == 0:
+			return {"player": speaker, "command": {"type": "debate_finish"}}
+		return {"tick": int(act["deadline"])}
+	if act["phase"] == GameStateScript.ActPhase.VOTING:
+		var waiting: Array = []
+		for id in s.player_ids:
+			if id != performer and id != debate["rival"] and not s.eliminated.get(id, false) and not act["votes"].has(id):
+				waiting.append(id)
+		if waiting.is_empty() or (act["votes"].size() >= 1 and act["card"] % 2 == 0):
+			return {"tick": int(act["deadline"])}   # the rest never voted
+		var voter: int = first_free(s, waiting)
+		return {"player": voter, "command": {"type": "debate_vote", "winner": performer if (voter + act["card"]) % 3 != 0 else debate["rival"]}}
 	return {"player": performer, "command": {"type": "end_turn"}}
 
 
