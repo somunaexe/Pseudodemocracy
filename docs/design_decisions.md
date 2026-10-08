@@ -720,10 +720,20 @@ Checks: `tests/test_server_core.gd` (pretend connections) and `tools/smoke_serve
 
 | Question | Decision | Status |
 |---|---|---|
-| First platform | **Phones, held upright** (your call). Base screen 720x1280, portrait, stretch to fit; touch is the only input assumed; buttons and fields at least 96 px tall. Tablets, desktop and browser come from the same project later. | **Built** (settings) |
+| First platform | **Phones, held SIDEWAYS (landscape)** (your call). Base screen 1280x720, sensor-landscape, stretch to fit; touch is the only input assumed; buttons and fields at least 72 px tall. Tablets, desktop and browser come from the same project later. | **Built** (settings) |
 | Structure | `session_model.gd` (pure: what the server said, what to send; tested against the real server core), `connection.gd` (socket, saved seat, reconnect with back-off), `lobby_screen.gd` (drawn in code, reads the model, emits what the player asked), `main.gd` (joins them). | **Built** |
 | Reconnecting | The phone saves `{token, room code, server address}` in `user://session.json`. Reopening the app, or a dropped network, sends `resume` automatically; an unknown token returns the phone to the start screen (no retry loop). | **Built** |
 | Lobby screen | Server address, name (1 to 24), gender (optional), create a room or join with a 4-letter code; the waiting room shows the code large, who is in (and who is away), and Start for the host with 3 or more. Mistakes in the name or code are caught on the phone first. | **Built** |
 | Not yet | The table, turn, election, amendment, private panels, actions menu, event feed and end screens (items 12 to 18). Android/iOS export needs the export templates and signing keys, which are not set up. | Next |
 
 Checks: `tests/test_client_lobby.gd` (model, screen) and `tools/smoke_server.sh` (the real phone code against the real server, including a dropped connection).
+
+### The table (item 12, built: client/table_*.gd)
+
+| Question | Decision | Status |
+|---|---|---|
+| Layout | An oval table (your picture). You are always at the bottom middle; the others follow in seat order clockwise (to your left first), so every player sees the same order from their own place. Badges shrink as the table fills (3 to 5, 6 to 7, 8 to 10 players); checked for 3 to 10 players: all on screen, none overlapping. | **Built** |
+| A badge shows | Name (and "you"), popularity, PSD (and what they owe), and tags: Leader, Vice, sick, frozen, markers, union (Unionizer, Capon, mob member), roles, away, voted, out. Gold border = whose turn it is, blue = you. Never how anyone voted. | **Built** |
+| The middle | What is happening: the election step, the Inauguration, "X's turn", the Farewell, game over. Round, treasury and Leader are in the top bar. The middle will also hold the performance card and the vote (item 13). | **Built** (first part) |
+| Constitution | A button top right opens every article, its title and its current wording over the table. | **Built** |
+| Looked at | `tools/screenshot_table.gd` draws the real screen to a picture (needs a display: `xvfb-run`); see docs/screenshots/. Not yet tried on a phone. | **Built** |

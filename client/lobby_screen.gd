@@ -1,6 +1,6 @@
 # The first screens: where to connect, your name, create or join a room, and the waiting room.
-# Built in code (no scene file to keep in step) for a PHONE held upright: one column, big text, big buttons, nothing smaller
-# than a thumb. It only DRAWS the session model and emits what the player asked for; main.gd turns those into messages.
+# Built in code (no scene file to keep in step) for a PHONE held SIDEWAYS (1280 x 720): the form in two columns so it fits without
+# scrolling, big text, big buttons, nothing smaller than a thumb. It only DRAWS the session model and emits what the player asked for; main.gd turns those into messages.
 extends Control
 
 const SessionModelScript = preload("res://client/session_model.gd")
@@ -11,11 +11,11 @@ signal join_requested(room_code: String, name: String, gender: String)
 signal start_requested
 signal leave_requested
 
-const FONT_SIZE := 30
-const TITLE_SIZE := 52
-const CODE_SIZE := 96
-const TAP_HEIGHT := 96      # a finger needs about 9 mm: at a typical phone density this is a comfortable 96 px
-const MARGIN := 32
+const FONT_SIZE := 26
+const TITLE_SIZE := 44
+const CODE_SIZE := 80
+const TAP_HEIGHT := 72      # a finger needs about 9 mm: 72 px of a 720 px-high screen is about 10 mm on a 6-inch phone
+const MARGIN := 28
 
 var model = SessionModelScript.new()
 
@@ -28,7 +28,7 @@ var gender_menu: OptionButton
 var code_field: LineEdit
 var create_button: Button
 var join_button: Button
-var entry_box: VBoxContainer
+var entry_box: HBoxContainer
 var lobby_box: VBoxContainer
 var room_code_label: Label
 var members_box: VBoxContainer
@@ -57,7 +57,7 @@ func _build() -> void:
 	margin.add_child(scroll)
 	column = VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.add_theme_constant_override("separation", 20)
+	column.add_theme_constant_override("separation", 14)
 	scroll.add_child(column)
 
 	var title := Label.new()
@@ -72,40 +72,48 @@ func _build() -> void:
 	message_label.add_theme_color_override("font_color", Color(0.85, 0.2, 0.2))
 	column.add_child(message_label)
 
-	entry_box = VBoxContainer.new()
-	entry_box.add_theme_constant_override("separation", 20)
+	entry_box = HBoxContainer.new()
+	entry_box.add_theme_constant_override("separation", 40)
 	column.add_child(entry_box)
-	entry_box.add_child(_label("Server"))
+	var left := VBoxContainer.new()
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.add_theme_constant_override("separation", 10)
+	entry_box.add_child(left)
+	var right := VBoxContainer.new()
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right.add_theme_constant_override("separation", 10)
+	entry_box.add_child(right)
+	left.add_child(_label("Server"))
 	server_field = _field("ws://host:9080")
 	server_field.text_submitted.connect(func(text): connect_requested.emit(text))
-	entry_box.add_child(server_field)
+	left.add_child(server_field)
 	var connect_button := _button("Connect")
 	connect_button.pressed.connect(func(): connect_requested.emit(server_field.text))
-	entry_box.add_child(connect_button)
-	entry_box.add_child(_label("Your name"))
+	left.add_child(connect_button)
+	left.add_child(_label("Your name"))
 	name_field = _field("Name")
 	name_field.max_length = SessionModelScript.NAME_MAX
-	entry_box.add_child(name_field)
-	entry_box.add_child(_label("Gender (some cards ask)"))
+	left.add_child(name_field)
+	left.add_child(_label("Gender (some cards ask)"))
 	gender_menu = OptionButton.new()
 	gender_menu.custom_minimum_size.y = TAP_HEIGHT
 	for choice in SessionModelScript.gender_choices():
 		gender_menu.add_item(choice if choice != "" else "Prefer not to say")
-	entry_box.add_child(gender_menu)
+	left.add_child(gender_menu)
 	create_button = _button("Create a room")
 	create_button.pressed.connect(_on_create)
-	entry_box.add_child(create_button)
-	entry_box.add_child(_label("or join with a code"))
+	right.add_child(create_button)
+	right.add_child(_label("or join with a code"))
 	code_field = _field("ABCD")
 	code_field.max_length = SessionModelScript.CODE_LENGTH
 	code_field.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	entry_box.add_child(code_field)
+	right.add_child(code_field)
 	join_button = _button("Join the room")
 	join_button.pressed.connect(_on_join)
-	entry_box.add_child(join_button)
+	right.add_child(join_button)
 
 	lobby_box = VBoxContainer.new()
-	lobby_box.add_theme_constant_override("separation", 20)
+	lobby_box.add_theme_constant_override("separation", 10)
 	column.add_child(lobby_box)
 	lobby_box.add_child(_label("Room code, tell your friends:"))
 	room_code_label = Label.new()

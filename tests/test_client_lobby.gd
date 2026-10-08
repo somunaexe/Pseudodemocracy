@@ -123,7 +123,7 @@ func screen() -> void:
 	lobby.model.connected = true
 	lobby.refresh()
 	expect("connected: the buttons are on", [lobby.create_button.disabled, lobby.status_label.text], [false, "Connected"])
-	expect("every button is at least 96 px tall: easy to hit with a thumb", [lobby.create_button.custom_minimum_size.y >= 96, lobby.join_button.custom_minimum_size.y >= 96, lobby.start_button.custom_minimum_size.y >= 96], [true, true, true])
+	expect("every button is at least 72 px tall: easy to hit with a thumb", [lobby.create_button.custom_minimum_size.y >= 72, lobby.join_button.custom_minimum_size.y >= 72, lobby.start_button.custom_minimum_size.y >= 72], [true, true, true])
 	var asked: Array = []
 	lobby.create_requested.connect(func(name, gender): asked.append([name, gender]))
 	lobby.name_field.text = ""
