@@ -188,6 +188,17 @@ const effects = {
     ['You throw a lavish independence day party', { psd: -50, popularity: 10 }],
     ['Your cousin abroad wires funds', { psd: 80 }],
     ['You donate to charity live on camera', { psd: -30, popularity: 15 }],
+    // Cards that ask the drawer to choose. `choose` is { kind: 'option' | 'role' | 'player', ... }:
+    //   option  one of `options`, each its own effects (with a label shown to the player)
+    //   role    any role the drawer can be given;   player  any other player in the game
+    //   player with who: 'has_role'  only players holding a role card
+    // After the choice: gain_role gives the DRAWER a role ('$choice' = the role they chose),
+    // swap_with: '$choice' swaps all roles with the chosen player, target: {...} applies
+    // psd/popularity to the chosen player.
+    ['You gave a heartfelt speech nobody expected', { choose: { kind: 'option', options: [{ label: 'Gain 15 popularity', popularity: 15 }, { label: 'Gain 70 PSD', psd: 70 }] } }],
+    ['You have many talents', { choose: { kind: 'role' }, gain_role: '$choice' }],
+    ['Choose a player to publicly praise you', { choose: { kind: 'player' }, target: { popularity: 5 }, gain_role: 'Lawyer' }],
+    ['Choose a player with a role card', { choose: { kind: 'player', who: 'has_role' }, swap_with: '$choice', target: { popularity: -5 } }],
   ],
   scandal: [
     ['You overpaid for office supplies', { psd: -40 }],

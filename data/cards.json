@@ -166,8 +166,38 @@
    "21": {
     "popularity": 10
    },
+   "22": {
+    "choose": {
+     "kind": "option",
+     "options": [
+      {
+       "label": "Gain 15 popularity",
+       "popularity": 15
+      },
+      {
+       "label": "Gain 70 PSD",
+       "psd": 70
+      }
+     ]
+    }
+   },
+   "23": {
+    "choose": {
+     "kind": "role"
+    },
+    "gain_role": "$choice"
+   },
    "26": {
     "popularity": 5
+   },
+   "30": {
+    "choose": {
+     "kind": "player"
+    },
+    "target": {
+     "popularity": 5
+    },
+    "gain_role": "Lawyer"
    },
    "32": {
     "psd": 150,
@@ -175,6 +205,16 @@
    },
    "35": {
     "psd": 100
+   },
+   "36": {
+    "choose": {
+     "kind": "player",
+     "who": "has_role"
+    },
+    "swap_with": "$choice",
+    "target": {
+     "popularity": -5
+    }
    },
    "37": {
     "psd": -50,

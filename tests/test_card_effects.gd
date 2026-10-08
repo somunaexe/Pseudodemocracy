@@ -39,8 +39,8 @@ func every_listed_card() -> void:
 	for deck in ["settlement", "scandal"]:
 		for card in CardsScript.count(deck):
 			var effect: Dictionary = CardsScript.effects(deck, card)
-			if effect.is_empty():
-				continue
+			if effect.is_empty() or effect.has("choose"):
+				continue   # the cards that ask for a choice are tested in test_card_choices.gd
 			listed += 1
 			var s := new_game()
 			var total: int = total_money(s)
@@ -52,7 +52,7 @@ func every_listed_card() -> void:
 			expect(label + ": the player's cash moved by exactly the card's amount", s.psd[3] - cash, int(effect.get("psd", 0)))
 			expect(label + ": popularity moved by exactly the card's amount", PopularityScript.effective(s, 3) - pop, int(effect.get("popularity", 0)))
 			expect(label + ": one public event, logged once, not left to the table", [ev.size(), ev[0]["audience"], ev[0]["by_table"], s.event_log.back() == ev[0]], [1, [], false, true])
-	expect("22 cards are applied by the game", listed, 22)
+	expect("22 cards are applied by the game without asking anything", listed, 22)
 
 
 func collecting() -> void:

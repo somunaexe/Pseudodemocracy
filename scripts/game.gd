@@ -31,7 +31,7 @@ const SERVER_ID := 0
 
 const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
 const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
-const TERM_COMMANDS := ["pass_window", "end_turn", "finish_performance", "performance_vote"]
+const TERM_COMMANDS := ["pass_window", "end_turn", "finish_performance", "performance_vote", "choose"]
 
 
 # A new game for 3 to 10 players with ids 1, 2, 3, ... in seat order. Everyone starts with the

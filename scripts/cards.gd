@@ -38,15 +38,29 @@ static func text(deck: String, card: int) -> String:
 
 
 # What the game itself does when this card is drawn: {} (the table carries it out), or a dictionary
-# with "psd" (money to or from the treasury) and/or "popularity" (a change to the base). Performance
-# cards have none.
+# (see CardEffects): "psd" and "popularity" for the drawer, and for cards that ask for a choice
+# "choose", "gain_role", "swap_with" and "target". Performance cards have none.
 static func effects(deck: String, card: int) -> Dictionary:
 	assert(card >= 0 and card < count(deck), "There is no card %d in the %s deck" % [card, deck])
-	var effect: Dictionary = _load()["effects"].get(deck, {}).get(str(card), {})
-	var result: Dictionary = {}
-	for kind in effect:
-		result[kind] = int(effect[kind])   # JSON numbers load as floats
-	return result
+	return _whole(_load()["effects"].get(deck, {}).get(str(card), {}))
+
+
+# JSON numbers load as floats; the effects hold only whole numbers, so turn them back, however deep.
+static func _whole(value: Variant) -> Variant:
+	match typeof(value):
+		TYPE_FLOAT:
+			return int(value)
+		TYPE_ARRAY:
+			var list: Array = []
+			for item in value:
+				list.append(_whole(item))
+			return list
+		TYPE_DICTIONARY:
+			var map: Dictionary = {}
+			for key in value:
+				map[key] = _whole(value[key])
+			return map
+	return value
 
 
 # Draw the top card of a deck, reshuffling the whole deck first if the pile is empty.

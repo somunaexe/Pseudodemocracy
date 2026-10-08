@@ -8,6 +8,7 @@ const GameScript = preload("res://scripts/game.gd")
 const SerializerScript = preload("res://scripts/serializer.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
+const RolesScript = preload("res://scripts/roles.gd")
 const ScoringScript = preload("res://scripts/scoring.gd")
 
 const EXAM_WRITING = GameStateScript.ElectionPhase.EXAM_WRITING
@@ -26,8 +27,10 @@ var problems: Array = []
 
 func _init() -> void:
 	# Ordinary games of different sizes and seeds.
+	var all_types: Array = []
 	for seed_value in range(1, 13):
 		var run := play(5, seed_value, 6)
+		all_types.append_array(run["types"])
 		expect("seed %d: 6 terms of a 5-player game ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
 		expect("seed %d: no rule was ever broken" % seed_value, run["problems"], [])
 	for count in [3, 4, 7, 10]:
@@ -42,7 +45,7 @@ func _init() -> void:
 	var nepo_babies: int = 0
 	var leaders_lost: int = 0
 	var rescued: int = 0
-	for seed_value in range(1, 13):
+	for seed_value in range(1, 25):
 		var run := play(5, 200 + seed_value, 8, 3)
 		expect("poor game %d: ran to the end" % seed_value, run["finished"], true)
 		expect("poor game %d: no rule was ever broken" % seed_value, run["problems"], [])
@@ -53,7 +56,7 @@ func _init() -> void:
 		eliminations += 1 if run["eliminated"].has(3) else 0
 		nepo_babies += 1 if run["types"].has("nepo_baby") else 0
 		leaders_lost += 1 if run["types"].has("leader_vacant") else 0
-	expect("some poor players never led (%d of 12), so the test means something" % poor_runs, poor_runs >= 4, true)
+	expect("some poor players never led (%d of 24), so the test means something" % poor_runs, poor_runs >= 4, true)
 	expect("a poor player who never led or got a windfall was eliminated, every time (%d of %d)" % [eliminations, poor_runs], eliminations, poor_runs)
 	expect("... and their heir became a Nepo Baby each time", nepo_babies, poor_runs)
 
@@ -64,6 +67,10 @@ func _init() -> void:
 			"amendment_proposed", "amendment_resolved", "article_changed", "ballot_cast", "exam_answered",
 			"performance_started", "performance_voting_opened", "performance_vote_cast", "performance_resolved", "income_paid", "card_applied"]:
 		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
+
+	# Choices come up too (only some cards ask for one, so across all the ordinary games).
+	for kind in ["choice_needed", "choice_made", "role_gained"]:
+		expect("the twelve ordinary games produced a '%s' event" % kind, all_types.has(kind), true)
 
 	# The same seed always plays out the same way, to the last byte.
 	var a := play(5, 42, 5)
@@ -125,7 +132,7 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 			types_seen.append(event["type"])
 			if event["type"] == "leader_installed":
 				leaders.append(event["leader"])
-			if event["type"] == "card_applied" and event["player"] == poor and event.get("psd", 0) > 0:
+			if event["type"] in ["card_applied", "choice_made"] and event["player"] == poor and event.get("psd", 0) > 0:
 				windfalls += 1   # a Settlement card paid the poor player
 		check_rules(s, steps)
 		if s.event_log.size() < log_size:
@@ -189,6 +196,16 @@ func performance_move(s: GameStateScript) -> Dictionary:
 			if act["votes"].size() >= 2 and act["card"] % 2 == 0:
 				return {"tick": int(act["deadline"])}   # the rest never voted
 			return {"player": waiting[0], "command": {"type": "performance_vote", "good": (waiting[0] * 7 + act["card"]) % 3 != 0}}
+	if act.has("choice"):
+		# Every kind of choice is made, taking different answers in turn so none is always the first.
+		var choice: Dictionary = act["choice"]
+		var answer: Variant = 0
+		match choice["kind"]:
+			"option":
+				answer = (s.current_round + performer) % choice["labels"].size()
+			"role", "player":
+				answer = choice["candidates"][(s.current_round + performer) % choice["candidates"].size()]
+		return {"player": performer, "command": {"type": "choose", "choice": answer}}
 	return {"player": performer, "command": {"type": "end_turn"}}
 
 
@@ -255,6 +272,19 @@ func vote_everyone(s: GameStateScript) -> void:
 
 func check_rules(s: GameStateScript, step: int) -> void:
 	var where: String = "step %d: " % step
+	for role in RolesScript.names():
+		if RolesScript.holders(s, role).size() > RolesScript.copies():
+			problems.append(where + "more than %d %s cards are held" % [RolesScript.copies(), role])
+	for id in s.roles:
+		var seen_roles: Array = []
+		for role in s.roles[id]:
+			if not role in RolesScript.names() or role in seen_roles:
+				problems.append(where + "player %d holds a bad or doubled role (%s)" % [id, role])
+			seen_roles.append(role)
+		if s.eliminated.get(id, false) and not s.roles[id].is_empty():
+			problems.append(where + "eliminated player %d still holds roles" % id)
+		if s.roles[id].is_empty():
+			problems.append(where + "player %d has an empty role list instead of none" % id)
 	var total: int = s.treasury
 	for id in s.player_ids:
 		var cash: int = int(s.psd.get(id, 0))

@@ -18,7 +18,7 @@ class_name Elimination
 # Every heir becomes a Nepo Baby (see Nepo).
 #
 # Their roles go to the role heir named in the will (by default the heir of the money), or are
-# rescinded (see Roles). A role heir who isn't also the money heir is not a Nepo Baby.
+# rescinded (see Roles). Whoever inherits anything from a will is a Nepo Baby, role heirs included.
 # See docs/design_decisions.md.
 
 const GameStateScript = preload("res://scripts/game_state.gd")
@@ -103,9 +103,15 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 		"debt_cleared": debt_cleared,
 		"claims_cleared": claims_cleared,
 	}))
-	events.append_array(RolesScript.settle_estate(state, player_id, role_heir))
+	var role_events: Array = RolesScript.settle_estate(state, player_id, role_heir)
+	events.append_array(role_events)
 	if heir != 0:
 		events.append_array(NepoScript.become(state, heir))   # an heir cannot refuse, so every heir is one (Article 30)
+	for event in role_events:
+		# Anyone who inherits something from a will is a Nepo Baby, so a role heir who actually received a role
+		# card is one too (the heir of the money already is).
+		if event["type"] == "roles_inherited" and not event["roles"].is_empty() and event["heir"] != heir:
+			events.append_array(NepoScript.become(state, event["heir"]))
 	events.append_array(_leave_unions(state, player_id))
 	_leave_term(state, player_id)
 

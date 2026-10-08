@@ -274,10 +274,25 @@ A turn: the levy has already been paid (at the start of the term). The player dr
 | Are the votes secret? | Yes until the result. Everyone sees WHO has voted, you see your own vote, and the result reveals all of them. | **Built** |
 | Are the decks secret? | Yes. The draw piles are server-only, shuffled with the game's own random generator, and reshuffled when empty. | **Built** |
 | Does the Activist doubling apply to a performance vote? | No. It applies only when a confrontation is triggered. | Confirmed |
-| What do Settlement and Scandal cards DO? | The drawn card is read out to everyone. If it only concerns the player's own PSD and popularity (22 of 100 cards so far, listed in `cards.js`), the game applies it: money to or from the treasury (a short treasury pays what it has; what a player can't pay becomes debt) and popularity on the track. Every other card is carried out by the table, and the event says so. Performance cards are just things to perform. | Confirmed (self-only cards first) |
+| What do Settlement and Scandal cards DO? | The drawn card is read out to everyone. If it only concerns the player's own PSD and popularity (22 cards), or is one of the 4 that ask for a choice (see Choices), the game applies it: money to or from the treasury (a short treasury pays what it has; what a player can't pay becomes debt) and popularity on the track. Every other card is carried out by the table, and the event says so. Performance cards are just things to perform. | Confirmed (self-only cards first) |
 | Where do a card's effects live? | In an `effects` table in `cards.js`, keyed by the start of the card's text. The export fails if a key matches no card or two, or if an amount isn't a number in the card's own text. | **Built** |
 | What is still left to the table? | Cards with choices, other players, timing ("keep this", "next term"), corruption markers, the sick duration, Loyalists and Vices. Each needs its own mechanic first. | Next steps |
 | Can a turn end before the result? | No. `end_turn` is refused until the performance is done. | **Built** |
+
+### Choices (built: card_effects.gd)
+
+Some cards need the player to decide. The card is drawn and applied as far as it can be, then the turn waits for one `choose` command, and `end_turn` is refused ("Make your choice first") until it comes.
+
+| Question | Decision | Status |
+|---|---|---|
+| What kinds of choice are there? | An **option** (one of the card's own options, by number), a **role** (any role the player can be given), a **player** (any other player in the game, or only those who hold a role). | **Built** |
+| Which cards use them? | Four so far, one of each: "gain 15 popularity or 70 PSD", "choose any role", "a player praises you and you gain the Lawyer role", "swap roles with a player who has a role (they lose 5 popularity)". | **Built** |
+| What does the server check? | That a choice is pending, that it is the drawer answering, that the answer has the right type (a whole number, or text; not a bool, a float, a list or nothing), and that it is one of the offered choices. The offer is built when the card is drawn from the live state: eliminated players, yourself, Civilians (for a swap) and roles you already hold are never offered. | **Built** |
+| Everyone sees the choice? | Yes, and who it is waiting on. | **Built** |
+| What if there is nothing to choose from? | The card says so ("choice_unavailable") and the turn carries on. Example: you already hold every role. | **Built** |
+| What if the effect can't be done after the choice? | That part is skipped and the event says why. Example: "you gain the Lawyer role" when you are already a Lawyer; the chosen player still gains their popularity. | Assumed |
+| What if the player never chooses? | Nothing happens: the turn waits. There is no time limit yet, nor for exams or votes outside the performance. A real server will need a rule for absent players. | **Known gap** |
+| Can a card choose several players ("choose up to 3")? | Not yet. One choice of one thing. | Next step |
 
 ### Income (built: scripts/income.gd)
 
@@ -312,11 +327,11 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | Who may use a role's power? | Someone who holds it, is in the game, and isn't sick (Article 17). Frozen role cards come with corruption markers and a Scandal card. | **Built** (the shared rule) |
 | What happens to roles on elimination? | Rescinded (the cards go back in the box), unless willed. | Confirmed (Article 53 and CHANGES.md) |
 | Can a will name a different heir for roles? | Yes (Article 56): an optional `role_heir` in the will, by default the heir of the money. A will on hold, or a role heir who is the testator, a stranger or eliminated, means the roles are rescinded. | **Built** |
-| Does a role heir become a Nepo Baby? | Only the heir of the money does, as before. | Assumed, please confirm |
+| Does a role heir become a Nepo Baby? | Yes: anyone who inherits something from a will does, if they actually received a role card. One heir for everything is a Nepo Baby once. | Confirmed |
 | The heir already holds that role. | They can't hold it twice, so that card goes back in the box. | Assumed |
-| How are roles gained? | From Settlement cards. Those cards need the player to choose (a role, a player to swap with), so they come with the choice mechanism. | Next step |
+| How are roles gained? | From Settlement cards: choose any role, swap roles, gain the Lawyer role (all built, see Choices). Others (found a union, become a Doctor/Lawyer if you hold neither) wait for their mechanics. | **Built** (3 cards) |
 
-Not built yet, and the next steps: the choice mechanism for cards (then the role cards, swaps and the union-founding cards), each role's power, sickness, then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That will be a server-only record when coups are built; one Scandal card lets a rival check it.
+Not built yet, and the next steps: each role's power (committed separately), sickness, the union-founding cards, choices of several players, then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That will be a server-only record when coups are built; one Scandal card lets a rival check it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

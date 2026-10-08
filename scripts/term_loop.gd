@@ -17,6 +17,7 @@ class_name TermLoop
 #   { "type": "pass_window" }   the Leader, at the Inauguration or the Farewell, chooses not to amend
 #   { "type": "end_turn" }      the player whose turn it is, once their performance is over
 #   { "type": "finish_performance" } / { "type": "performance_vote", "good": bool }   see PerformanceTurn
+#   { "type": "choose", "choice": ... }   the answer to a card that asks the player to choose (see CardEffects)
 #
 # A Leader who can't amend (a Commander, or sick, or CANCELLED) has both windows skipped.
 # Sick players still take their turn. Eliminated players are skipped.
@@ -34,6 +35,7 @@ const PermissionsScript = preload("res://scripts/permissions.gd")
 const ElectionScript = preload("res://scripts/election.gd")
 const LevyBandScript = preload("res://scripts/levy_band.gd")
 const IncomeScript = preload("res://scripts/income.gd")
+const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const PerformanceTurnScript = preload("res://scripts/performance.gd")
 const TurnEndScript = preload("res://scripts/turn_end.gd")
 const EventsScript = preload("res://scripts/events.gd")
@@ -44,7 +46,7 @@ const MAX_STEPS := 50
 const ALLOWED_COMMANDS = {
 	GameStateScript.TermPhase.NONE: [],
 	GameStateScript.TermPhase.INAUGURATION: ["pass_window"],
-	GameStateScript.TermPhase.TURNS: ["end_turn", "finish_performance", "performance_vote"],
+	GameStateScript.TermPhase.TURNS: ["end_turn", "finish_performance", "performance_vote", "choose"],
 	GameStateScript.TermPhase.FAREWELL: ["pass_window"],
 }
 
@@ -63,6 +65,8 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 			return _end_turn(state, player_id)
 		"finish_performance", "performance_vote":
 			return PerformanceTurnScript.handle(state, player_id, command)
+		"choose":
+			return CardEffectsScript.choose(state, player_id, command)
 	return [_reject(player_id, "Unknown command.")]
 
 
@@ -82,6 +86,8 @@ static func _end_turn(state: GameStateScript, player_id: int) -> Array:
 		return [_reject(player_id, "It isn't your turn.")]
 	if state.term.get("act", {}).get("phase", -1) != GameStateScript.ActPhase.DONE:
 		return [_reject(player_id, "Finish your performance first.")]
+	if state.term["act"].has("choice"):
+		return [_reject(player_id, "Make your choice first.")]
 	state.term.erase("act")
 	waiting.pop_front()
 	state.term["played"].append(player_id)

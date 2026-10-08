@@ -143,7 +143,29 @@ func elimination_with_a_will() -> void:
 	s.wills[3] = {"psd_heir": 4, "role_heir": 5, "on_hold": false}
 	ev = ElimScript.eliminate(s, 3, "debt")
 	expect("a will can name a different heir for the roles", [RolesScript.held(s, 5), RolesScript.held(s, 4), s.heirs[3]], [["Doctor"], [], 4])
-	expect("... and only the heir of the money is a Nepo Baby", [s.nepo.has(4), s.nepo.has(5)], [true, false])
+	expect("... and both heirs are Nepo Babies: each inherited something", [s.nepo.has(4), s.nepo.has(5)], [true, true])
+	expect("... the Nepo Baby event is logged once for each", count(s.event_log, "nepo_baby"), 2)
+
+	# A role heir who inherits no role (the testator had none) is not a Nepo Baby.
+	s = table(5)
+	s.wills[3] = {"psd_heir": 4, "role_heir": 5, "on_hold": false}
+	ElimScript.eliminate(s, 3, "debt")
+	expect("a role heir who received nothing is not a Nepo Baby", [s.nepo.has(4), s.nepo.has(5)], [true, false])
+
+	# If the heir already held the role, nothing was received.
+	s = table(5)
+	RolesScript.grant(s, 3, "Doctor")
+	RolesScript.grant(s, 5, "Doctor")
+	s.wills[3] = {"psd_heir": 4, "role_heir": 5, "on_hold": false}
+	ElimScript.eliminate(s, 3, "debt")
+	expect("... nor one whose only role was already theirs", s.nepo.has(5), false)
+
+	# When one player is both heirs they become a Nepo Baby once.
+	s = table(5)
+	RolesScript.grant(s, 3, "Doctor")
+	s.wills[3] = {"psd_heir": 4, "on_hold": false}
+	ElimScript.eliminate(s, 3, "debt")
+	expect("one heir for everything is a Nepo Baby once", count(s.event_log, "nepo_baby"), 1)
 
 	# An unusable role heir.
 	for bad in [3, 9]:
