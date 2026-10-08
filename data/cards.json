@@ -407,6 +407,9 @@
    }
   },
   "scandal": {
+   "0": {
+    "special": "apology"
+   },
    "1": {
     "popularity": -15,
     "popularity_per_loyalist": {
@@ -426,6 +429,12 @@
      "round_only": true
     }
    },
+   "3": {
+    "special": "seat_debt"
+   },
+   "4": {
+    "special": "civilian"
+   },
    "5": {
     "psd": -100,
     "marker": 1
@@ -439,8 +448,23 @@
      "marker": 1
     }
    },
+   "7": {
+    "special": "rally"
+   },
    "8": {
     "disband": true
+   },
+   "9": {
+    "special": "tax_leak"
+   },
+   "10": {
+    "special": "flyover_collapse"
+   },
+   "11": {
+    "special": "tax_break"
+   },
+   "12": {
+    "special": "lost_20v1"
    },
    "13": {
     "choose": {
@@ -466,13 +490,42 @@
      ]
     }
    },
+   "14": {
+    "special": "delayed_reckoning"
+   },
    "15": {
     "popularity": -20,
     "defect": true
    },
+   "16": {
+    "choose": {
+     "kind": "option",
+     "options": [
+      {
+       "label": "Pay 50 PSD",
+       "psd": -50
+      },
+      {
+       "label": "Ask someone to read it aloud: they pay half with you",
+       "then": {
+        "kind": "player"
+       },
+       "each": {
+        "psd": -25
+       }
+      }
+     ]
+    }
+   },
    "17": {
     "psd": -150,
     "marker": 1
+   },
+   "18": {
+    "special": "satirist"
+   },
+   "19": {
+    "special": "term_limits"
    },
    "20": {
     "psd": -40
@@ -490,6 +543,9 @@
     "psd": -70,
     "popularity": -5
    },
+   "25": {
+    "special": "role_freeze"
+   },
    "26": {
     "psd": -80
    },
@@ -503,11 +559,40 @@
    "29": {
     "popularity": -10
    },
+   "30": {
+    "choose": {
+     "kind": "player"
+    },
+    "pay_chosen": 50
+   },
+   "31": {
+    "popularity": -5,
+    "choose": {
+     "kind": "player"
+    },
+    "target": {
+     "popularity": 5
+    }
+   },
+   "32": {
+    "choose": {
+     "kind": "player"
+    },
+    "peek": {
+     "kinds": [
+      "coup"
+     ],
+     "round_only": false
+    }
+   },
    "33": {
     "psd": -30
    },
    "34": {
     "popularity": -10
+   },
+   "35": {
+    "special": "skip_settlement"
    },
    "36": {
     "psd": -45,
@@ -542,8 +627,21 @@
      ]
     }
    },
+   "43": {
+    "special": "exam_rig"
+   },
    "44": {
     "psd": -35
+   },
+   "45": {
+    "popularity": -7,
+    "choose": {
+     "kind": "player"
+    },
+    "pay_chosen": 30
+   },
+   "46": {
+    "special": "covid"
    },
    "47": {
     "psd": 200,
@@ -564,6 +662,12 @@
       }
      ]
     }
+   },
+   "48": {
+    "special": "skip_income"
+   },
+   "49": {
+    "special": "extra_performance"
    }
   },
   "performance": {

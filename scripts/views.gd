@@ -18,7 +18,7 @@ const PeeksScript = preload("res://scripts/peeks.gd")
 const PUBLIC_FIELDS = [
 	"player_count", "turns_played", "leader_id", "leader_type", "sick",
 	"windows_used", "treasury", "psd", "debts", "debt_terms", "eliminated", "player_ids",
-	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "choice", "union_invites", "reform", "genders", "coup_ban", "effect_round", "markers", "frozen", "rivals", "truces", "accords", "skip_draw", "loyalists", "vice_id", "grammar_referee", "mods", "schedule", "poll_counter", "card_offers", "choice_queue", "amend_offer", "last_turn_player", "leader_goes_first", "levy_band",
+	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "choice", "union_invites", "reform", "genders", "coup_ban", "effect_round", "markers", "frozen", "rivals", "truces", "accords", "skip_draw", "loyalists", "vice_id", "grammar_referee", "mods", "schedule", "poll_counter", "card_offers", "choice_queue", "block_rights", "delayed", "amend_offer", "last_turn_player", "leader_goes_first", "levy_band",
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).
@@ -120,6 +120,7 @@ static func _election_view(election: Dictionary, player_id: int) -> Dictionary:
 		return {}
 	var view: Dictionary = election.duplicate(true)
 	view.erase("key")
+	view.erase("rigged")   # which way the Leader marked a taker is secret until the marks are read
 	var answers: Dictionary = view.get("answers", {})
 	var votes: Dictionary = view.get("votes", {})
 	view.erase("answers")

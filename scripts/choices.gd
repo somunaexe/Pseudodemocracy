@@ -19,6 +19,7 @@ const RivalsScript = preload("res://scripts/rivals.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const GendersScript = preload("res://scripts/genders.gd")
+const SeatsScript = preload("res://scripts/seats.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
@@ -33,6 +34,10 @@ static func ask(state: GameStateScript, player_id: int, deck: String, card: int,
 	if spec.get("chooser", "") == "leader":
 		chooser = state.leader_id
 		if chooser == player_id or chooser == -1 or state.eliminated.get(chooser, false):
+			return [_log(state, "choice_unavailable", {"player": player_id, "deck": deck, "card": card, "kind": kind})]
+	elif spec.get("chooser", "") == "neighbour":
+		chooser = SeatsScript.neighbour(state, player_id, 1)   # the player seated next to them (on their left)
+		if chooser == 0:
 			return [_log(state, "choice_unavailable", {"player": player_id, "deck": deck, "card": card, "kind": kind})]
 	var pending: Dictionary = {"player": chooser, "subject": player_id, "deck": deck, "card": card, "kind": kind, "deadline": ends_at}
 	var shown: Dictionary = {"player": chooser, "subject": player_id, "deck": deck, "card": card, "kind": kind, "seconds": seconds, "ends_at_ms": ends_at}

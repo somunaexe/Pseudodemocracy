@@ -21,6 +21,7 @@ const PeeksScript = preload("res://scripts/peeks.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
+const SeatsScript = preload("res://scripts/seats.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
@@ -29,6 +30,8 @@ const NAMES := [
 	"old_boys", "diaspora", "hospital", "flyover", "statue", "levy_cut", "heckler", "youth_wing", "free_settlement", "fundraiser",
 	"exam_pass", "salary", "deck_peek", "loan", "halve_loss", "fee_bonus", "vote_with", "reroll", "pop_floor", "petrol", "hero",
 	"benefits", "holiday",
+	"apology", "seat_debt", "civilian", "rally", "tax_leak", "flyover_collapse", "tax_break", "lost_20v1", "delayed_reckoning", "satirist",
+	"term_limits", "role_freeze", "skip_settlement", "exam_rig", "covid", "skip_income", "extra_performance",
 ]
 
 
@@ -83,7 +86,7 @@ static func apply(state: GameStateScript, drawer: int, deck: String, card: int, 
 			return [_log(state, "modifier_given", {"player": drawer, "name": "skip_tax"})]
 		"holiday":
 			return _holiday(state, drawer)
-	return []
+	return _apply_scandal(state, drawer, deck, card, name)
 
 
 # --- questions to the drawer -------------------------------------------------------------
@@ -117,6 +120,14 @@ static func answered(state: GameStateScript, pending: Dictionary, value: Variant
 			events.append_array(PollsScript.open(state, "vote_with", drawer, value, ["Vote with them for the rest of the term", "Refuse (lose 5 popularity)"], 0, {}, "each", pending["deck"], pending["card"]))
 		"deck_peek":
 			events.append_array(_bury_answered(state, drawer, pending, int(value)))
+		"rally":
+			events.append_array(_rally_answered(state, drawer, int(value)))
+		"civilian":
+			events.append_array(_civilian_answered(state, int(value)))
+		"tax_leak":
+			events.append_array(_tax_leak_answered(state, drawer, int(value)))
+		"covid":
+			events.append_array(_covid_answered(state, drawer, int(value)))
 		"reroll":
 			events.append_array(_reroll_answered(state, drawer, pending, value))
 	return events
@@ -150,6 +161,29 @@ static func poll_closed(state: GameStateScript, poll: Dictionary, answers: Dicti
 						events.append(_log(state, "flyover_redirected", {"player": id, "amount": share - owed2, "new_debt": owed2}))
 					2:
 						events.append(_pop(state, id, -10, "flyover_refused"))
+		"reaction":
+			events.append_array(_reaction_closed(state, poll, answers))
+		"apology":
+			var yes: int = 0
+			for id in answers:
+				yes += 1 if answers[id] == 0 else 0
+			if yes * 2 > answers.size():
+				ScheduleScript.end_penalties(state, drawer)
+				events.append(_log(state, "apology_accepted", {"player": drawer, "yes": yes, "of": answers.size()}))
+			else:
+				events.append(_log(state, "apology_rejected", {"player": drawer, "yes": yes, "of": answers.size()}))
+		"flyover_collapse":
+			var share: int = int(poll["data"]["share"])
+			for id in answers:
+				match answers[id]:
+					0:
+						var owed: int = DebtScript.charge(state, drawer, id, share)
+						events.append(_log(state, "collapse_accepted", {"player": id, "drawer": drawer, "amount": share - owed, "new_debt": owed}))
+					1:
+						var owed2: int = DebtScript.charge(state, drawer, DebtScript.TREASURY_ID, share)
+						events.append(_log(state, "collapse_redirected", {"player": id, "drawer": drawer, "amount": share - owed2, "new_debt": owed2}))
+					2:
+						events.append(_log(state, "collapse_rejected", {"player": id, "drawer": drawer, "kept": share}))
 		"vote_with":
 			for id in answers:
 				if answers[id] == 0:
@@ -351,6 +385,265 @@ static func _reroll_answered(state: GameStateScript, drawer: int, pending: Dicti
 	return events
 
 
+# --- the Scandal cards ---------------------------------------------------------------------
+
+static func _apply_scandal(state: GameStateScript, drawer: int, deck: String, card: int, name: String) -> Array:
+	match name:
+		"apology":
+			ScheduleScript.penalty(state, drawer, -5, 1, 4, true)
+			return [_log(state, "apology_owed", {"player": drawer, "per_round": 5, "rounds": 4})]
+		"seat_debt":
+			var creditor: int = SeatsScript.neighbour(state, drawer, 2)
+			if creditor == 0:
+				return [_log(state, "seat_debt_void", {"player": drawer})]
+			# An IOU, not a debt in the money system (a player in debt can't hold cash): owed on demand, and until it is paid the creditor
+			# may block the drawer's Result cards. The owner may pay it (pay_iou) or the creditor may demand it (demand_iou).
+			state.block_rights.append({"holder": creditor, "owner": drawer, "owed": 150})
+			return [_log(state, "seat_debt", {"player": drawer, "creditor": creditor, "amount": 150})]
+		"civilian":
+			if not RolesScript.is_civilian(state, drawer):
+				var lost: Array = RolesScript.held(state, drawer)
+				var events: Array = _log_all(state, RolesScript.clear(state, drawer))
+				events.append(_log(state, "made_civilian", {"player": drawer, "roles": lost}))
+				return events
+			return _ask(state, drawer, deck, card, {"kind": "player", "who": "has_role", "prompt": "You were already a Civilian: name the player with a role who becomes one instead."}, name, 0)
+		"rally":
+			var before: Dictionary = _pop(state, drawer, -10, "rally_failed")
+			if UnionsScript.union_of(state, drawer) == -1:
+				return [before]
+			var asked: Array = _ask(state, drawer, deck, card, {"kind": "player", "who": "union_member", "prompt": "Which member of your union or mob leaves?"}, name, 0)
+			return [before] + asked
+		"tax_leak":
+			var low: int = 0 if RolesScript.is_civilian(state, drawer) else 10
+			return _ask(state, drawer, deck, card, {"kind": "number", "min": low, "max": 50, "chooser": "neighbour", "prompt": "Set the transparency fee, from %d to 50 PSD." % low}, name, 0)
+		"flyover_collapse":
+			var others: Array = state.player_ids.filter(func(id): return id != drawer and not state.eliminated.get(id, false))
+			if others.is_empty():
+				return []
+			var share: int = ceili(200.0 / others.size())
+			return PollsScript.open(state, "flyover_collapse", drawer, others, ["Accept your share (%d PSD)" % share, "Redirect it to the treasury", "Reject it (they keep it)"], 0, {"share": share}, "each", deck, card)
+		"tax_break":
+			ModifiersScript.give(state, drawer, "double_levy", {"rounds": -1, "uses": 1})
+			var events2: Array = [_log(state, "modifier_given", {"player": drawer, "name": "double_levy"})]
+			if drawer == state.leader_id:
+				ModifiersScript.give(state, drawer, "levy_locked", {"rounds": 1})
+				events2.append(_log(state, "modifier_given", {"player": drawer, "name": "levy_locked"}))
+			return events2
+		"lost_20v1":
+			var opposite: int = SeatsScript.opposite(state, drawer)
+			var roles: Array = RolesScript.held(state, drawer)
+			var events3: Array = [_log(state, "made_civilian", {"player": drawer, "roles": roles})]
+			if roles.is_empty() or opposite == 0:
+				return events3
+			events3.append_array(_log_all(state, RolesScript.settle_estate(state, drawer, opposite)))
+			return events3
+		"delayed_reckoning":
+			state.delayed.append(drawer)
+			return [_log(state, "reckoning_placed", {"player": drawer})]
+		"satirist":
+			var events4: Array = [_pop(state, drawer, -15, "satirised")]
+			ModifiersScript.give(state, drawer, "cite_right", {"starts": 1, "rounds": 2, "uses": 1})
+			events4.append(_log(state, "modifier_given", {"player": drawer, "name": "cite_right", "from_round": state.current_round + 1, "until_round": state.current_round + 2}))
+			return events4
+		"term_limits":
+			var events5: Array = [_pop(state, drawer, -25, "term_limits_caught")]
+			ModifiersScript.give(state, drawer, "no_stand", {"rounds": -1, "elections": 2})
+			events5.append(_log(state, "modifier_given", {"player": drawer, "name": "no_stand", "elections": 2}))
+			return events5
+		"role_freeze":
+			ModifiersScript.give(state, drawer, "role_freeze", {"starts": 1, "rounds": 1})
+			return [_log(state, "modifier_given", {"player": drawer, "name": "role_freeze", "from_round": state.current_round + 1})]
+		"skip_settlement":
+			ModifiersScript.give(state, drawer, "skip_settlement", {"rounds": -1, "uses": 1})
+			return [_log(state, "modifier_given", {"player": drawer, "name": "skip_settlement"})]
+		"exam_rig":
+			ModifiersScript.give(state, drawer, "exam_rig", {"rounds": -1, "uses": 1})
+			return [_log(state, "modifier_given", {"player": drawer, "name": "exam_rig"})]
+		"covid":
+			return _covid(state, drawer, deck, card)
+		"skip_income":
+			ModifiersScript.give(state, drawer, "skip_income", {"rounds": -1, "uses": 1})
+			return [_log(state, "modifier_given", {"player": drawer, "name": "skip_income"})]
+		"extra_performance":
+			ModifiersScript.give(state, drawer, "extra_performance", {"starts": 1, "rounds": 1, "uses": 1})
+			return [_log(state, "modifier_given", {"player": drawer, "name": "extra_performance", "from_round": state.current_round + 1})]
+	return []
+
+
+static func _rally_answered(state: GameStateScript, drawer: int, member: int) -> Array:
+	var union_id: int = UnionsScript.union_of(state, drawer)
+	if union_id == -1 or not member in state.unions[union_id]["members"]:
+		return []
+	return _log_all(state, UnionsScript.remove_member(state, union_id, member, "nobody showed up to the rally"))
+
+
+static func _civilian_answered(state: GameStateScript, victim: int) -> Array:
+	var lost: Array = RolesScript.held(state, victim)
+	var events: Array = _log_all(state, RolesScript.clear(state, victim))
+	events.append(_log(state, "made_civilian", {"player": victim, "roles": lost}))
+	return events
+
+
+static func _tax_leak_answered(state: GameStateScript, drawer: int, fee: int) -> Array:
+	var owed: int = DebtScript.charge(state, drawer, DebtScript.TREASURY_ID, fee)
+	return [_log(state, "transparency_fee", {"player": drawer, "fee": fee, "paid": fee - owed, "new_debt": owed})]
+
+
+# "You have been infected with COVID": the drawer, the two players seated either side of them and the last player they spoke to (whom
+# they name) are sick for 3 rounds, those who are already sick or immune excepted. (The last sentence of the card, about eye contact, is
+# something the game can't see: the table plays it.)
+static func _covid(state: GameStateScript, drawer: int, deck: String, card: int) -> Array:
+	var events: Array = _covid_infect(state, [drawer, SeatsScript.neighbour(state, drawer, 1), SeatsScript.neighbour(state, drawer, -1)])
+	events.append_array(_ask(state, drawer, deck, card, {"kind": "player", "prompt": "Name the last player you spoke to."}, "covid", 0))
+	return events
+
+
+static func _covid_answered(state: GameStateScript, drawer: int, spoke_to: int) -> Array:
+	return _covid_infect(state, [spoke_to])
+
+
+static func _covid_infect(state: GameStateScript, ids: Array) -> Array:
+	var events: Array = []
+	var done: Array = []
+	for id in ids:
+		if id == 0 or id in done:
+			continue
+		done.append(id)
+		var problem: String = SicknessScript.problem_sickening(state, id)
+		if problem != "":
+			events.append(_log(state, "covid_skipped", {"player": id, "reason": problem}))
+		else:
+			events.append_array(_log_all(state, SicknessScript.sicken(state, id, 3)))
+	return events
+
+
+# --- reactions to Result cards ----------------------------------------------------------------
+
+# A Result card has been drawn by `drawer` after a performance. It is delivered: first others may react (a creditor with the right to
+# block it; anyone citing a satirist's card against a Settlement card), then, if the player has a reroll, they are asked, then it applies.
+static func deliver(state: GameStateScript, drawer: int, deck: String, card: int) -> Array:
+	var blockers: Array = _blockers(state, drawer)
+	var citers: Array = []
+	if deck == "settlement" and ModifiersScript.active(state, drawer, "cite_right"):
+		citers = state.player_ids.filter(func(id): return id != drawer and not state.eliminated.get(id, false))
+	var targets: Array = blockers.duplicate()
+	for id in citers:
+		if not id in targets:
+			targets.append(id)
+	if not targets.is_empty():
+		var opened: Array = PollsScript.open(state, "reaction", drawer, targets, ["Let it through", "Cancel it"], 0, {"blockers": blockers, "citers": citers}, "any_cancels", deck, card)
+		if not opened.is_empty():
+			return opened
+	return after_reaction(state, drawer, deck, card)
+
+
+static func after_reaction(state: GameStateScript, drawer: int, deck: String, card: int) -> Array:
+	if state.eliminated.get(drawer, false):
+		return []
+	var card_effects = load("res://scripts/card_effects.gd")
+	if ModifiersScript.active(state, drawer, "reroll"):
+		ModifiersScript.use(state, drawer, "reroll")   # "you may reroll one Result card draw": the player is asked
+		return reroll_offer(state, drawer, deck, card)
+	return card_effects.apply(state, drawer, deck, card)
+
+
+# Creditors who may block the drawer's cards: only while the IOU is still owed.
+static func _blockers(state: GameStateScript, drawer: int) -> Array:
+	var result: Array = []
+	var kept: Array = []
+	for right in state.block_rights:
+		if int(right["owed"]) > 0 and not state.eliminated.get(right["holder"], false) and not state.eliminated.get(right["owner"], false):
+			kept.append(right)
+			if right["owner"] == drawer and not right["holder"] in result:
+				result.append(right["holder"])
+	state.block_rights = kept   # an IOU that was paid ends the right
+	result.sort()
+	return result
+
+
+static func _reaction_closed(state: GameStateScript, poll: Dictionary, answers: Dictionary) -> Array:
+	var canceller: int = 0
+	var ids: Array = answers.keys()
+	ids.sort()
+	for id in ids:
+		if answers[id] == 1:
+			canceller = id
+			break
+	var drawer: int = poll["drawer"]
+	if canceller == 0:
+		return after_reaction(state, drawer, poll["deck"], int(poll["card"]))
+	var by_right: bool = canceller in poll["data"]["blockers"]
+	if not by_right:
+		ModifiersScript.use(state, drawer, "cite_right")   # the satirist's card can be cited once
+	return [_log(state, "card_cancelled", {"drawer": drawer, "deck": poll["deck"], "card": poll["card"], "by": canceller, "because": "a debt" if by_right else "a satirist's card"})]
+
+
+# The levy has gone from `before` to `after`. If it went UP, every face-down Delayed Reckoning is flipped: its owner loses 5 popularity and
+# repays the difference to the treasury. `log` says whether to log the events here or leave that to the caller.
+static func levy_changed(state: GameStateScript, before: int, after: int, log: bool) -> Array:
+	if after <= before or state.delayed.is_empty():
+		return []
+	var events: Array = []
+	var owners: Array = state.delayed.duplicate()
+	state.delayed = []
+	for owner in owners:
+		if state.eliminated.get(owner, false):
+			continue
+		var pop_before: int = PopularityScript.effective(state, owner)
+		PopularityScript.change_base(state, owner, -5)
+		var owed: int = DebtScript.charge(state, owner, DebtScript.TREASURY_ID, after - before)
+		var event: Dictionary = EventsScript.make("reckoning_flipped", {"player": owner, "popularity": PopularityScript.effective(state, owner) - pop_before, "repaid": (after - before) - owed, "new_debt": owed})
+		if log:
+			state.event_log.append(event)
+		events.append(event)
+	return events
+
+
+# --- commands ------------------------------------------------------------------------------
+
+#   { "type": "apologize" }   a player who owes the table an apology offers one; the others judge whether it counts
+static func handle(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
+	match str(command.get("type", "")):
+		"pay_iou", "demand_iou":
+			return _iou(state, player_id, command)
+	if str(command.get("type", "")) != "apologize":
+		return [_reject(player_id, "Unknown command.")]
+	if not player_id in state.player_ids or state.eliminated.get(player_id, false):
+		return [_reject(player_id, "You are not in the game.")]
+	if not ScheduleScript.has_apology_penalty(state, player_id):
+		return [_reject(player_id, "You don't owe the table an apology.")]
+	for poll in state.polls:
+		if poll["special"] == "apology" and poll["drawer"] == player_id:
+			return [_reject(player_id, "The table is already judging your apology.")]
+	var others: Array = state.player_ids.filter(func(id): return id != player_id and not state.eliminated.get(id, false))
+	var opened: Array = PollsScript.open(state, "apology", player_id, others, ["It counts", "It doesn't count"], 1, {})
+	if opened.is_empty():
+		return [_reject(player_id, "There is nobody to apologise to.")]
+	return opened
+
+
+#   { "type": "pay_iou", "holder": id }       the owner pays the IOU from their cash (all 150 of it)
+#   { "type": "demand_iou", "owner": id }     the creditor demands it: the owner pays what they have and the rest becomes debt
+static func _iou(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
+	var paying: bool = str(command.get("type", "")) == "pay_iou"
+	var other = command.get("holder" if paying else "owner", null)
+	for right in state.block_rights:
+		if typeof(other) != TYPE_INT:
+			break
+		var matches: bool = (right["owner"] == player_id and right["holder"] == other) if paying else (right["holder"] == player_id and right["owner"] == other)
+		if not matches:
+			continue
+		var owner: int = right["owner"]
+		var holder: int = right["holder"]
+		var amount: int = int(right["owed"])
+		if paying and int(state.psd.get(owner, 0)) < amount:
+			return [_reject(player_id, "You need %d PSD in hand to pay it." % amount)]
+		state.block_rights.erase(right)
+		var owed: int = DebtScript.charge(state, owner, holder, amount)
+		return [_log(state, "iou_settled", {"owner": owner, "holder": holder, "amount": amount - owed, "new_debt": owed, "demanded": not paying})]
+	return [_reject(player_id, "There is no such IOU.")]
+
+
 # --- the kept cards ------------------------------------------------------------------------
 
 # Do the player's kept cards include a card with this special?
@@ -389,9 +682,19 @@ static func leader_changed(state: GameStateScript, old_leader: int, new_leader: 
 	return events
 
 
+# The election is over: players who can't run for some elections have one fewer to wait.
+static func _count_down_term_limits(state: GameStateScript) -> void:
+	for id in state.mods.keys():
+		if state.mods[id].has("no_stand"):
+			state.mods[id]["no_stand"]["elections"] = int(state.mods[id]["no_stand"]["elections"]) - 1
+			if state.mods[id]["no_stand"]["elections"] <= 0:
+				ModifiersScript.remove(state, id, "no_stand")
+
+
 # The election is over (the exam and the ballot): "The youth wing backs you" pays 5 popularity to everyone who has never led and was
 # seen voting for the holder, then the card is gone, whether the holder won or not.
 static func election_over(state: GameStateScript, revealed: Dictionary) -> Array:
+	_count_down_term_limits(state)
 	var events: Array = []
 	for holder in state.hands.keys():
 		var index: int = hand_index(state, holder, "youth_wing")
@@ -417,6 +720,10 @@ static func _pop(state: GameStateScript, player_id: int, delta: int, kind: Strin
 	var before: int = PopularityScript.effective(state, player_id)
 	PopularityScript.change_base(state, player_id, delta)
 	return _log(state, kind, {"player": player_id, "popularity": PopularityScript.effective(state, player_id) - before})
+
+
+static func _reject(player_id: int, reason: String) -> Dictionary:
+	return EventsScript.make("rejected", {"reason": reason}, [player_id])
 
 
 static func _log_all(state: GameStateScript, events: Array) -> Array:

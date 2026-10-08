@@ -35,6 +35,7 @@ const ScoringScript = preload("res://scripts/scoring.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
+const SpecialCardsScript = preload("res://scripts/special_cards.gd")
 const CardTradeScript = preload("res://scripts/card_trade.gd")
 const PollsScript = preload("res://scripts/polls.gd")
 const PeeksScript = preload("res://scripts/peeks.gd")
@@ -44,12 +45,13 @@ const EventsScript = preload("res://scripts/events.gd")
 const SERVER_ID := 0
 
 const AMENDMENT_COMMANDS := ["propose", "amend_agree", "rule_grammar", "confront", "vote"]
-const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
+const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "rig_exam", "cast_vote"]
 const COUP_COMMANDS := ["coup"]
 const CORRUPTION_COMMANDS := ["pay_fine"]
 const PEEK_COMMANDS := ["peek"]
 const POLL_COMMANDS := ["poll_answer"]
 const TRADE_COMMANDS := ["sell_card", "buy_card"]
+const SPECIAL_COMMANDS := ["apologize", "pay_iou", "demand_iou"]
 const COMMAND_COMMANDS := ["union_command", "command_finish", "command_vote"]
 const GENDER_COMMANDS := ["set_gender"]
 const UNION_COMMANDS := ["union_recruit", "union_respond", "union_leave", "union_kick", "union_disperse", "union_reform"]
@@ -106,6 +108,8 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 		events = TermLoopScript.handle(state, player_id, command)
 	elif type in COUP_COMMANDS:
 		events = CoupScript.handle(state, player_id, command)
+	elif type in SPECIAL_COMMANDS:
+		events = SpecialCardsScript.handle(state, player_id, command)
 	elif type in TRADE_COMMANDS:
 		events = CardTradeScript.handle(state, player_id, command)
 	elif type in POLL_COMMANDS:

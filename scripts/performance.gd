@@ -35,6 +35,7 @@ const GameDataScript = preload("res://scripts/game_data.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const CardsScript = preload("res://scripts/cards.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
+const PollsScript = preload("res://scripts/polls.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const ModifiersScript = preload("res://scripts/modifiers.gd")
 const SpecialCardsScript = preload("res://scripts/special_cards.gd")
@@ -214,6 +215,13 @@ static func step(state: GameStateScript, performer: int) -> Array:
 		VOTING:
 			if state.clock_ms >= int(act["deadline"]) or _everyone_voted(state, act):
 				return _resolve(state, act)
+		DONE:
+			if ModifiersScript.active(state, performer, "extra_performance") and state.choice.is_empty() and not PollsScript.open_for(state, performer):
+				# "You draw an extra Performance card for your next turn": once their first performance is over, another begins.
+				ModifiersScript.use(state, performer, "extra_performance")
+				var again: Array = _start(state, performer)
+				again.insert(0, _log(state, "extra_performance", {"player": performer}))
+				return again
 	return []
 
 
@@ -291,16 +299,12 @@ static func _resolve(state: GameStateScript, act: Dictionary) -> Array:
 	act["phase"] = DONE
 	var events: Array = [_log(state, "performance_resolved", data)]
 	if data.has("card"):
-		if ModifiersScript.active(state, act["player"], "reroll"):
-			ModifiersScript.use(state, act["player"], "reroll")   # "you may reroll one Result card draw": the player is asked
-			events.append_array(SpecialCardsScript.reroll_offer(state, act["player"], data["deck"], data["card"]))
-		else:
-			events.append_array(CardEffectsScript.apply(state, act["player"], data["deck"], data["card"]))   # logs its own event
+		events.append_array(SpecialCardsScript.deliver(state, act["player"], data["deck"], data["card"]))   # others may react; a reroll may be offered; then it applies
 	if ModifiersScript.active(state, act["player"], "free_settlement") and not state.frozen.has(act["player"]):
 		ModifiersScript.use(state, act["player"], "free_settlement")   # "take a free Settlement card on your next performance"
 		var free: int = CardsScript.draw(state, "settlement")
 		events.append(_log(state, "free_card", {"player": act["player"], "deck": "settlement", "card": free, "text": CardsScript.text("settlement", free)}))
-		events.append_array(CardEffectsScript.apply(state, act["player"], "settlement", free))
+		events.append_array(SpecialCardsScript.deliver(state, act["player"], "settlement", free))
 	return events
 
 

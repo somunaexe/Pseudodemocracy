@@ -14,6 +14,7 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const LawScript = preload("res://scripts/law.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
+const SpecialCardsScript = preload("res://scripts/special_cards.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 
@@ -46,4 +47,6 @@ static func shift_at_term_end(state: GameStateScript) -> Array:
 		"old_levy": levy_before, "new_levy": levy_after,
 	})
 	state.event_log.append(event)
-	return [event]
+	var events: Array = [event]
+	events.append_array(SpecialCardsScript.levy_changed(state, levy_before, levy_after, true))
+	return events

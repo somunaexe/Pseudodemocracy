@@ -25,6 +25,8 @@ const ConstitutionScript = preload("res://scripts/constitution.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const ViceScript = preload("res://scripts/vice.gd")
+const SpecialCardsScript = preload("res://scripts/special_cards.gd")
+const ModifiersScript = preload("res://scripts/modifiers.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
@@ -84,6 +86,8 @@ static func _propose(state: GameStateScript, player_id: int, command: Dictionary
 	var article_id = command.get("article_id", -1)
 	if typeof(article_id) != TYPE_INT or not state.articles.has(article_id):
 		return [_reject(player_id, "There is no such article.")]
+	if article_id == int(ConstitutionScript.bindings()["levy"]["article_id"]) and ModifiersScript.active(state, state.leader_id, "levy_locked"):
+		return [_reject(player_id, "The Leader's levy-setting power is suspended this term.")]
 	var texts = command.get("new_texts", null)
 	if typeof(texts) != TYPE_ARRAY:
 		return [_reject(player_id, "The new wording must be a list of words.")]
@@ -443,7 +447,9 @@ static func _resolve(state: GameStateScript) -> Array:
 		"votes": revealed,
 	})]
 	if stands:
+		var levy_before: int = LawScript.get_int(state, "levy")
 		state.articles[article_id] = new_words
+		events.append_array(SpecialCardsScript.levy_changed(state, levy_before, LawScript.get_int(state, "levy"), false))   # unlogged: the caller logs these
 		events.append(EventsScript.make("article_changed", {
 			"article_id": article_id,
 			"title": ConstitutionScript.title(article_id),

@@ -38,7 +38,7 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 
 function validate(deck, prefix, text, effect) {
   const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband', 'loyalist', 'target_role', 'popularity_per_loyalist', 'defect', 'keys', 'peek', 'peek_rival', 'favor', 'special'];
-  const SPECIALS = ['old_boys', 'diaspora', 'hospital', 'flyover', 'statue', 'levy_cut', 'heckler', 'youth_wing', 'free_settlement', 'fundraiser', 'exam_pass', 'salary', 'deck_peek', 'loan', 'halve_loss', 'fee_bonus', 'vote_with', 'reroll', 'pop_floor', 'petrol', 'hero', 'benefits', 'holiday'];   // the names in scripts/special_cards.gd (a test keeps the two lists equal)
+  const SPECIALS = ['old_boys', 'diaspora', 'hospital', 'flyover', 'statue', 'levy_cut', 'heckler', 'youth_wing', 'free_settlement', 'fundraiser', 'exam_pass', 'salary', 'deck_peek', 'loan', 'halve_loss', 'fee_bonus', 'vote_with', 'reroll', 'pop_floor', 'petrol', 'hero', 'benefits', 'holiday', 'apology', 'seat_debt', 'civilian', 'rally', 'tax_leak', 'flyover_collapse', 'tax_break', 'lost_20v1', 'delayed_reckoning', 'satirist', 'term_limits', 'role_freeze', 'skip_settlement', 'exam_rig', 'covid', 'skip_income', 'extra_performance'];   // the names in scripts/special_cards.gd (a test keeps the two lists equal)
   if ('special' in effect) {
     if (!SPECIALS.includes(effect.special)) fail(deck, prefix, `unknown special "${effect.special}"`);
     for (const key of Object.keys(effect)) if (!['special', 'keep'].includes(key)) fail(deck, prefix, `a special card has no other effects ("${key}")`);
@@ -101,7 +101,11 @@ function validate(deck, prefix, text, effect) {
       checkAmounts(deck, prefix, text, Object.fromEntries(Object.entries(option).filter(([k]) => !['found_union', 'share', 'then', 'each'].includes(k))), [...SELF_KEYS, 'marker']);
       if ('share' in option && (option.share !== 'half' || !('psd' in effect) || effect.psd <= 0)) fail(deck, prefix, 'share "half" needs a card that pays the drawer');
       if ('then' in option && (option.then.kind !== 'player' || !option.each)) fail(deck, prefix, 'an option with "then" must ask for a player and say what happens to both ("each")');
-      if ('each' in option) checkAmounts(deck, prefix, text, option.each, [...SELF_KEYS, 'marker']);
+      if ('each' in option) {
+        // what each of the two pays may be half of an amount in the card ("they help you pay half")
+        const halved = Object.fromEntries(Object.entries(option.each).map(([k, v]) => [k, (k === 'psd' && !new RegExp(`(^|[^0-9])${Math.abs(v)}([^0-9]|$)`).test(text)) ? v * 2 : v]));
+        checkAmounts(deck, prefix, text, halved, [...SELF_KEYS, 'marker']);
+      }
       if ('found_union' in option && !UNIONS.includes(option.found_union)) fail(deck, prefix, `unknown union "${option.found_union}"`);
     }
     for (const key of ['gain_role', 'swap_with', 'target']) if (key in effect) fail(deck, prefix, `"${key}" doesn't go with an option choice`);

@@ -18,6 +18,7 @@ class_name Roles
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
+const ModifiersScript = preload("res://scripts/modifiers.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const EventsScript = preload("res://scripts/events.gd")
@@ -260,6 +261,8 @@ static func can_use_pledge(state: GameStateScript, player_id: int, role: String)
 		return "CANCELLED players have no roles until they climb back."
 	if state.frozen.has(player_id):
 		return "Your roles are frozen by corruption."
+	if ModifiersScript.active(state, player_id, "role_freeze"):
+		return "Your role card is frozen for a term."
 	return ""
 
 

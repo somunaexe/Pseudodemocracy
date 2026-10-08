@@ -256,6 +256,32 @@ const effects = {
     // player too, and pay_chosen is money the drawer pays the chosen player. A choice with chooser: 'leader' is made by the
     // Leader about the drawer: share 'half' takes half of the card's psd off the drawer for the Leader.
     // disband: the drawer's union or mob disperses and its other members become the drawer's rivals.
+    // Scandal cards with a rule of their own (see scripts/special_cards.gd), and a few that only need the usual effects.
+    ['The women playing the game are owed', { special: 'apology' }],
+    ['You owe the player 2 seats', { special: 'seat_debt' }],
+    ['You spoke horribly at a university debate', { special: 'civilian' }],
+    ['Nobody shows up to your rally', { special: 'rally' }],
+    ['The person seated closest to you', { special: 'tax_leak' }],
+    ['Your flyover collapsed', { special: 'flyover_collapse' }],
+    ['Your tax break gets ruled illegal', { special: 'tax_break' }],
+    ['You lost the 20-v-1', { special: 'lost_20v1' }],
+    ['Delayed Reckoning', { special: 'delayed_reckoning' }],
+    ['A satirist made you', { special: 'satirist' }],
+    ['You tried to extend term limits', { special: 'term_limits' }],
+    ['Your role card is frozen', { special: 'role_freeze' }],
+    ['You lose your next Settlement card draw', { special: 'skip_settlement' }],
+    ['Whoever is marking your exam answers', { special: 'exam_rig' }],
+    ['You have been infected with COVID', { special: 'covid' }],
+    ['You missed your own policy announcement', { special: 'skip_income' }],
+    ['You draw an extra Performance card', { special: 'extra_performance' }],
+    ['Your convoy hit a pothole', { choose: { kind: 'option', options: [
+      { label: 'Pay 50 PSD', psd: -50 },
+      { label: 'Ask someone to read it aloud: they pay half with you', then: { kind: 'player' }, each: { psd: -25 } },
+    ] } }],
+    ['Choose a player \u2014 you must repay a debt', { choose: { kind: 'player' }, pay_chosen: 50 }],
+    ['Choose a player \u2014 they publicly criticize you', { popularity: -5, choose: { kind: 'player' }, target: { popularity: 5 } }],
+    ['Choose a player \u2014 they may peek', { choose: { kind: 'player' }, peek: { kinds: ['coup'], round_only: false } }],
+    ['Choose a player of your choice \u2014 you must pay', { popularity: -7, choose: { kind: 'player' }, pay_chosen: 30 }],
     // peek: the chosen player gets a free check of the drawer (kinds: coup = coup-card status, bead = the Doctor's bead), once,
     // for the rest of the round if round_only. peek_rival: one of the drawer's rivals (either way round), at random, gets it.
     ['A rival now has your number', { choose: { kind: 'player' }, peek: { kinds: ['bead', 'coup'], round_only: true } }],

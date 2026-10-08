@@ -171,4 +171,8 @@ var poll_counter: int = 0
 var card_offers: Dictionary = {}    # seller id -> { "buyer", "deck", "card", "price", "deadline" }
 # Questions about cards waiting for the open one (state.choice) to be answered. Public.
 var choice_queue: Array = []
+# Scandal cards that wait: creditors who may block their debtor's Result cards ("You owe the player 2 seats to your left"), and
+# owners of a face-down Delayed Reckoning (see SpecialCards). Public.
+var block_rights: Array = []        # { "holder", "owner", "owed" }: the owner owes the holder an IOU
+var delayed: Array = []             # owner ids
 var frozen: Dictionary = {}         # player id -> { "left": rounds until the freeze runs out, "drop": popularity lost }

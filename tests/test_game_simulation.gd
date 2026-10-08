@@ -16,6 +16,7 @@ const RolesScript = preload("res://scripts/roles.gd")
 const CardsScript = preload("res://scripts/cards.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
+const ModifiersScript = preload("res://scripts/modifiers.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const ScoringScript = preload("res://scripts/scoring.gd")
@@ -32,6 +33,7 @@ const BOX := 12550   # every PSD note in the game
 
 var failures: int = 0
 var problems: Array = []
+var votes_bad: bool = false   # every Good/Bad vote in the simulation is Bad, so Scandal cards are drawn
 var pay_fines: bool = false   # a frozen player in the simulation pays the fine as soon as they can
 
 
@@ -147,6 +149,18 @@ func _init() -> void:
 	pay_fines = false
 	expect("a server restarting from its save every 5 moves gives the same corruption game", [corrupt_restarted["problems"], corrupt_restarted["final"] == corrupt_straight["final"]], [[], true])
 
+	# Scandals: everyone votes Bad, so every Scandal card with a rule of its own is drawn.
+	var scandal_types: Array = []
+	votes_bad = true
+	for seed_value in range(1, 7):
+		var run := play(5, 800 + seed_value, 7, 0, 0, 0, 0, 0, seed_value % 2 == 0)
+		scandal_types.append_array(run["types"])
+		expect("scandal game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+		expect("scandal game %d: no rule was ever broken" % seed_value, run["problems"], [])
+	votes_bad = false
+	for kind in ["seat_debt", "made_civilian", "reckoning_placed", "apology_owed", "transparency_fee", "satirised", "rally_failed", "modifier_given"]:
+		expect("the scandal games produced a '%s' event (%d times)" % [kind, scandal_types.count(kind)], scandal_types.has(kind), true)
+
 	# Everything that can happen did happen somewhere.
 	var seen := play(5, 7, 6)
 	for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
@@ -195,9 +209,12 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		for id in ids:
 			genders[id] = "male" if id % 2 == 0 else "female"   # so the cards that ask for men or women have someone to ask
 	var s := GameScript.new_game(ids, seed_value, genders)
+	if votes_bad:
+		s.decks["scandal"] = [0, 3, 4, 7, 9, 10, 11, 12, 14, 16, 18, 19, 25, 30, 31, 32, 35, 43, 45, 46, 48, 49]
 	if seed_value <= 12 and seed_value % 2 == 0:
 		# Every Settlement card with a rule of its own comes up early (drawn from the end of the list).
 		s.decks["settlement"] = [1, 3, 4, 6, 10, 12, 13, 14, 16, 17, 24, 27, 28, 29, 34, 38, 39, 41, 44, 45, 46, 47, 48, 49]
+		s.decks["scandal"] = [0, 3, 4, 7, 9, 10, 11, 12, 14, 16, 18, 19, 25, 30, 31, 32, 35, 43, 45, 46, 48, 49]
 	if poor != 0:
 		s.treasury += s.psd[poor] - 30
 		s.psd[poor] = 30
@@ -247,6 +264,7 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		if seed_value % 2 == 0:
 			s.wills.erase(poor)                  # the poor player writes theirs through the Lawyer, and misses the upkeep
 	problems = []
+	var recent: Array = []   # the last few moves, to say what a game that never ends was doing
 	var steps: int = 0
 	var types_seen: Array = []
 	var leaders: Array = []
@@ -255,6 +273,9 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 	var log_size: int = 0
 	while s.current_round <= terms and not s.game_over and steps < 4000:
 		var move := next_move(s)
+		recent.append(str(move).replace("\n", " "))
+		if recent.size() > 8:
+			recent.pop_front()
 		if move.is_empty():
 			problems.append("stuck at step %d: %s" % [steps, describe(s)])
 			break
@@ -294,6 +315,8 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 				problems.append("step %d: a saved game did not restore identically: %s" % [steps, difference])
 			if restart_every > 0 and steps % restart_every == 0 and errors.is_empty():
 				s = restored   # the server restarts: the game carries on from its save
+	if steps >= 4000:
+		problems.append("the game never ended; its last moves: %s; state: %s" % [" | ".join(recent), describe(s)])
 	var eliminated: Array = []
 	for id in s.eliminated:
 		if s.eliminated[id]:
@@ -315,6 +338,16 @@ func next_move(s: GameStateScript) -> Dictionary:
 	var polling := poll_move(s)
 	if not polling.is_empty():
 		return polling
+	for owner in s.schedule:
+		if owner["kind"] == "penalty" and owner["until_apology"] and (s.current_round + owner["player"]) % 3 == 0 and not s.eliminated.get(owner["player"], false):
+			var judging: bool = false
+			for poll in s.polls:
+				judging = judging or (poll["special"] == "apology" and poll["drawer"] == owner["player"])
+			if not judging and apologies_this_term(s) == 0:
+				return {"player": owner["player"], "command": {"type": "apologize"}}
+	for right in s.block_rights:
+		if (s.current_round + right["holder"]) % 3 == 0:
+			return {"player": right["holder"], "command": {"type": "demand_iou", "owner": right["owner"]}}
 	var choosing := choice_move(s)
 	if not choosing.is_empty():
 		return choosing
@@ -620,6 +653,18 @@ func amend_offers_this_term(s: GameStateScript) -> int:
 	return n
 
 
+# Apologies put to the table since the term began: a rejected one costs nothing, so the script must not offer them for ever.
+func apologies_this_term(s: GameStateScript) -> int:
+	var n: int = 0
+	for i in range(s.event_log.size() - 1, -1, -1):
+		var event: Dictionary = s.event_log[i]
+		if event["type"] == "term_started":
+			break
+		if event["type"] == "poll_opened" and event["special"] == "apology":
+			n += 1
+	return n
+
+
 func hires_this_term(s: GameStateScript) -> int:
 	var n: int = 0
 	for i in range(s.event_log.size() - 1, -1, -1):
@@ -753,7 +798,7 @@ func performance_move(s: GameStateScript) -> Dictionary:
 			if act["votes"].size() >= 2 and act["card"] % 2 == 0:
 				return {"tick": int(act["deadline"])}   # the rest never voted
 			var voter: int = first_free(s, waiting)
-			return {"player": voter, "command": {"type": "performance_vote", "good": (voter * 7 + act["card"]) % 3 != 0}}
+			return {"player": voter, "command": {"type": "performance_vote", "good": (not votes_bad) and (voter * 7 + act["card"]) % 3 != 0}}
 	return {"player": performer, "command": {"type": "end_turn"}}
 
 
@@ -799,6 +844,11 @@ func election_move(s: GameStateScript) -> Dictionary:
 				questions.append({"text": "Question %d?" % (i + 1), "options": ["A", "B", "C"], "answer": (i + s.current_round) % 3})
 			return {"player": s.leader_id, "command": {"type": "write_exam", "questions": questions}}
 		EXAM_ANSWERING:
+			for id in s.election["takers"]:
+				if s.election["answers"].has(id) and ModifiersScript.active(s, id, "exam_rig") and not s.election.get("rigged", {}).has(id) and not s.eliminated.get(id, false):
+					if s.current_round % 3 == 0:
+						return {"tick": int(s.election["deadline"])}   # the Leader never decides
+					return {"player": s.leader_id, "command": {"type": "rig_exam", "target": id, "pass": (id + s.current_round) % 2 == 0}}
 			if s.current_round % 4 == 1 and not s.election["answers"].is_empty():
 				return {"tick": int(s.election["deadline"])}   # the slow ones fail
 			for id in s.election["takers"]:

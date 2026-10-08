@@ -42,7 +42,7 @@ const SERVER_ID := 0
 const ALLOWED_COMMANDS = {
 	GameStateScript.ElectionPhase.NONE: [],
 	GameStateScript.ElectionPhase.EXAM_WRITING: ["write_exam", "skip_exam"],
-	GameStateScript.ElectionPhase.EXAM_ANSWERING: ["answer_exam"],
+	GameStateScript.ElectionPhase.EXAM_ANSWERING: ["answer_exam", "rig_exam"],
 	GameStateScript.ElectionPhase.VOTING: ["cast_vote"],
 }
 
@@ -122,6 +122,7 @@ static func install_leader(state: GameStateScript, winner: int, how: String) -> 
 #   { "type": "write_exam", "questions": [ { "text": String, "options": [String, ...], "answer": int } ] }
 #   { "type": "skip_exam" }                       (server only)
 #   { "type": "answer_exam", "answers": [int, ...] }
+#   { "type": "rig_exam", "target": id, "pass": bool }   the Leader, for a taker a card lets the marker manipulate (exam_rig)
 #   { "type": "cast_vote", "candidate": int }
 static func handle(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
 	var type: String = str(command.get("type", ""))
@@ -136,6 +137,8 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 			events = _skip_exam(state, player_id)
 		"answer_exam":
 			events = _answer_exam(state, player_id, command)
+		"rig_exam":
+			events = _rig_exam(state, player_id, command)
 		"cast_vote":
 			events = _cast_vote(state, player_id, command)
 	if events.is_empty() or events[0]["type"] != "rejected":
@@ -287,6 +290,29 @@ static func _answer_exam(state: GameStateScript, player_id: int, command: Dictio
 	return events
 
 
+# "Whoever is marking your exam answers next round can manipulate them": the Leader marks the exam and may decide whether such a taker
+# passes. The marking waits for that decision (or the clock), and only for takers who handed in their answers.
+static func _rigged_takers(state: GameStateScript) -> Array:
+	return _active_takers(state).filter(func(id): return ModifiersScript.active(state, id, "exam_rig") and state.election["answers"].has(id))
+
+
+static func _rig_exam(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
+	if player_id != state.leader_id:
+		return [_reject(player_id, "Only the Leader marks the exam.")]
+	var target = command.get("target", null)
+	var passes = command.get("pass", null)
+	if typeof(target) != TYPE_INT or typeof(passes) != TYPE_BOOL or not target in _rigged_takers(state):
+		return [_reject(player_id, "There is nobody there whose marks you can change.")]
+	if not state.election.has("rigged"):
+		state.election["rigged"] = {}
+	if state.election["rigged"].has(target):
+		return [_reject(player_id, "You have already decided that one.")]
+	state.election["rigged"][target] = passes   # SECRET until the marks are revealed
+	var events: Array = [EventsScript.make("exam_rigged", {"target": target})]   # THAT, never which way
+	events.append_array(_maybe_reveal(state))
+	return events
+
+
 # Everyone still able to sit the exam.
 static func _active_takers(state: GameStateScript) -> Array:
 	return state.election["takers"].filter(func(id): return _is_active(state, id))
@@ -298,6 +324,9 @@ static func _maybe_reveal(state: GameStateScript) -> Array:
 	for id in _active_takers(state):
 		if not state.election["answers"].has(id) and not ModifiersScript.active(state, id, "exam_pass"):
 			return []   # still waiting for someone (a player excused by a card needn't sit it)
+	for id in _rigged_takers(state):
+		if not state.election.get("rigged", {}).has(id) and _can_use_pledges(state, state.leader_id):
+			return []   # the Leader is still deciding
 	return _reveal(state)
 
 
@@ -318,6 +347,14 @@ static func _reveal(state: GameStateScript) -> Array:
 		var difference: int = correct * 100 - mark * total   # compared without fractions
 		if direction * difference > 0:
 			passed.append(id)
+	var rigged: Dictionary = state.election.get("rigged", {})
+	for id in _rigged_takers(state):
+		ModifiersScript.use(state, id, "exam_rig")   # the card is used up whether or not the Leader changed anything
+		if rigged.has(id):
+			if rigged[id] and not id in passed:
+				passed.append(id)
+			elif not rigged[id] and id in passed:
+				passed.erase(id)
 	var excused: Array = []
 	for id in _active_takers(state):
 		if ModifiersScript.active(state, id, "exam_pass"):
@@ -329,7 +366,7 @@ static func _reveal(state: GameStateScript) -> Array:
 	if state.leader_id != -1 and not state.leader_id in passed:
 		passed.append(state.leader_id)
 	passed.sort()
-	var events: Array = [EventsScript.make("exam_revealed", {"key": key.duplicate(), "total": total, "scores": scores, "passed": passed.duplicate(), "excused": excused})]
+	var events: Array = [EventsScript.make("exam_revealed", {"key": key.duplicate(), "total": total, "scores": scores, "passed": passed.duplicate(), "excused": excused, "rigged": rigged.keys()})]
 	var voters: Array = passed.filter(func(id): return _can_vote(state, id))
 	var candidates: Array = _eligible_candidates(state, voters)
 	if candidates.is_empty():
@@ -390,7 +427,7 @@ static func _maybe_finish_vote(state: GameStateScript) -> Array:
 
 
 static func _count(state: GameStateScript) -> Array:
-	var candidates: Array = state.election["candidates"].filter(func(id): return _can_stand(state, id))
+	var candidates: Array = state.election["candidates"].filter(func(id): return _can_run(state, id))
 	var tally: Dictionary = {}
 	for id in candidates:
 		tally[id] = 0
@@ -457,7 +494,12 @@ static func _eligible_voters(state: GameStateScript) -> Array:
 
 
 static func _eligible_candidates(state: GameStateScript, voters: Array) -> Array:
-	return voters.filter(func(id): return _can_stand(state, id))
+	return voters.filter(func(id): return _can_run(state, id))
+
+
+# May stand in this election: able to lead, and not barred by a card ("you can't run for the leader role for 2 terms").
+static func _can_run(state: GameStateScript, id: int) -> bool:
+	return _can_stand(state, id) and not ModifiersScript.has(state, id, "no_stand")
 
 
 static func _reject(player_id: int, reason: String) -> Dictionary:

@@ -600,6 +600,30 @@ Plumbing: a card with a rule of its own says `special` in its data. **Modifiers*
 | Public holiday | Every other player's next income is skipped. | Assumed |
 | Appointee under investigation (Settlement) | The drawer picks a player; both get +20 popularity and 100 PSD from the treasury. | Confirmed |
 
+### Scandal cards
+
+| Card | Rule | Status |
+|---|---|---|
+| The women playing the game | -5 popularity at the end of each of the next 4 rounds, until the player apologises (`apologize`): the others judge in a poll, and it counts if MORE than half say so (silence says no). They may try again, one at a time. | Confirmed (table decides); majority rule assumed |
+| You owe the player 2 seats to your left 150 | The player 2 seats to the left (next seat in id order, skipping the eliminated) holds an IOU for 150, payable on demand. It is an IOU, not a debt in the money system (a player in debt holds no cash). Until it is paid the creditor may block any of the drawer's Result cards: they are asked in a poll when one is drawn (silence lets it through). The owner may pay it (`pay_iou`, needs 150 in hand) or the creditor may demand it (`demand_iou`: the owner pays what they have and the rest becomes debt). Either ends the right. | Assumed |
+| Spoke horribly at a debate | The drawer is a Civilian (roles back in the box). If already a Civilian they name a player with a role who becomes one instead (the game can't hear who "speaks to" them). | Assumed |
+| Nobody shows up to your rally | -10 popularity; if in a union or mob the drawer chooses another member to leave it. | Confirmed |
+| Tax returns leaked | The player seated next on the left sets a "transparency fee" from 10 to 50 (0 to 50 if the drawer is a Civilian), paid to the treasury. Silence sets the smallest. | Assumed ("closest" = next seat) |
+| Flyover collapsed | The drawer pays 200 split among the others (rounded up). Each chooses: accept the share (the drawer pays them), redirect it to the treasury (the drawer pays it there), or reject it (the drawer keeps it). Silence accepts. | Assumed |
+| Tax break ruled illegal | The next levy is doubled, once. A Leader's levy-setting power (amending the Levy article) is suspended this round. | Confirmed |
+| Lost the 20-v-1 | The drawer becomes a Civilian and the player opposite (half the table away) takes the roles; a role they already hold goes back in the box. | Confirmed |
+| Delayed Reckoning | Face-down (everyone knows it exists). The next time the levy goes UP, by an amendment or by the levy band moving it, it flips: -5 popularity and the difference in levy is repaid to the treasury. | Assumed (difference paid once) |
+| Pothole | Pay 50, or ask a player to "read it aloud" and each pays 25 (the helper has no say). | Assumed |
+| A satirist | -15 popularity. In the next 2 rounds anyone may cite it once against one of the drawer's Settlement cards before it resolves: a poll to the others, the first to cancel wins. | Confirmed |
+| Term limits | -25 popularity; can't be a candidate in the next 2 elections (can still vote). | Confirmed |
+| Role card frozen | Next round the drawer can't use any role's power. | Assumed |
+| Choose a player: repay 50 / criticize / may peek / peace offering | The chosen player is paid 50; or -5 for the drawer and +5 for them; or gets a once-only free look at the drawer's coup cards; or is paid 30 while the drawer loses 7 popularity. | Confirmed |
+| Lose your next Settlement draw | The next Settlement card the drawer would draw is lost; a Scandal draw doesn't use it up. | Confirmed |
+| Marking your exam | The next exam the drawer sits: the Leader, who marks, may decide whether they pass (`rig_exam`, secret until the marks are read). The marking waits for the decision or the exam clock; the card is used either way. | Assumed |
+| COVID | The drawer and the players seated on either side are sick for 3 rounds (the immune and the already sick are skipped, and it is said), and so is the last player they spoke to, whom they name. The sentence about eye contact is something the game can't see: the table plays it. | Assumed |
+| Missed your policy announcement | Their next income is skipped. | Confirmed |
+| Extra Performance card | On their next turn, when the first performance is over a second begins. | Confirmed |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.

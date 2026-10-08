@@ -23,6 +23,15 @@ static func total_debt(state: GameStateScript, player_id: int) -> int:
 
 
 # Cash minus debt. Negative means the player is in debt.
+# What the debtor owes this creditor in all.
+static func owed_to(state: GameStateScript, debtor_id: int, creditor_id: int) -> int:
+	var total: int = 0
+	for entry in state.debts.get(debtor_id, []):
+		if entry["creditor"] == creditor_id:
+			total += int(entry["amount"])
+	return total
+
+
 static func net_psd(state: GameStateScript, player_id: int) -> int:
 	return int(state.psd.get(player_id, 0)) - total_debt(state, player_id)
 

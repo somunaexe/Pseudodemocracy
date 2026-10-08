@@ -210,6 +210,8 @@ func rich_state() -> GameStateScript:
 	s.accords = [{"a": 2, "b": 4, "left": 2, "loss": 10}]
 	s.skip_draw = {5: true}
 	s.grammar_referee = false
+	s.block_rights = [{"holder": 3, "owner": 2, "owed": 150}]
+	s.delayed = [4]
 	s.choice_queue = [{"pending": {"player": 2, "deck": "settlement", "card": 22, "kind": "option", "deadline": 5000, "labels": ["a", "b"]}, "shown": {"player": 2}}]
 	s.card_offers = {3: {"buyer": 4, "deck": "settlement", "card": 12, "price": 100, "deadline": 777}}
 	s.poll_counter = 4
