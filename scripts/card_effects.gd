@@ -13,6 +13,7 @@ class_name CardEffects
 #   no_coup > 0  the player can't attempt a coup for that many rounds
 #   collect_each   every other player of a gender pays the drawer an amount (what they can't pay becomes debt)
 #   marker       the player gets a corruption marker (see Corruption)
+#   disband      the player's union or mob disperses and its other members become the player's rivals (see Rivals)
 # A card with "keep" goes into the player's hand instead (state.hands), to be played later with the command
 # "play_card" (see play()). The union cards do that: playing one founds a union (see Unions).
 # A card with "choose" stops the turn until the player chooses (command "choose", see choose()):
@@ -22,6 +23,9 @@ class_name CardEffects
 #            can then move the chosen player's popularity (target), swap all roles with them
 #            (swap_with), give the drawer a role (gain_role), take money from the drawer for them (pay_chosen, debt if
 #            the drawer can't cover it) and give them a corruption marker (target.marker).
+#            With who = "rival" the choice is among the drawer's rivals (anyone, if they have none) and the one chosen
+#            becomes their rival; the card can then make a truce (the two can't coup each other this round), an accord
+#            (if either is couped within some rounds the other loses popularity) or skip the chosen player's next draw.
 #   option with chooser "leader"   the Leader chooses, not the drawer: stay quiet, share (the Leader takes half of the card's
 #            money from the drawer) or expose (the drawer gets a marker). The drawer's turn waits for it. (Assumed: if the
 #            drawer IS the Leader, or the seat is empty, nobody chooses and the drawer keeps it all.)
@@ -42,6 +46,7 @@ const SicknessScript = preload("res://scripts/sickness.gd")
 const GendersScript = preload("res://scripts/genders.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
+const RivalsScript = preload("res://scripts/rivals.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const RngScript = preload("res://scripts/rng.gd")
@@ -62,6 +67,8 @@ static func apply(state: GameStateScript, player_id: int, deck: String, card: in
 	if effect.has("collect_each"):
 		_collect_each(state, player_id, effect["collect_each"], data)
 	var extra: Array = _apply_status(state, player_id, effect, data)
+	if effect.has("disband"):
+		extra.append_array(_disband(state, player_id, data))
 	data["asks_choice"] = effect.has("choose")
 	var events: Array = [_log(state, "card_applied", data)]
 	events.append_array(_log_all(state, extra))
@@ -133,6 +140,20 @@ static func _apply_status(state: GameStateScript, player_id: int, effect: Dictio
 	return events
 
 
+# "Your mob got caught on camera": the union or mob the player is in disperses; the others in it become their rivals.
+static func _disband(state: GameStateScript, player_id: int, data: Dictionary) -> Array:
+	var union_id: int = UnionsScript.union_of(state, player_id)
+	if union_id == -1:
+		return []
+	var others: Array = state.unions[union_id]["members"].duplicate()
+	others.erase(player_id)
+	var events: Array = UnionsScript.disperse(state, union_id, "caught on camera")
+	for other in others:
+		events.append_array(RivalsScript.name_rival(state, player_id, other))
+	data["disbanded"] = union_id
+	return events
+
+
 static func _log_all(state: GameStateScript, events: Array) -> Array:
 	for event in events:
 		state.event_log.append(event)   # events from helpers are logged here, once
@@ -187,6 +208,8 @@ static func _player_candidates(state: GameStateScript, player_id: int, who: Stri
 		if who == "has_role" and RolesScript.is_civilian(state, id):
 			continue
 		result.append(id)
+	if who == "rival":
+		return RivalsScript.candidates(state, player_id)
 	return result
 
 
@@ -215,9 +238,10 @@ static func play(state: GameStateScript, player_id: int, command: Dictionary) ->
 		return [_reject(player_id, "Choose a card in your hand by its number.")]
 	var kept: Dictionary = hand[index]
 	var effect: Dictionary = CardsScript.effects(kept["deck"], kept["card"])
-	var problem: String = UnionsScript.problem_founding(state, player_id)   # every kept card so far founds a union
-	if problem != "":
-		return [_reject(player_id, problem)]   # the card stays in the hand
+	if not effect.has("truce"):   # the other kept cards found a union
+		var problem: String = UnionsScript.problem_founding(state, player_id)
+		if problem != "":
+			return [_reject(player_id, problem)]   # the card stays in the hand
 	hand.remove_at(index)
 	if hand.is_empty():
 		state.hands.erase(player_id)
@@ -296,6 +320,14 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 					data["target_" + key] = target_data[key]
 				if effect["target"].has("marker"):
 					events.append_array(CorruptionScript.give(state, value))
+			if effect.get("choose", {}).get("who", "") == "rival":
+				events.append_array(RivalsScript.name_rival(state, player_id, value))
+			if effect.has("truce"):
+				events.append_array(RivalsScript.truce(state, player_id, value))
+			if effect.has("accord"):
+				events.append_array(RivalsScript.accord(state, player_id, value, int(effect["accord"]["rounds"]), int(effect["accord"]["loss"])))
+			if effect.has("skip_draw"):
+				events.append_array(RivalsScript.skip_next_draw(state, value))
 			if effect.has("pay_chosen"):
 				var owes: int = DebtScript.charge(state, player_id, value, int(effect["pay_chosen"]))
 				data["paid_to_chosen"] = int(effect["pay_chosen"]) - owes

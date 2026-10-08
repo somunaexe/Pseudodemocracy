@@ -204,6 +204,10 @@ func rich_state() -> GameStateScript:
 	s.agent_used = {4: true}
 	s.coup_ban = {3: 2}
 	s.markers = {2: 3, 4: 1}
+	s.rivals = {2: [3, 4]}
+	s.truces = [[2, 3]]
+	s.accords = [{"a": 2, "b": 4, "left": 2, "loss": 10}]
+	s.skip_draw = {5: true}
 	s.frozen = {2: {"left": 2, "drop": 30}}
 	s.agent_offers = {2: {"client": 5, "kind": "will", "target": 3, "role": "", "price": 40, "deadline": 8000}}
 	s.command = {"phase": GameStateScript.CommandPhase.VOTING, "union_id": 1, "union_type": 0, "leader": 3, "target": 4, "scenario": "sell a fridge to a penguin", "deadline": 9000, "votes": {2: true, 5: false}}

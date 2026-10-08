@@ -37,7 +37,13 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 }
 
 function validate(deck, prefix, text, effect) {
-  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen'];
+  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband'];
+  for (const flag of ['truce', 'skip_draw', 'disband']) if (flag in effect && effect[flag] !== true) fail(deck, prefix, `"${flag}" must be true`);
+  if ('accord' in effect) {
+    checkAmounts(deck, prefix, text, { psd: effect.accord.rounds, popularity: effect.accord.loss }, ['psd', 'popularity']);
+    if (effect.accord.rounds <= 0 || effect.accord.loss <= 0) fail(deck, prefix, 'an accord needs positive rounds and loss');
+  }
+  for (const key of ['truce', 'accord', 'skip_draw']) if (key in effect && !(effect.choose && effect.choose.kind === 'player')) fail(deck, prefix, `"${key}" needs a player choice`);
   if ('pay_chosen' in effect) {
     if (!effect.choose || effect.choose.kind !== 'player') fail(deck, prefix, 'pay_chosen needs a player choice');
     checkAmounts(deck, prefix, text, { psd: effect.pay_chosen }, ['psd']);
@@ -51,7 +57,7 @@ function validate(deck, prefix, text, effect) {
   }
   if ('keep' in effect) {
     if (effect.keep !== true) fail(deck, prefix, '"keep" must be true');
-    for (const key of Object.keys(effect)) if (!['keep', 'found_union', 'choose'].includes(key)) fail(deck, prefix, `a kept card can't also have "${key}"`);
+    for (const key of Object.keys(effect)) if (!['keep', 'found_union', 'choose', 'truce'].includes(key)) fail(deck, prefix, `a kept card can't also have "${key}"`);
     if (!('found_union' in effect) && !('choose' in effect)) fail(deck, prefix, 'a kept card must do something when played');
   }
   if ('found_union' in effect && !UNIONS.includes(effect.found_union)) fail(deck, prefix, `unknown union "${effect.found_union}"`);
@@ -77,7 +83,7 @@ function validate(deck, prefix, text, effect) {
     for (const key of ['gain_role', 'swap_with', 'target']) if (key in effect) fail(deck, prefix, `"${key}" doesn't go with an option choice`);
   }
   if (choose.kind === 'player') {
-    if ('who' in choose && choose.who !== 'has_role') fail(deck, prefix, `unknown "who": ${choose.who}`);
+    if ('who' in choose && !['has_role', 'rival'].includes(choose.who)) fail(deck, prefix, `unknown "who": ${choose.who}`);
     if (effect.gain_role === '$choice') fail(deck, prefix, '"$choice" for a role needs a role choice');
     if ('swap_with' in effect && effect.swap_with !== '$choice') fail(deck, prefix, 'swap_with must be "$choice"');
     if ('target' in effect) checkAmounts(deck, prefix, text, effect.target, MONEY_KEYS);

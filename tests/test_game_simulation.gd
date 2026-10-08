@@ -765,6 +765,21 @@ func check_rules(s: GameStateScript, step: int) -> void:
 			problems.append(where + "player %d is frozen without markers or time" % id)
 		if RolesScript.can_use_pledge(s, id, "Doctor") == "" and RolesScript.has(s, id, "Doctor"):
 			problems.append(where + "frozen player %d can still use a pledge" % id)
+	for owner in s.rivals:
+		if s.eliminated.get(owner, false) or s.rivals[owner].is_empty() or owner in s.rivals[owner]:
+			problems.append(where + "player %d has a malformed rival list" % owner)
+		for rival in s.rivals[owner]:
+			if s.eliminated.get(rival, false):
+				problems.append(where + "player %d has an eliminated rival %d" % [owner, rival])
+	for pair in s.truces:
+		if s.eliminated.get(pair[0], false) or s.eliminated.get(pair[1], false) or pair[0] == pair[1]:
+			problems.append(where + "a truce %s involves a player who left or is the same twice" % str(pair))
+	for entry in s.accords:
+		if s.eliminated.get(entry["a"], false) or s.eliminated.get(entry["b"], false) or entry["left"] <= 0:
+			problems.append(where + "an accord %s should have ended" % str(entry))
+	for id in s.skip_draw:
+		if s.eliminated.get(id, false):
+			problems.append(where + "an eliminated player %d still loses a draw" % id)
 	var in_union: Dictionary = {}
 	for union_id in s.unions:
 		var union: Dictionary = s.unions[union_id]

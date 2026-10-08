@@ -128,6 +128,9 @@ static func _resolve(state: GameStateScript, act: Dictionary) -> Array:
 		var deck: String = "settlement" if good > bad else "scandal"
 		if deck == "settlement" and state.frozen.has(act["player"]):
 			data["frozen"] = true   # corruption: no Settlement cards for them
+		elif state.skip_draw.has(act["player"]):
+			state.skip_draw.erase(act["player"])
+			data["draw_skipped"] = true   # a card made them lose this draw entirely
 		else:
 			var card: int = CardsScript.draw(state, deck)
 			data["deck"] = deck

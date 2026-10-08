@@ -196,6 +196,13 @@ const effects = {
     ['The Market Women', { collect_each: { gender: 'female', amount: 5 } }],
     // Cards the drawer KEEPS to play later ("play anytime"): keep: true. A union card founds a union when played;
     // the player becomes its Unionizer (an Agbero mob's Capon). The third lets them choose which when they play it.
+    // Rival cards: who 'rival' offers the drawer's rivals, or anyone if they have none; the one chosen becomes their rival.
+    // truce: the two can't coup each other until the round ends; accord: for that many rounds, if either is couped the
+    // other loses that much popularity; skip_draw: the chosen player's next Settlement or Scandal draw is lost.
+    ['You survived a vote of no confidence', { keep: true, truce: true, choose: { kind: 'player', who: 'rival' } }],
+    ["A rival's scandal breaks", { popularity: 5, choose: { kind: 'player', who: 'rival' }, target: { popularity: -15 } }],
+    ['Peace Accord', { choose: { kind: 'player', who: 'rival' }, accord: { rounds: 3, loss: 10 } }],
+    ['Choose a Rival', { choose: { kind: 'player', who: 'rival' }, skip_draw: true }],
     ["You've had enough", { keep: true, found_union: 'activist' }],
     ["You're ready to stir up trouble", { keep: true, found_union: 'agbero' }],
     ['The people are ready to move', { keep: true, choose: { kind: 'option', options: [{ label: 'Found an Activist union', found_union: 'activist' }, { label: 'Found an Agbero mob', found_union: 'agbero' }] } }],
@@ -216,6 +223,8 @@ const effects = {
     // marker: 1 gives the drawer a corruption marker (see Corruption). In a player choice, target.marker gives one to the chosen
     // player too, and pay_chosen is money the drawer pays the chosen player. A choice with chooser: 'leader' is made by the
     // Leader about the drawer: share 'half' takes half of the card's psd off the drawer for the Leader.
+    // disband: the drawer's union or mob disperses and its other members become the drawer's rivals.
+    ['Your mob got caught on camera', { disband: true }],
     ['You paid an official', { psd: -100, marker: 1 }],
     ['Your appointee turns out', { marker: 1, choose: { kind: 'player' }, target: { marker: 1 } }],
     ['Your ghost workers', { psd: -150, marker: 1 }],

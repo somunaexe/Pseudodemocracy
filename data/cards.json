@@ -163,6 +163,14 @@
      "amount": 5
     }
    },
+   "2": {
+    "keep": true,
+    "truce": true,
+    "choose": {
+     "kind": "player",
+     "who": "rival"
+    }
+   },
    "7": {
     "keep": true,
     "found_union": "activist"
@@ -185,6 +193,26 @@
        "found_union": "agbero"
       }
      ]
+    }
+   },
+   "15": {
+    "popularity": 5,
+    "choose": {
+     "kind": "player",
+     "who": "rival"
+    },
+    "target": {
+     "popularity": -15
+    }
+   },
+   "18": {
+    "choose": {
+     "kind": "player",
+     "who": "rival"
+    },
+    "accord": {
+     "rounds": 3,
+     "loss": 10
     }
    },
    "19": {
@@ -264,6 +292,13 @@
    "42": {
     "psd": -30,
     "popularity": 15
+   },
+   "43": {
+    "choose": {
+     "kind": "player",
+     "who": "rival"
+    },
+    "skip_draw": true
    }
   },
   "scandal": {
@@ -279,6 +314,9 @@
     "target": {
      "marker": 1
     }
+   },
+   "8": {
+    "disband": true
    },
    "17": {
     "psd": -150,

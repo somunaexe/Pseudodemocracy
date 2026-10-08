@@ -486,6 +486,20 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | "Collect 70 PSD from you as compensation". | The drawer pays the chosen player 70 (debt if short), the chosen player gets a marker, the drawer none. | Assumed |
 | "Snitch and split the punishment" (the embezzlement traced card). | Not built: it needs a second choice by a second player. The table plays it as before. | Known gap |
 
+## Rivals (built: scripts/rivals.gd)
+
+| Question | Decision | Status |
+|---|---|---|
+| What is a rival? | A one-way public label: your list of rivals. It has no rules of its own. It lasts until the rival leaves the game. | Confirmed (glossary), one-way assumed |
+| "Choose a rival" when you have none. | Any other player is offered, and the one you choose becomes your rival. With rivals, only they are offered. | Confirmed (glossary), labelling the chosen assumed |
+| A rival's scandal (+5 / -15). | You gain 5 at once; the chosen rival loses 15. | **Built** |
+| The vote of no confidence card (kept). | Playable any time, without a union. The two of you can't coup each other until the round ends. It also makes the chosen player your rival. | **Built**, rival label assumed |
+| Peace Accord. | For 3 rounds, if either of you is successfully couped (overthrown as Leader), the other loses 10 popularity. A failed coup costs nothing. The couping round counts as one of the 3 (the coup ends the round). | **Built** |
+| Lose the next Result card draw. | The chosen player's next Settlement or Scandal card is not drawn (they still perform and the popularity still moves). A tie draws no card, so the penalty waits. | **Built** |
+| Mob caught on camera. | The drawer's union or mob disperses (whoever is in it, not just the leader) and the other members become the drawer's rivals. | **Built** |
+| A rival may check your coup card, Doctor bead or role draw for free. | Not built: it needs a Secret-Agent-style peek for a rival. The table plays it as before. | Known gap |
+| Debate a rival, choose a rival to challenge (Performance cards). | The table plays them. | Known gap |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.
@@ -510,7 +524,7 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | The heir already holds that role. | They can't hold it twice, so that card goes back in the box. | Assumed |
 | How are roles gained? | From Settlement cards: choose any role, swap roles, gain the Lawyer role (all built, see Choices). Others (found a union, become a Doctor/Lawyer if you hold neither) wait for their mechanics. | **Built** (3 cards) |
 
-Not built yet, and the next steps: the Vice, Rivals and Loyalists, choices of several players, the other kept cards, and a first Godot screen. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
+Not built yet, and the next steps: the Vice and Loyalists, choices of several players, the other kept cards, and a first Godot screen. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

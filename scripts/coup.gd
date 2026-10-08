@@ -9,7 +9,7 @@ class_name Coup
 # To attempt a coup a player (not the Leader) needs:
 #   - 300 PSD in hand (coupCost) and a COUP CARD: a role card with a coup sticker (see Roles; only they can see
 #     which of their cards have one). A CANCELLED player has no roles, so can't coup.
-#   - not to be barred from coups for a term by a Scandal card (coup_ban).
+#   - not to be barred from coups for a term by a Scandal card (coup_ban), nor in a truce with the Leader (Rivals).
 #   - to be at least coupGap (20) points more popular than the Leader (effective popularity) for the coup to SUCCEED. So
 #     a Leader above +30 can't be couped at all.
 # If it FAILS (they are not 20 ahead): they lose the coup card and the 300 PSD, and nothing else happens: the sticker
@@ -17,7 +17,8 @@ class_name Coup
 # If it succeeds:
 #   - the challenger pays the 300 to the treasury, and the sticker moves from the card they used to another role
 #     card, chosen at random;
-#   - the round stops at once: the couped Leader scores HALF a round (not a full one), the levy band shifts on
+#   - the round stops at once: the couped Leader scores HALF a round (not a full one), a Peace Accord with them costs
+#     its partner popularity (Rivals), the levy band shifts on
 #     their popularity at that moment (Article 5), sickness and charges move on a round (RoundEnd), and anything
 #     under way in the term (an amendment, a performance) ends with it;
 #   - there is no exam and no vote: the challenger draws a Leader role card and starts a new term, and takes the
@@ -31,6 +32,7 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const RolesScript = preload("res://scripts/roles.gd")
+const RivalsScript = preload("res://scripts/rivals.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const ElectionScript = preload("res://scripts/election.gd")
 const LevyBandScript = preload("res://scripts/levy_band.gd")
@@ -72,6 +74,8 @@ static func _problem_with(state: GameStateScript, player_id: int) -> String:
 		return "Your roles are frozen by corruption, so you have no coup card."
 	if state.coup_ban.get(player_id, 0) > 0:
 		return "You can't attempt a coup for %d more round(s)." % state.coup_ban[player_id]
+	if RivalsScript.in_truce(state, player_id, state.leader_id):
+		return "You and the Leader agreed not to coup each other this round."
 	var cost: int = GameDataScript.get_int("coupCost")
 	if int(state.psd.get(player_id, 0)) < cost:
 		return "You need %d PSD in hand for a coup." % cost
@@ -114,6 +118,7 @@ static func _succeed(state: GameStateScript, challenger: int, card: int, challen
 	# The round stops. The couped Leader scores half a round instead of a full one.
 	state.half_rounds[old_leader] = int(state.half_rounds.get(old_leader, 0)) + 1
 	events.append_array(LevyBandScript.shift_at_term_end(state))   # logs its own event
+	events.append_array(_log_all(state, RivalsScript.accord_penalties(state, old_leader)))   # a Peace Accord with the couped Leader
 	events.append_array(_log_all(state, RoundEndScript.run(state)))
 	if not state.amend.is_empty():
 		state.amendment_record.append({"round": state.current_round, "leader": old_leader, "article_id": state.amend["article_id"], "outcome": "abandoned", "for": 0, "against": 0, "text": ""})

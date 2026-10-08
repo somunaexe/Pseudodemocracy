@@ -138,4 +138,10 @@ var coup_ban: Dictionary = {}       # player id -> rounds left
 
 # Corruption markers held (see Corruption), and the players frozen by their last one. Public.
 var markers: Dictionary = {}        # player id -> markers held
+# Rivals (see Rivals): each player's labelled rivals, the players who agreed not to coup each other this round,
+# the Peace Accords running, and the players who lose their next Settlement/Scandal draw. Public.
+var rivals: Dictionary = {}         # owner id -> list of player ids
+var truces: Array = []              # [a, b] pairs
+var accords: Array = []             # { "a", "b", "left": rounds, "loss": popularity }
+var skip_draw: Dictionary = {}      # player id -> true
 var frozen: Dictionary = {}         # player id -> { "left": rounds until the freeze runs out, "drop": popularity lost }
