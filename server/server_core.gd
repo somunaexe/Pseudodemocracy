@@ -34,6 +34,11 @@ const NAME_MAX := 24
 const MAX_ROOMS := 200
 const BURST := 20              # a connection may send this many messages at once...
 const REFILL_PER_SECOND := 8   # ...and gets this many more every second
+const PRUNE_EVERY_MS := 60000
+const LOBBY_IDLE_MS := 3600000          # a room that never started and has nobody in it is dropped after an hour
+const FINISHED_KEEP_MS := 86400000      # a finished game is kept for a day
+const ABANDONED_KEEP_MS := 604800000    # a running game that nobody has touched or joined for a week is dropped
+const SAVE_VERSION := 1
 const CLIENT_TYPES := ["create_room", "join_room", "resume", "start_game", "command", "sync", "leave"]
 
 var rooms: Dictionary = {}     # code -> room
@@ -41,6 +46,8 @@ var members: Dictionary = {}   # token -> member { token, name, gender, code, se
 var conns: Dictionary = {}     # connection id -> { "token": String, "tokens": float, "at": int }
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var now_ms: int = 0
+var store = null                  # where rooms are saved after every change (DiskStore or MemoryStore); null = nowhere
+var last_prune_ms: int = 0
 var secure_tokens: bool = false   # a real server draws tokens from the operating system; a seeded test server does not
 
 
@@ -70,6 +77,7 @@ func disconnect_peer(conn: int, now: int) -> Array:
 	conns.erase(conn)
 	if token != "" and members.has(token) and members[token]["conn"] == conn:
 		members[token]["conn"] = -1
+		rooms[members[token]["code"]]["touched"] = now_ms
 		_announce_room(out, rooms[members[token]["code"]])
 	return out
 
@@ -107,11 +115,92 @@ func receive(conn: int, text: String, now: int) -> Array:
 func tick(now: int) -> Array:
 	now_ms = maxi(now_ms, now)
 	var out: Array = []
-	for code in rooms:
+	for code in rooms.keys():
 		var room: Dictionary = rooms[code]
 		if room["state"] != null and not room["state"].game_over:
-			_broadcast(out, room, GameScript.tick(room["state"], now_ms))
+			var events: Array = GameScript.tick(room["state"], now_ms - room["clock_base"])
+			if not events.is_empty():   # (the clock moving the game is not "activity": only people touching it keeps a room alive)
+				_save(room)
+				_broadcast(out, room, events)
+	if now_ms - last_prune_ms >= PRUNE_EVERY_MS:
+		last_prune_ms = now_ms
+		_prune()
 	return out
+
+
+# --- saving ---------------------------------------------------------------------------------
+
+# One room as text. Connections are not saved: nobody is connected after a restart. Tokens are (they are the way back in).
+func _room_text(room: Dictionary) -> String:
+	var people: Array = []
+	for token in room["members"]:
+		var m: Dictionary = members[token]
+		people.append({"token": token, "name": m["name"], "gender": m["gender"], "seat": m["seat"]})
+	return SerializerScript.to_json({
+		"version": SAVE_VERSION, "code": room["code"], "host": room["host"], "members": people,
+		"started": room["started"], "touched": room["touched"],
+		"state": SerializerScript.state_to_json(room["state"]) if room["state"] != null else "",
+	})
+
+
+func _save(room: Dictionary) -> void:
+	if store == null:
+		return
+	if not store.save(room["code"], _room_text(room)):
+		push_error("room %s could not be saved" % room["code"])
+
+
+func _drop_room(room: Dictionary) -> void:
+	for token in room["members"]:
+		members.erase(token)
+	rooms.erase(room["code"])
+	if store != null:
+		store.remove(room["code"])
+
+
+# Brings every saved room back after a restart. The game's clock carries on from where it was, as if the downtime had not
+# happened: otherwise every deadline would have passed and everyone would be skipped at once. Returns how many came back.
+func load_saved(now: int) -> int:
+	now_ms = maxi(now_ms, now)
+	if store == null:
+		return 0
+	var loaded: int = 0
+	for text in store.load_all():
+		var errors: Array = []
+		var data = SerializerScript.from_json(text, errors)
+		if not errors.is_empty() or typeof(data) != TYPE_DICTIONARY or int(data.get("version", 0)) != SAVE_VERSION:
+			push_error("a saved room was skipped: unreadable or from another version")
+			continue
+		var room: Dictionary = {"code": str(data["code"]), "host": str(data["host"]), "members": [], "started": bool(data["started"]), "state": null, "touched": now_ms, "clock_base": 0}   # downtime is not idle time
+		if room["started"]:
+			var state = SerializerScript.state_from_json(str(data["state"]), errors)
+			if not errors.is_empty() or state == null:
+				push_error("room %s was skipped: its game could not be read (%s)" % [room["code"], str(errors)])
+				continue
+			room["state"] = state
+			room["clock_base"] = now_ms - state.clock_ms
+		for person in data["members"]:
+			var token: String = str(person["token"])
+			room["members"].append(token)
+			members[token] = {"token": token, "name": str(person["name"]), "gender": str(person["gender"]), "code": room["code"], "seat": int(person["seat"]), "conn": -1}
+		rooms[room["code"]] = room
+		loaded += 1
+	return loaded
+
+
+# Rooms nobody wants any more go, so the server does not fill up over weeks.
+func _prune() -> void:
+	for code in rooms.keys():
+		var room: Dictionary = rooms[code]
+		var idle: int = now_ms - int(room["touched"])
+		var connected: bool = false
+		for token in room["members"]:
+			connected = connected or members[token]["conn"] != -1
+		if connected:
+			continue
+		var over: bool = room["state"] != null and room["state"].game_over
+		if (not room["started"] and idle > LOBBY_IDLE_MS) or (over and idle > FINISHED_KEEP_MS) or (idle > ABANDONED_KEEP_MS):
+			_drop_room(room)
 
 
 # --- the lobby ------------------------------------------------------------------------------
@@ -125,11 +214,12 @@ func _create_room(out: Array, conn: int, message: Dictionary) -> void:
 	if who.has("error"):
 		return _error(out, conn, who["error"])
 	var code: String = _new_code()
-	var room: Dictionary = {"code": code, "host": "", "members": [], "started": false, "state": null}
+	var room: Dictionary = {"code": code, "host": "", "members": [], "started": false, "state": null, "touched": now_ms, "clock_base": 0}
 	rooms[code] = room
 	_seat(out, conn, room, who)
 	room["host"] = conns[conn]["token"]
 	_announce_room(out, room)
+	_save(room)
 
 
 func _join_room(out: Array, conn: int, message: Dictionary) -> void:
@@ -151,6 +241,7 @@ func _join_room(out: Array, conn: int, message: Dictionary) -> void:
 			return _error(out, conn, "Someone in this room already has that name.")
 	_seat(out, conn, room, who)
 	_announce_room(out, room)
+	_save(room)
 
 
 func _resume(out: Array, conn: int, message: Dictionary) -> void:
@@ -167,6 +258,7 @@ func _resume(out: Array, conn: int, message: Dictionary) -> void:
 	member["conn"] = conn
 	conns[conn]["token"] = token
 	var room: Dictionary = rooms[member["code"]]
+	room["touched"] = now_ms
 	_send(out, conn, {"type": "welcome", "token": token, "code": room["code"], "you": member["seat"]})
 	_announce_room(out, room)
 	_send_state(out, room, member, true)
@@ -194,6 +286,8 @@ func _start_game(out: Array, conn: int) -> void:
 			genders[i + 1] = m["gender"]
 	room["started"] = true
 	room["state"] = GameScript.new_game(ids, rng.randi_range(1, 2147483646), genders)
+	room["clock_base"] = now_ms   # the game's own clock starts at 0 now
+	_save(room)
 	_announce_room(out, room)
 	for token in room["members"]:
 		_send(out, members[token]["conn"], {"type": "welcome", "token": token, "code": room["code"], "you": members[token]["seat"]})
@@ -211,11 +305,14 @@ func _leave(out: Array, conn: int) -> void:
 	members.erase(member["token"])
 	conns[conn]["token"] = ""
 	if room["members"].is_empty():
-		rooms.erase(room["code"])
+		_drop_room(room)
 	else:
 		if room["host"] == member["token"]:
 			room["host"] = room["members"][0]
+		for i in room["members"].size():
+			members[room["members"][i]]["seat"] = i + 1   # seats close up: they are only final once the game starts
 		_announce_room(out, room)
+		_save(room)
 	_send(out, conn, {"type": "left"})
 
 
@@ -232,10 +329,12 @@ func _command(out: Array, conn: int, message: Dictionary) -> void:
 	if typeof(command) != TYPE_DICTIONARY or typeof(command.get("type")) != TYPE_STRING:
 		return _error(out, conn, "A command must be an object with a text 'type'.")
 	var state = room["state"]
+	room["touched"] = now_ms
 	var events: Array = GameScript.handle(state, member["seat"], command)
 	if events.size() == 1 and events[0]["type"] == "rejected":
 		_send(out, conn, {"type": "events", "events": ViewsScript.visible_events(events, member["seat"])})   # only the asker hears a refusal
 		return
+	_save(room)   # after EVERY accepted move, before anyone is told about it
 	_broadcast(out, room, events)
 
 

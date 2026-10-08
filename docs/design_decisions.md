@@ -699,6 +699,10 @@ What it says, and what it cannot say:
 | Rooms | 4-letter code (no I or O), 3 to 10 players, host starts, seats are fixed in join order when it starts, names 1 to 24 characters and unique in the room, at most 200 rooms. | Assumed |
 | Reconnecting | A 128-bit random token from the operating system is the key to a seat; `resume` returns the seat and the full picture; the newest connection wins. A dropped player stays seated and the game's clocks carry on without them. | **Built** |
 | Abuse | Messages over 64 KB, bad JSON, unknown types and floods (20 at once, 8 more per second) get an error and change nothing. Clients can't end the game or rule on grammar (server only). | **Built** |
-| Not yet | Saving to disk and a clock that survives restarts (item 9), accounts and hosting (item 10). | Next |
+| Saving | Every accepted move is saved to its own file (`<CODE>.json`, written then renamed so a crash never leaves half a file) BEFORE players are told. A refused move or a look at the table is not saved. | **Built** |
+| Restart | `load_saved` brings rooms back; players resume with their token. The game clock continues from where it was (downtime costs no deadlines) and downtime is not idle time. Bad or other-version saves are skipped. | **Built** |
+| Clean-up | Unstarted empty room: 1 hour; finished game: 1 day; running game nobody touched: 1 week. The clock moving a game does not count as touching it. | Assumed |
+| Accounts | None: a name and a secret token per room is the identity (see docs/deploying.md). | Assumed |
+| Hosting | Dockerfile, compose with Caddy for TLS, systemd unit: written, **untested**. | Written |
 
 Checks: `tests/test_server_core.gd` (pretend connections) and `tools/smoke_server.sh` (the real WebSocket server, one client).

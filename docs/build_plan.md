@@ -13,8 +13,8 @@ The rules engine (pure GDScript, tested headless) is nearly complete. What is le
 ## Phase 2: the server (the game is online-only)
 7. **(done)** **Network layer.** One authoritative server process (Godot headless) that owns every `GameState`, receives commands from clients, runs `Game.handle`, and sends each player only `Views.deliver` events and `state_view`. Reject malformed or oversized input with the existing `parse_command`.
 8. **(done)** **Lobby and rooms.** Create/join a room by code, set name and gender, pick player count (3 to 10), start the game. Reconnect after a dropped connection by player token.
-9. **Clock and persistence.** A real server clock feeding `Game.tick`, plus saving the state to disk on every move so a server restart carries on (the serializer already round-trips).
-10. **Accounts and hosting.** Minimal identity (name plus a secret token), then deploy to a small VPS or a Godot-compatible host with TLS (WebSocket).
+9. **(done)** **Clock and persistence.** A real server clock feeding `Game.tick`, plus saving the state to disk on every move so a server restart carries on (the serializer already round-trips).
+10. **(done, hosting files untested)** **Accounts and hosting.** Minimal identity (name plus a secret token), then deploy to a small VPS or a Godot-compatible host with TLS (WebSocket).
 
 ## Phase 3: the client (Godot UI), in the order a game needs it
 11. **Lobby screen and connection.** Name, room code, ready, player list.
