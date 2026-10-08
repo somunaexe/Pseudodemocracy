@@ -143,6 +143,7 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 	if events.size() == 1 and events[0]["type"] == "rejected":
 		return events
 	events.append_array(TermLoopScript.settle(state))
+	events.append_array(_end_if_alone(state))
 	return events
 
 
@@ -152,7 +153,23 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 static func tick(state: GameStateScript, now_ms: int = -1) -> Array:
 	if now_ms > state.clock_ms:
 		state.clock_ms = now_ms
-	return TermLoopScript.settle(state)
+	var events: Array = TermLoopScript.settle(state)
+	events.append_array(_end_if_alone(state))
+	return events
+
+
+# A game needs two players: when everyone else has been eliminated the last one standing wins and the game ends, as if the
+# server had stopped it (found by the balance simulation: a lone survivor otherwise sat in a game nobody could play).
+static func _end_if_alone(state: GameStateScript) -> Array:
+	if state.game_over or state.player_ids.is_empty():
+		return []
+	var standing: int = 0
+	for id in state.player_ids:
+		if not state.eliminated.get(id, false):
+			standing += 1
+	if standing >= 2:
+		return []
+	return _finish(state, SERVER_ID)
 
 
 # Amendments happen at set moments of a term: the Inauguration window at the Inauguration, the

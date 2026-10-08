@@ -6,9 +6,9 @@ The rules engine (pure GDScript, tested headless) is nearly complete. What is le
 1. **Timeouts everywhere.** Exams, elections, amendment windows and the Leader's pass have no clock yet, so one absent player can stall a table. Add per-step deadlines and a sensible default (skip, abstain, pass) for each.
 2. **The grammar referee.** Amendments need a ruling on whether the new wording is correct English (`rule_grammar` is server-only today). Decide how: a referee player, word lists, or a language model call. This is the biggest open design question.
 3. **Remaining cards the table still plays by hand.** Exam effect cards (skip an exam, rig the marking), "can't run for 2 terms" (Scandal 20), COVID (spreads sickness to neighbours), Loyalist "choose up to 2", the other kept cards, and any card still read out and carried out by the table.
-4. **Article 17** (a union or mob that includes the Leader acts on a rival of the Leader's choice) and the Command Performance rules when the Leader is a member.
+4. **(done)** **Article 17** (a union or mob that includes the Leader acts on a rival of the Leader's choice) and the Command Performance rules when the Leader is a member.
 5. **Handbook sync.** Apply the pending edits to the handbook (heirs can't refuse, pledges, Vice earns 90, Command Performance, coup failure, two genders, the further-rounds rule, Vice, card changes) so the printed rules and the code agree.
-6. **Balance pass.** Run many simulated games with varied player counts and read the numbers: how often players are eliminated, how long a game lasts, whether coups, markers or the Vice dominate. Tune `game_data.js`.
+6. **(first pass done; real tuning needs playtests)** **Balance pass.** Run many simulated games with varied player counts and read the numbers: how often players are eliminated, how long a game lasts, whether coups, markers or the Vice dominate. Tune `game_data.js`.
 
 ## Phase 2: the server (the game is online-only)
 7. **Network layer.** One authoritative server process (Godot headless) that owns every `GameState`, receives commands from clients, runs `Game.handle`, and sends each player only `Views.deliver` events and `state_view`. Reject malformed or oversized input with the existing `parse_command`.

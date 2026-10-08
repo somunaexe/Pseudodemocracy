@@ -1,5 +1,6 @@
 extends SceneTree
 
+const GameScript = preload("res://scripts/game.gd")
 const ElimScript = preload("res://scripts/elimination.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const FlowScript = preload("res://scripts/amendment_flow.gd")
@@ -21,6 +22,7 @@ func _init() -> void:
 	claims_on_the_dead()
 	unions_and_votes()
 	through_the_turn_end()
+	the_last_one_standing()
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -234,6 +236,16 @@ func through_the_turn_end() -> void:
 		expect("player %d cannot see wills" % viewer, ViewsScript.state_view(s, viewer).has("wills"), false)
 	ElimScript.eliminate(s, 3, "test")
 	expect("after elimination everyone sees who inherited", ViewsScript.state_view(s, 1)["heirs"], {3: 4})
+
+
+func the_last_one_standing() -> void:
+	var s := GameScript.new_game([1, 2, 3], 7)
+	ElimScript.eliminate(s, 1, "test")
+	expect("with two players left the game goes on", [GameScript.tick(s).filter(func(e): return e["type"] == "game_over").size(), s.game_over], [0, false])
+	ElimScript.eliminate(s, 2, "test")
+	var over := GameScript.tick(s).filter(func(e): return e["type"] == "game_over")
+	expect("when one is left the game ends and they win", [over.size(), over[0]["winners"], s.game_over], [1, [3], true])
+	expect("... and it is said only once", GameScript.tick(s), [{"type": "rejected"}].slice(0, 0))
 
 
 # --- helpers ---------------------------------------------------------------------------

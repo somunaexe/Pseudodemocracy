@@ -46,7 +46,55 @@ func want(group: String) -> bool:
 	return args.is_empty() or group in args
 
 
+# `-- balance` (never part of the normal run) plays many games and prints what happened, for tuning game_data.js.
+func balance_report() -> void:
+	var games: int = 20
+	for count in [3, 4, 5, 7, 10]:
+		var total: Dictionary = {"games": 0, "eliminated": 0, "leaders": 0, "steps": 0, "ended": 0, "rich_over_poor": 0.0, "debtors": 0, "coups": 0, "markers": 0, "sick": 0, "frozen": 0, "agbero_acts": 0, "activist_acts": 0, "amend_ok": 0, "amend_fail": 0, "winner_was_leader": 0}
+		for seed_value in range(1, games + 1):
+			var run := play(count, 1000 + seed_value, 10)
+			total["games"] += 1
+			total["eliminated"] += run["eliminated"].size()
+			total["leaders"] += run["leaders"].size()
+			total["steps"] += run["steps"]
+			total["ended"] += 1 if run["finished"] else 0
+			for type in run["types"]:
+				match type:
+					"coup_succeeded": total["coups"] += 1
+					"marker_gained": total["markers"] += 1
+					"sickened": total["sick"] += 1
+					"player_frozen": total["frozen"] += 1
+					"rival_robbed", "amendment_blocked": total["agbero_acts"] += 1
+					"rival_shamed": total["activist_acts"] += 1
+					"amendment_resolved": total["amend_ok"] += 1
+					"amendment_failed": total["amend_fail"] += 1
+			var errors: Array = []
+			var end: GameStateScript = SerializerScript.state_from_json(run["final"], errors)
+			var richest: int = -999999
+			var poorest: int = 999999
+			for id in end.player_ids:
+				if end.eliminated.get(id, false):
+					continue
+				richest = maxi(richest, int(end.psd.get(id, 0)))
+				poorest = mini(poorest, int(end.psd.get(id, 0)))
+				if not end.debts.get(id, []).is_empty():
+					total["debtors"] += 1
+			total["rich_over_poor"] += float(richest) / float(maxi(poorest, 1))
+		var n: float = float(total["games"])
+		print("BALANCE %2d players: %d games, %.1f eliminated, %.1f leaders, %.0f moves, %d finished, richest/poorest %.1f, debtors %.1f, coups %.1f, markers %.1f, sick %.1f, frozen %.1f, blocks %.1f, shames %.1f, amendments ok %.1f failed %.1f" % [count, total["games"], total["eliminated"] / n, total["leaders"] / n, total["steps"] / n, total["ended"], total["rich_over_poor"] / n, total["debtors"] / n, total["coups"] / n, total["markers"] / n, total["sick"] / n, total["frozen"] / n, total["agbero_acts"] / n, total["activist_acts"] / n, total["amend_ok"] / n, total["amend_fail"] / n])
+
+
 func _init() -> void:
+	if "one" in OS.get_cmdline_user_args():   # `-- one PLAYERS SEED TERMS`: one game, to chase a failure
+		var args: PackedStringArray = OS.get_cmdline_user_args()
+		var run := play(int(args[1]), int(args[2]), int(args[3]))
+		print("finished ", run["finished"], " ", run["problems"])
+		quit(0)
+		return
+	if "balance" in OS.get_cmdline_user_args():
+		balance_report()
+		quit(0)
+		return
 	if want("ordinary"):
 		# Ordinary games of different sizes and seeds.
 		var all_types: Array = []

@@ -671,3 +671,20 @@ Built in `scripts/performance_cards.gd`; state lives in `state.term["act"]["spec
 | Word wrestle | A named opponent; whoever sends `concede` first loses 20 PSD to the treasury. |
 
 Tests: `tests/test_performance_cards.gd`.
+
+## Balance pass (first reading)
+
+Run with `godot --headless --script tests/test_game_simulation.gd -- balance` (about 5 minutes; 20 games per size, 10 terms, scripted players; `-- one PLAYERS SEED TERMS` replays one game).
+
+| Players | Eliminated / game | Moves / game | Richest ÷ poorest at the end | Coups / game | Markers / game | Sick / game |
+|---|---|---|---|---|---|---|
+| 3 | 0.0 | 237 | 2.0 | 0.1 | 0.4 | 0.8 |
+| 4 | 0.2 | 462 | 2.2 | 0.3 | 1.6 | 1.5 |
+| 5 | 0.2 | 464 | 2.7 | 0.2 | 0.9 | 2.5 |
+| 7 | 0.0 | 727 | 3.8 | 0.3 | 1.1 | 2.5 |
+| 10 | 0.0 | 1155 | 4.4 | 0.8 | 1.9 | 3.0 |
+
+What it says, and what it cannot say:
+- Nothing runs away: nobody sits in debt at the end, wealth stays within 2 to 4.5 times between richest and poorest, and the game's money is conserved.
+- The simulated players are scripted, not strategic (they follow fixed rules, never scheme), so these numbers show that the rules are stable, not that they are fun. Real tuning needs real tables: leave `game_data.js` as it is until a playtest.
+- Found by the run: with everyone else eliminated, the last player sat in a game nobody could play. The game now ends when fewer than two players are standing (the survivor wins).
