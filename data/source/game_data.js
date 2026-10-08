@@ -37,7 +37,7 @@ const V = {
 
   // Physical components (print run)
   components: {
-    leaderCards: { Dictator: 1, President: 3, Commander: 1 },
+    leaderCards: { Dictator: 1, President: 1, Commander: 1 },
     roleCards: ['Doctor', 'Lawyer', 'Secret Agent', 'Activist', 'Agbero'], roleCopies: 5,
     willCards: 8, corruptionTokens: 15, coupStickers: 10,
   },
@@ -54,7 +54,7 @@ const V = {
 
   // Elections (digital version)
   electionRunoffs: 1,             // a tied vote is re-run among the tied candidates this many times, then decided by lot
-  examMaxQuestions: 20, examMaxOptions: 6, examTextMax: 200,   // limits on what a Leader may write in an exam
+  examMaxQuestions: 10, examMaxOptions: 3, examTextMax: 200,   // limits on what a Leader may write in an exam
 
   // Debt (digital version)
   debtMaxTerms: 3,                // eliminated when still in debt at the end of this many of their own turns

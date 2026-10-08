@@ -79,7 +79,7 @@
  "components": {
   "leaderCards": {
    "Dictator": 1,
-   "President": 3,
+   "President": 1,
    "Commander": 1
   },
   "roleCards": [
@@ -111,8 +111,8 @@
   10
  ],
  "electionRunoffs": 1,
- "examMaxQuestions": 20,
- "examMaxOptions": 6,
+ "examMaxQuestions": 10,
+ "examMaxOptions": 3,
  "examTextMax": 200,
  "debtMaxTerms": 3,
  "startMoney": 1000,

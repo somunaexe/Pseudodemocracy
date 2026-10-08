@@ -4,6 +4,9 @@ const ElectionScript = preload("res://scripts/election.gd")
 const ElimScript = preload("res://scripts/elimination.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const ViewsScript = preload("res://scripts/views.gd")
+const PopularityScript = preload("res://scripts/popularity.gd")
+const PermissionsScript = preload("res://scripts/permissions.gd")
+const FlowScript = preload("res://scripts/amendment_flow.gd")
 const SerializerScript = preload("res://scripts/serializer.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")
@@ -11,6 +14,7 @@ const ConstitutionScript = preload("res://scripts/constitution.gd")
 const EXAM_WRITING = GameStateScript.ElectionPhase.EXAM_WRITING
 const EXAM_ANSWERING = GameStateScript.ElectionPhase.EXAM_ANSWERING
 const VOTING = GameStateScript.ElectionPhase.VOTING
+const INAUG = GameStateScript.AmendWindow.INAUGURATION
 const SERVER := 0
 
 var failures: int = 0
@@ -23,6 +27,7 @@ func _init() -> void:
 	who_can_take_part()
 	ties_and_lots()
 	the_role_card_draw()
+	a_cancelled_leader_keeps_the_seat()
 	vacancies_and_eliminations()
 	secrets_and_saves()
 	print("%d failure(s)" % failures)
@@ -80,7 +85,7 @@ func writing_the_exam() -> void:
 	var good: Array = exam()
 	for case in [
 		["4 questions are too few", good.slice(0, 4)],
-		["21 questions are too many", exam(21)],
+		["11 questions are too many", exam(11)],
 		["not a list", "questions"],
 		["a question that isn't an object", good.slice(0, 4) + [5]],
 		["a blank question", mutated(good, 0, "text", "   ")],
@@ -88,7 +93,7 @@ func writing_the_exam() -> void:
 		["a control character in a question", mutated(good, 0, "text", "bad\ttext")],
 		["a question that isn't text", mutated(good, 0, "text", 7)],
 		["one option", mutated(good, 0, "options", ["A"])],
-		["seven options", mutated(good, 0, "options", ["A", "B", "C", "D", "E", "F", "G"])],
+		["four options are too many", mutated(good, 0, "options", ["A", "B", "C", "D"])],
 		["a blank option", mutated(good, 0, "options", ["A", " ", "C"])],
 		["the same option twice", mutated(good, 0, "options", ["A", "A", "C"])],
 		["options that aren't a list", mutated(good, 0, "options", "ABC")],
@@ -99,6 +104,12 @@ func writing_the_exam() -> void:
 		var out := send(s, 1, {"type": "write_exam", "questions": case[1]})
 		expect("refused: " + case[0], types(out), ["rejected"])
 	expect("none of those changed anything", s.election["phase"], EXAM_WRITING)
+
+	# The limits are 5 to 10 questions and 2 to 3 options, and both ends are allowed.
+	for ok in [["5 questions", exam(5)], ["10 questions", exam(10)], ["2 options", mutated(good, 0, "options", ["A", "B"])], ["3 options", good]]:
+		var fresh := make_state()
+		ElectionScript.begin(fresh, "term_ended")
+		expect(ok[0] + " is allowed", types(send(fresh, 1, write(ok[1]))), ["exam_written"])
 
 	expect("a sick Leader can't write one", sick_leader_cannot_write(), true)
 	var accepted := send(s, 1, write(exam()))
@@ -314,18 +325,26 @@ func ties_and_lots() -> void:
 
 
 func the_role_card_draw() -> void:
+	# Three Leader cards, one for each role. Each is kept by the Leader for their term and goes back
+	# into the pile, shuffled, only when it is time to draw, so all three are in every draw.
 	var s := make_state()
 	RngScript.seed_with(s, 2024)
 	var counts: Dictionary = {GameStateScript.LeaderType.DICTATOR: 0, GameStateScript.LeaderType.PRESIDENT: 0, GameStateScript.LeaderType.COMMANDER: 0}
-	for i in 5000:
+	var repeats: int = 0
+	var previous: int = -1
+	for i in 6000:
 		ElectionScript.install_leader(s, 1, "test")
 		counts[s.leader_type] += 1
+		if s.leader_type == previous:
+			repeats += 1
+		previous = s.leader_type
 	var dictator: int = counts[GameStateScript.LeaderType.DICTATOR]
 	var president: int = counts[GameStateScript.LeaderType.PRESIDENT]
 	var commander: int = counts[GameStateScript.LeaderType.COMMANDER]
-	expect("5 Leader cards: Dictator about 1 in 5 (%d of 5000)" % dictator, dictator > 900 and dictator < 1100, true)
-	expect("President about 3 in 5 (%d)" % president, president > 2850 and president < 3150, true)
-	expect("Commander about 1 in 5 (%d)" % commander, commander > 900 and commander < 1100, true)
+	expect("Dictator about 1 in 3 (%d of 6000)" % dictator, dictator > 1800 and dictator < 2200, true)
+	expect("President about 1 in 3 (%d)" % president, president > 1800 and president < 2200, true)
+	expect("Commander about 1 in 3 (%d)" % commander, commander > 1800 and commander < 2200, true)
+	expect("the Leader's own card is back in the draw: the same card comes up again about 1 time in 3 (%d)" % repeats, repeats > 1800 and repeats < 2200, true)
 
 	# A new term wipes the old one's state.
 	s = make_state()
@@ -341,6 +360,33 @@ func the_role_card_draw() -> void:
 	expect("... the round counter moved on", s.current_round, 5)
 	expect("a coup (no election) also installs a Leader and starts a term", [ElectionScript.install_leader(s, 2, "coup")[0]["how"], s.current_round], ["coup", 6])
 
+
+func a_cancelled_leader_keeps_the_seat() -> void:
+	# Becoming CANCELLED (or sick) does not start an election: the Leader keeps the seat (Part 3).
+	var s := make_state()
+	PopularityScript.change_base(s, 1, -80)
+	expect("the Leader is CANCELLED", PopularityScript.effective(s, 1), -50)
+	expect("... and still the Leader", s.leader_id, 1)
+	expect("... no election starts", [s.election.is_empty(), s.event_log.size()], [true, 0])
+	expect("... they can't use Leader powers", PermissionsScript.can_amend(s, 1, INAUG), "A CANCELLED Leader can't amend.")
+
+	# End to end: a failed amendment is what drives them to -50.
+	s = make_state()
+	s.popularity[1] = -26
+	var words: Array = s.articles[2]
+	var texts: Array = []
+	for word in words:
+		texts.append(word["text"])
+	texts[0] = "Duty:"   # a fixed word: a failed check, -24 popularity
+	var ev := FlowScript.handle(s, 1, {"type": "propose", "window": INAUG, "article_id": 2, "new_texts": texts})
+	expect("the failed check drops them to -50", [types(ev), s.popularity[1]], [["amendment_proposed", "amendment_failed"], -50])
+	expect("... and that starts no election", [s.election.is_empty(), s.leader_id], [true, 1])
+
+	# When the term ends the election runs as normal: no exam, they may vote but cannot stand.
+	var end := ElectionScript.begin(s, "term_ended")
+	expect("at the end of the term there is no exam", end[0]["exam"], false)
+	expect("... they can vote", 1 in end[1]["voters"], true)
+	expect("... but not stand", end[1]["candidates"], [2, 3, 4, 5])
 
 func vacancies_and_eliminations() -> void:
 	# An eliminated Leader: the seat is vacant and a new Leader is voted for with no exam.
