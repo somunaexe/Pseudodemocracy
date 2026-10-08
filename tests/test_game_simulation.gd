@@ -91,6 +91,19 @@ func _init() -> void:
 	var will_restarted := play(5, 403, 7, 3, 6, 0, 2, 4)
 	expect("a server restarting from its save every 6 moves, with wills waiting or not, gives the same game", [will_restarted["problems"], will_restarted["final"] == will_straight["final"]], [[], true])
 
+	# Unions at the table: founded, recruiting, refused, shrinking, kicking, dispersing and re-forming.
+	var union_types: Array = []
+	for seed_value in range(1, 9):
+		var run := play(5, 500 + seed_value, 7, 0, 0, 0, 0, 0, true)
+		union_types.append_array(run["types"])
+		expect("union game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+		expect("union game %d: no rule was ever broken" % seed_value, run["problems"], [])
+	for kind in ["union_founded", "union_invited", "union_joined", "union_invitation_refused", "union_invitation_expired", "union_left", "union_dispersed"]:
+		expect("the union games produced a '%s' event (%d times)" % [kind, union_types.count(kind)], union_types.has(kind), true)
+	var union_straight := play(5, 503, 7, 0, 0, 0, 0, 0, true)
+	var union_restarted := play(5, 503, 7, 0, 5, 0, 0, 0, true)
+	expect("a server restarting from its save every 5 moves, with invitations waiting or not, gives the same union game", [union_restarted["problems"], union_restarted["final"] == union_straight["final"]], [[], true])
+
 	# Everything that can happen did happen somewhere.
 	var seen := play(5, 7, 6)
 	for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
@@ -132,7 +145,7 @@ func _init() -> void:
 
 # Plays until `terms` terms have been completed. If `poor` is a player id, that player starts
 # with only 30 PSD (and names player 4 as their heir) and so drifts into debt.
-func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0, agent: int = 0) -> Dictionary:
+func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0, agent: int = 0, unions: bool = false) -> Dictionary:
 	var ids: Array = range(1, player_count + 1)
 	var s := GameScript.new_game(ids, seed_value)
 	if poor != 0:
@@ -141,6 +154,14 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		s.wills[poor] = {"psd_heir": 4, "on_hold": false}
 	if doctor != 0:
 		RolesScript.grant(s, doctor, "Doctor")   # a Doctor from the start, so doses are given all game
+	if unions:
+		# Union cards in hand (played as soon as possible) and two Agberos, so mobs form, recruit, shrink,
+		# disperse and re-form inside whole games.
+		s.hands[3] = [{"deck": "settlement", "card": 8}]
+		s.hands[1] = [{"deck": "settlement", "card": 7}]
+		s.hands[5] = [{"deck": "settlement", "card": 9}]
+		RolesScript.grant(s, 3, "Agbero")
+		RolesScript.grant(s, 4, "Agbero")
 	if agent != 0:
 		RolesScript.grant(s, agent, "Secret Agent")   # a Secret Agent, who checks cards, wills and beads
 	if lawyer != 0:
@@ -211,6 +232,9 @@ func next_move(s: GameStateScript) -> Dictionary:
 	var played := hand_move(s)
 	if not played.is_empty():
 		return played
+	var union := union_move(s)
+	if not union.is_empty():
+		return union
 	var dose := doctor_move(s)
 	if not dose.is_empty():
 		return dose
@@ -293,6 +317,57 @@ func hand_move(s: GameStateScript) -> Dictionary:
 		if not s.eliminated.get(owner, false) and UnionsScript.problem_founding(s, owner) == "":
 			return {"player": owner, "command": {"type": "play_card", "index": 0}}
 	return {}
+
+
+# Unions: invitations are answered (some ignored), Unionizers recruit on their turns, members leave on theirs, big
+# unions kick, some disperse, and Agberos re-form. All limited by counts so the script cannot ask forever.
+func union_move(s: GameStateScript) -> Dictionary:
+	if s.game_over:
+		return {}
+	var asked: Array = s.union_invites.keys()
+	asked.sort()
+	for target in asked:
+		var number: int = count_events(s, "union_invited")
+		if number % 4 == 1:
+			return {"tick": int(s.union_invites[target]["deadline"])}   # nobody answers
+		return {"player": target, "command": {"type": "union_respond", "accept": number % 3 != 0}}
+	for player in s.reform:
+		if s.reform[player]:
+			return {"player": player, "command": {"type": "union_reform"}}
+	var waiting: Array = s.term.get("waiting", [])
+	if s.term.get("phase", 0) != GameStateScript.TermPhase.TURNS or waiting.is_empty():
+		return {}
+	var now: int = waiting[0]
+	var ids: Array = s.unions.keys()
+	ids.sort()
+	for union_id in ids:
+		var union: Dictionary = s.unions[union_id]
+		var members: Array = union["members"]
+		if now in members and now != union["owner"] and (s.turns_played + now) % 3 == 0:
+			return {"player": now, "command": {"type": "union_leave"}}
+		if (union["owner"] == now or (now == s.leader_id and s.leader_id in members)) and not s.sick.get(union["owner"], false):
+			var turn_number: int = count_events(s, "turn_started")
+			if members.size() >= 3 and turn_number % 4 == 0:
+				return {"player": union["owner"], "command": {"type": "union_kick", "union_id": union_id, "target": members[members.size() - 1]}}
+			if members.size() >= 2 and turn_number % 9 == 0:
+				return {"player": union["owner"], "command": {"type": "union_disperse", "union_id": union_id}}
+			if recruits_this_term(s) < 3:
+				for candidate in s.player_ids:
+					if candidate != union["owner"] and not s.eliminated.get(candidate, false) and candidate != s.leader_id \
+							and UnionsScript.union_of(s, candidate) == -1 and not s.union_invites.has(candidate):
+						return {"player": union["owner"], "command": {"type": "union_recruit", "union_id": union_id, "target": candidate}}
+	return {}
+
+
+func recruits_this_term(s: GameStateScript) -> int:
+	var n: int = 0
+	for i in range(s.event_log.size() - 1, -1, -1):
+		var kind: String = s.event_log[i]["type"]
+		if kind == "term_started":
+			break
+		if kind == "union_invited":
+			n += 1
+	return n
 
 
 # The Secret Agent (if there is one) uses their one check a round: the bead if a heal is under way, else on their

@@ -113,3 +113,10 @@ var choice: Dictionary = {}         # { "player", "deck", "card", "kind", "deadl
 # Cards kept to play later ("play anytime"), by player. SECRET to the owner: the server keeps them, a view shows
 # each player their own hand and everyone the size of every hand.
 var hands: Dictionary = {}          # player id -> list of { "deck": String, "card": int }
+
+# Invitations to join a union, by the player asked (see Unions). Public: recruiting is a social ask in the open.
+var union_invites: Dictionary = {}  # invited player id -> { "union_id": int, "deadline": clock ms }
+
+# Agbero who may form a new mob straight away because their last one dispersed and they still hold an Agbero
+# role card (see Unions). Public.
+var reform: Dictionary = {}         # player id -> true

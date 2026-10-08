@@ -35,6 +35,7 @@ const ElectionScript = preload("res://scripts/election.gd")
 const LevyBandScript = preload("res://scripts/levy_band.gd")
 const IncomeScript = preload("res://scripts/income.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
+const UnionsScript = preload("res://scripts/unions.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const DoctorScript = preload("res://scripts/doctor.gd")
 const PerformanceTurnScript = preload("res://scripts/performance.gd")
@@ -121,6 +122,9 @@ static func _step(state: GameStateScript) -> Array:
 	var wills: Array = WillsScript.step(state)   # so does a will nobody signed in time
 	if not wills.is_empty():
 		return wills
+	var invites: Array = UnionsScript.step(state)   # and an invitation to join a union
+	if not invites.is_empty():
+		return invites
 	var chosen: Array = CardEffectsScript.time_out(state)   # a card choice nobody made in time is made for them
 	if not chosen.is_empty():
 		return chosen

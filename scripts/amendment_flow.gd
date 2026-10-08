@@ -23,6 +23,7 @@ const PermissionsScript = preload("res://scripts/permissions.gd")
 const AmendmentScript = preload("res://scripts/amendment.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")
 const DebtScript = preload("res://scripts/debt.gd")
+const UnionsScript = preload("res://scripts/unions.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 # Only the server may rule on grammar. How it decides (a referee, a tool, word lists)
@@ -215,12 +216,14 @@ static func _block(state: GameStateScript, union_id: int, union: Dictionary) -> 
 	var article_id: int = state.amend["article_id"]
 	state.amend = {}
 	_record(state, article_id, "blocked", 0, 0, "")
-	return [EventsScript.make("amendment_blocked", {
+	var events: Array = [EventsScript.make("amendment_blocked", {
 		"union_id": union_id,
 		"stolen_each": steal,
 		"members": union["members"].duplicate(),
 		"became_debt": became_debt,
 	})]
+	events.append_array(UnionsScript.disperse(state, union_id, "the mob acted"))   # an Agbero mob disperses the instant it acts (Article 13)
+	return events
 
 
 # --- voting ----------------------------------------------------------------------------

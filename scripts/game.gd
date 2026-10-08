@@ -21,6 +21,7 @@ const DoctorScript = preload("res://scripts/doctor.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const SecretAgentScript = preload("res://scripts/secret_agent.gd")
+const UnionsScript = preload("res://scripts/unions.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")
@@ -36,6 +37,7 @@ const SERVER_ID := 0
 
 const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
 const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
+const UNION_COMMANDS := ["union_recruit", "union_respond", "union_leave", "union_kick", "union_disperse", "union_reform"]
 const CARD_COMMANDS := ["choose", "play_card"]
 const AGENT_COMMANDS := ["agent_check"]
 const WILL_COMMANDS := ["will_propose", "will_respond", "will_catch_up", "will_revoke"]
@@ -81,6 +83,8 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 		events = ElectionScript.handle(state, player_id, command)
 	elif type in TERM_COMMANDS:
 		events = TermLoopScript.handle(state, player_id, command)
+	elif type in UNION_COMMANDS:
+		events = UnionsScript.handle(state, player_id, command)
 	elif type in CARD_COMMANDS:
 		events = CardEffectsScript.handle(state, player_id, command)
 	elif type in AGENT_COMMANDS:

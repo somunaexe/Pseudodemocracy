@@ -189,13 +189,13 @@ func agbero_confront() -> void:
 	s.unions[10] = union(AGBERO, 2, [2, 3])
 	send(s, 1, propose(s, INAUG, {1: "30%"}))
 	var ev := send(s, 2, {"type": "confront", "union_id": 10})
-	expect("Agbero confront blocks", types(ev), ["union_confronted", "amendment_blocked"])
+	expect("Agbero confront blocks, and the mob disperses the instant it acts", types(ev), ["union_confronted", "amendment_blocked", "union_dispersed"])
 	expect("Leader pays 50 to each member", [s.psd[1], s.psd[2], s.psd[3]], [900, 1050, 1050])
 	expect("the window stays used", s.windows_used[INAUG], true)
 	expect("flow is back to NONE", s.amend.is_empty(), true)
 	expect("wording unchanged", tax_text(s), TAX_20)
 	expect("popularity unchanged", s.popularity[1], 0)
-	expect("the union can't confront again", s.unions[10]["confront_used"], true)
+	expect("the mob is gone, so it can't confront again", s.unions.has(10), false)
 	expect("record says blocked", s.amendment_record[0]["outcome"], "blocked")
 
 	s = make_state()
@@ -204,7 +204,7 @@ func agbero_confront() -> void:
 	send(s, 1, propose(s, INAUG, {1: "30%"}))
 	send(s, SERVER, {"type": "rule_grammar", "ok": true})
 	ev = send(s, 2, {"type": "confront", "union_id": 10})
-	expect("Agbero can also confront during the vote", types(ev), ["union_confronted", "amendment_blocked"])
+	expect("Agbero can also confront during the vote", types(ev), ["union_confronted", "amendment_blocked", "union_dispersed"])
 	expect("first member is paid in full, the second gets the rest", [s.psd[2], s.psd[3]], [1050, 1010])
 	expect("Leader is in debt for what they couldn't pay", DebtScript.total_debt(s, 1), 40)
 	expect("the debt is owed to the second member", s.debts[1][0]["creditor"], 3)
@@ -223,6 +223,7 @@ func activist_confront() -> void:
 	expect("2 for, and the union's 2 members count double against", [ev[1]["for"], ev[1]["against"]], [2, 4])
 	expect("popularity (2 - 4) x 6", s.popularity[1], -12)
 	expect("the amendment does not stand", tax_text(s), TAX_20)
+	expect("an Activist union lingers after acting (Article 12), but has used its one confront", [s.unions.has(11), s.unions[11]["confront_used"]], [true, true])
 
 	# Confronting before the vote: members can't vote any more, their votes are automatic.
 	s = make_state()

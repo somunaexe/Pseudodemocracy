@@ -25,6 +25,7 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const LawScript = preload("res://scripts/law.gd")
 const RolesScript = preload("res://scripts/roles.gd")
+const UnionsScript = preload("res://scripts/unions.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const NepoScript = preload("res://scripts/nepo.gd")
 const EventsScript = preload("res://scripts/events.gd")
@@ -187,15 +188,12 @@ static func _reassign_claims(state: GameStateScript, dead_id: int, heir: int) ->
 
 
 # Memberships end. A union left with one member dissolves (Article 11). Assumption: a union
-# also dissolves if its unionizer is the one eliminated.
+# also dissolves if its unionizer is the one eliminated. Invitations to or about them lapse.
 static func _leave_unions(state: GameStateScript, player_id: int) -> Array:
 	var events: Array = []
+	state.union_invites.erase(player_id)
+	state.reform.erase(player_id)
 	for union_id in state.unions.keys():
-		var union: Dictionary = state.unions[union_id]
-		if not player_id in union["members"]:
-			continue
-		union["members"].erase(player_id)
-		if union["members"].size() <= LawScript.get_int(state, "unionDissolveAt") or union["owner"] == player_id:
-			state.unions.erase(union_id)
-			events.append(EventsScript.make("union_dissolved", {"union_id": union_id}))
+		if player_id in state.unions[union_id]["members"]:
+			events.append_array(UnionsScript.remove_member(state, union_id, player_id, "eliminated"))
 	return events

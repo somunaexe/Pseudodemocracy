@@ -398,6 +398,29 @@ From the handbook (Part 6): "Can check one role card for coup-sticker status and
 | Can sick, CANCELLED or eliminated Agents check? | No (the shared role rule). | Confirmed |
 | The cards "a rival may check your coup-card status for free, once" and "peek at your role card once". | Left to the table until coups exist. | Next step |
 
+## Unions: Activists and Agberos (built: scripts/unions.gd)
+
+From the handbook (Part 6, Activists & Agberos, Articles 7 to 17). Founding a union by playing a card is described under Kept cards and the hand.
+
+| Question | Decision | Status |
+|---|---|---|
+| Who owns a union? | The Unionizer (a Capon for a mob), who founded it. Their decisions are the union's. | Confirmed (handbook) |
+| How does a union grow? | The Unionizer asks a player to join ("a free social ask"). The player agrees, or refuses, or lets the 30 seconds run out (a refusal). | Confirmed; the consent and the 30 seconds are mine |
+| Who can't be recruited? | The Leader, and members of another union (Article 8). A player can only have one invitation at a time. | Confirmed |
+| When can a union act? | Recruiting and kicking only on the Unionizer's own turn, or on the Leader's turn if the Leader is a member (Article 9). Sick Unionizers can't. | Confirmed |
+| Leaving. | A member (not the Unionizer) may leave on their own turn (Article 10). The Unionizer disperses the union instead. | Confirmed |
+| Kicking. | The Unionizer kicks a member just by saying so, on a union turn (Article 10). | Confirmed |
+| Dispersing. | The Unionizer may disperse the union at any time ("until its members choose to disperse"). | Assumed (any time, not only on a union turn) |
+| Dissolving. | A union that drops to the size in Article 11 (1, an amendable number) dissolves and the card is lost. An eliminated Unionizer dissolves it too. | Confirmed; the Unionizer rule is assumed |
+| Does an Activist union linger after acting? | Yes (Article 12): after confronting the Leader it stays, having used its one confront. | Confirmed |
+| Does an Agbero mob disperse when it acts? | Yes, at once (Article 13). It used not to; the confront now ends with `union_dispersed`. | **Built** (new) |
+| Can Agberos re-form? | After a mob disperses, any of its members who still hold an Agbero role card may form a new one straight away (`union_reform`), once. A union that merely dissolves gives no such right. | Confirmed (handbook); "once" is assumed |
+| Does the Activist or Agbero role card matter otherwise? | Not for anything but re-forming. Holding the role earns nothing (they earn no income) and is not needed to be in a union. | Assumed, please confirm |
+| **Not built: Command Performance** (Articles 16 and 17) | "The Leader performs a scenario scripted by the unionizer; the Leader's popularity is voted on after." If the Leader is in the union, "its actions target a rival of the Leader's choice". | **Needs your answers** |
+| **Not built: shared and personal gains** (Articles 12 and 13) | "Activist gains and losses are shared; Agbero gains and losses are personal." The handbook gives no numbers for what is gained or lost. | **Needs your answers** |
+
+The questions I need answered before Command Performance: Who writes the scenario, how long is it, and is it free text? Does the Leader then perform it for the usual 60 seconds, with everyone else (members included) voting Good or Bad? Whose popularity moves by what? And what does "shared" mean for an Activist union (do all members gain or lose what the Leader's vote gives)?
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.
@@ -407,8 +430,8 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | Doctor | 70 | Doses (Agbo, Concoction, Surgery), no fixed prices. Hidden bead: blue Cure, red Poison. A patient can reject a cure. Sabotage is guessed before the bead is taken. A right guess means the Doctor pays the guesser, gives a real Cure and loses their licence; a wrong guess means the guesser pays the Doctor what the patient paid. | Everything above (see The Doctor and Sickness) | Confirm my assumptions in The Doctor |
 | Lawyer | 50 | Signs wills for an agreed fee and collects upkeep every round (Article 26). | Everything in The Lawyer and wills | Confirm my assumptions |
 | Secret Agent | 80 | Checks a card's coup sticker or a will on their turn, or the Doctor's bead; once per round. | Everything in The Secret Agent | Confirm my assumptions |
-| Activist | none | Founds an Activist union (a Settlement card, played any time). Unions exist: recruit, kick, confront the Leader. | The union rules built earlier | How a player becomes an Activist, and how a Settlement card founds a union |
-| Agbero | none | Founds an Agbero mob; its leader is the Capon. Can re-form straight away if they hold an Agbero card. | The union rules built earlier | The same |
+| Activist | none | Peaceful union member. Founds a union with a Settlement card, recruits, kicks, confronts the Leader. | Everything in Unions except Command Performance | Command Performance and shared gains |
+| Agbero | none | Violent mob member; the Capon leads. The mob disperses when it acts, and can re-form straight away for those who hold an Agbero card. | Everything in Unions except Command Performance | Command Performance and personal gains |
 
 | Question | Decision | Status |
 |---|---|---|
@@ -422,7 +445,7 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | The heir already holds that role. | They can't hold it twice, so that card goes back in the box. | Assumed |
 | How are roles gained? | From Settlement cards: choose any role, swap roles, gain the Lawyer role (all built, see Choices). Others (found a union, become a Doctor/Lawyer if you hold neither) wait for their mechanics. | **Built** (3 cards) |
 
-Not built yet, and the next steps: the union cards (Activist and Agbero), choices of several players, then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
+Not built yet, and the next steps: Command Performance and shared or personal gains (once you answer), choices of several players, the other kept cards, then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 
