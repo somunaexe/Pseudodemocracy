@@ -163,6 +163,9 @@
      "amount": 5
     }
    },
+   "1": {
+    "special": "old_boys"
+   },
    "2": {
     "keep": true,
     "truce": true,
@@ -170,6 +173,12 @@
      "kind": "player",
      "who": "rival"
     }
+   },
+   "3": {
+    "special": "diaspora"
+   },
+   "4": {
+    "special": "hospital"
    },
    "5": {
     "choose": {
@@ -183,6 +192,9 @@
     "loyalist": {
      "rounds": 3
     }
+   },
+   "6": {
+    "special": "flyover"
    },
    "7": {
     "keep": true,
@@ -208,8 +220,22 @@
      ]
     }
    },
+   "10": {
+    "special": "statue"
+   },
    "11": {
     "keys": true
+   },
+   "12": {
+    "keep": true,
+    "special": "levy_cut"
+   },
+   "13": {
+    "special": "heckler"
+   },
+   "14": {
+    "keep": true,
+    "special": "youth_wing"
    },
    "15": {
     "popularity": 5,
@@ -220,6 +246,12 @@
     "target": {
      "popularity": -15
     }
+   },
+   "16": {
+    "special": "free_settlement"
+   },
+   "17": {
+    "special": "fundraiser"
    },
    "18": {
     "choose": {
@@ -261,6 +293,9 @@
     },
     "gain_role": "$choice"
    },
+   "24": {
+    "special": "exam_pass"
+   },
    "25": {
     "psd": 90,
     "popularity": -5,
@@ -268,6 +303,15 @@
    },
    "26": {
     "popularity": 5
+   },
+   "27": {
+    "special": "salary"
+   },
+   "28": {
+    "special": "deck_peek"
+   },
+   "29": {
+    "special": "loan"
    },
    "30": {
     "choose": {
@@ -292,6 +336,9 @@
    "33": {
     "immune": 2
    },
+   "34": {
+    "special": "halve_loss"
+   },
    "35": {
     "psd": 100
    },
@@ -309,8 +356,17 @@
     "psd": -50,
     "popularity": 10
    },
+   "38": {
+    "special": "fee_bonus"
+   },
+   "39": {
+    "special": "vote_with"
+   },
    "40": {
     "psd": 80
+   },
+   "41": {
+    "special": "reroll"
    },
    "42": {
     "psd": -30,
@@ -322,6 +378,32 @@
      "who": "rival"
     },
     "skip_draw": true
+   },
+   "44": {
+    "special": "pop_floor"
+   },
+   "45": {
+    "special": "petrol"
+   },
+   "46": {
+    "special": "hero"
+   },
+   "47": {
+    "special": "benefits"
+   },
+   "48": {
+    "special": "holiday"
+   },
+   "49": {
+    "psd": 100,
+    "popularity": 20,
+    "choose": {
+     "kind": "player"
+    },
+    "target": {
+     "psd": 100,
+     "popularity": 20
+    }
    }
   },
   "scandal": {

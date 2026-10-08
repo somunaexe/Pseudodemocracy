@@ -13,6 +13,7 @@ const CoupScript = preload("res://scripts/coup.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
 const RolesScript = preload("res://scripts/roles.gd")
+const CardsScript = preload("res://scripts/cards.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
@@ -155,7 +156,7 @@ func _init() -> void:
 		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
 
 	# Choices come up too (only some cards ask for one, so across all the ordinary games).
-	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed", "amendment_offered", "debate_started", "debate_turn", "debate_vote_cast", "union_pitch_unavailable", "exam_skipped", "exam_timeout", "vote_timeout", "window_passed"]:
+	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed", "amendment_offered", "debate_started", "debate_turn", "debate_vote_cast", "union_pitch_unavailable", "exam_skipped", "exam_timeout", "vote_timeout", "window_passed", "poll_opened", "poll_closed", "hospital_opened", "diaspora_set", "flyover_gave", "modifier_given", "stipend_set", "card_buried"]:
 		expect("the twelve ordinary games produced a '%s' event (%d times)" % [kind, all_types.count(kind)], all_types.has(kind), true)
 
 	# The same seed always plays out the same way, to the last byte.
@@ -189,7 +190,14 @@ func _init() -> void:
 # with only 30 PSD (and names player 4 as their heir) and so drifts into debt.
 func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0, agent: int = 0, unions: bool = false, coups: bool = false, corrupt: int = 0) -> Dictionary:
 	var ids: Array = range(1, player_count + 1)
-	var s := GameScript.new_game(ids, seed_value)
+	var genders: Dictionary = {}
+	if seed_value <= 12 and seed_value % 2 == 0:
+		for id in ids:
+			genders[id] = "male" if id % 2 == 0 else "female"   # so the cards that ask for men or women have someone to ask
+	var s := GameScript.new_game(ids, seed_value, genders)
+	if seed_value <= 12 and seed_value % 2 == 0:
+		# Every Settlement card with a rule of its own comes up early (drawn from the end of the list).
+		s.decks["settlement"] = [1, 3, 4, 6, 10, 12, 13, 14, 16, 17, 24, 27, 28, 29, 34, 38, 39, 41, 44, 45, 46, 47, 48, 49]
 	if poor != 0:
 		s.treasury += s.psd[poor] - 30
 		s.psd[poor] = 30
@@ -304,6 +312,9 @@ func next_move(s: GameStateScript) -> Dictionary:
 		if (s.current_round + s.amend_offer["by"]) % 4 == 3:
 			return {"tick": int(s.amend_offer["deadline"])}
 		return {"player": s.amend_offer["other"], "command": {"type": "amend_agree", "accept": (s.current_round + s.amend_offer["other"]) % 5 != 0}}
+	var polling := poll_move(s)
+	if not polling.is_empty():
+		return polling
 	var choosing := choice_move(s)
 	if not choosing.is_empty():
 		return choosing
@@ -403,7 +414,22 @@ func choice_move(s: GameStateScript) -> Dictionary:
 			answer = (s.current_round + chooser) % s.choice["labels"].size()
 		"role", "player":
 			answer = s.choice["candidates"][(s.current_round + chooser) % s.choice["candidates"].size()]
+		"players":
+			answer = s.choice["candidates"].slice(0, (s.current_round + chooser) % (s.choice["max"] + 1))
+		"number":
+			answer = s.choice["min"] + (s.current_round + chooser) % (s.choice["max"] - s.choice["min"] + 1)
 	return {"player": chooser, "command": {"type": "choose", "choice": answer}}
+
+
+# A question a card put to several players: each answers (option by who they are and the round), or lets the time run out.
+func poll_move(s: GameStateScript) -> Dictionary:
+	for poll in s.polls:
+		if (poll["id"] + s.current_round) % 4 == 0:
+			return {"tick": int(poll["deadline"])}
+		for id in poll["targets"]:
+			if not poll["answers"].has(id):
+				return {"player": id, "command": {"type": "poll_answer", "poll": poll["id"], "option": (id + poll["id"]) % poll["labels"].size()}}
+	return {}
 
 
 # Players play the union cards they are keeping as soon as they can.
@@ -411,8 +437,11 @@ func hand_move(s: GameStateScript) -> Dictionary:
 	var owners: Array = s.hands.keys()
 	owners.sort()
 	for owner in owners:
-		if not s.eliminated.get(owner, false) and UnionsScript.problem_founding(s, owner) == "":
-			return {"player": owner, "command": {"type": "play_card", "index": 0}}
+		if s.eliminated.get(owner, false) or UnionsScript.problem_founding(s, owner) != "":
+			continue
+		for i in s.hands[owner].size():
+			if not CardsScript.effects(s.hands[owner][i]["deck"], s.hands[owner][i]["card"]).has("special"):
+				return {"player": owner, "command": {"type": "play_card", "index": i}}
 	return {}
 
 
@@ -895,6 +924,25 @@ func check_rules(s: GameStateScript, step: int) -> void:
 	for permit in s.peeks:
 		if permit["holder"] == permit["target"] or s.eliminated.get(permit["holder"], false) or s.eliminated.get(permit["target"], false) or permit["kinds"].is_empty():
 			problems.append(where + "malformed free check %s" % str(permit))
+	for id in s.mods:
+		if s.eliminated.get(id, false) or s.mods[id].is_empty():
+			problems.append(where + "player %d has modifiers they shouldn't" % id)
+		for name in s.mods[id]:
+			var record: Dictionary = s.mods[id][name]
+			if int(record["uses"]) == 0 or (int(record["until"]) != -1 and int(record["until"]) < int(record["from"])):
+				problems.append(where + "player %d's modifier %s is malformed: %s" % [id, name, str(record)])
+	for entry in s.schedule:
+		for key in ["player", "borrower", "lender"]:
+			if entry.has(key) and s.eliminated.get(entry[key], false):
+				problems.append(where + "a scheduled entry %s involves an eliminated player" % str(entry))
+	for poll in s.polls:
+		if poll["targets"].is_empty() or s.eliminated.get(poll["drawer"], false):
+			problems.append(where + "a poll with nobody to ask or no drawer: %s" % str(poll))
+	if s.choice.is_empty() and not s.choice_queue.is_empty():
+		problems.append(where + "questions are queued but none is open")
+	for seller in s.card_offers:
+		if s.eliminated.get(seller, false) or s.eliminated.get(s.card_offers[seller]["buyer"], false):
+			problems.append(where + "a card offer involves an eliminated player")
 	var in_union: Dictionary = {}
 	for union_id in s.unions:
 		var union: Dictionary = s.unions[union_id]

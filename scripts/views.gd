@@ -18,11 +18,11 @@ const PeeksScript = preload("res://scripts/peeks.gd")
 const PUBLIC_FIELDS = [
 	"player_count", "turns_played", "leader_id", "leader_type", "sick",
 	"windows_used", "treasury", "psd", "debts", "debt_terms", "eliminated", "player_ids",
-	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "choice", "union_invites", "reform", "genders", "coup_ban", "effect_round", "markers", "frozen", "rivals", "truces", "accords", "skip_draw", "loyalists", "vice_id", "grammar_referee", "amend_offer", "last_turn_player", "leader_goes_first", "levy_band",
+	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "choice", "union_invites", "reform", "genders", "coup_ban", "effect_round", "markers", "frozen", "rivals", "truces", "accords", "skip_draw", "loyalists", "vice_id", "grammar_referee", "mods", "schedule", "poll_counter", "card_offers", "choice_queue", "amend_offer", "last_turn_player", "leader_goes_first", "levy_band",
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).
-const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term", "command"]
+const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term", "command", "polls"]
 
 # Extra keys a view carries that are not GameState fields.
 const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills", "my_hand", "hand_sizes", "my_coup_roles", "my_peeks"]
@@ -77,6 +77,7 @@ static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
 	view["election"] = _election_view(state.election, player_id)
 	view["term"] = _term_view(state.term, player_id)
 	view["command"] = _command_view(state.command, player_id)
+	view["polls"] = _polls_view(state.polls, player_id)
 	view["event_log"] = visible_events(state.event_log, player_id)
 	# Your own will, and if you are a Lawyer the wills you keep: the only wills anyone is shown.
 	view["my_will"] = _copy(state.wills.get(player_id, {}))
@@ -163,6 +164,22 @@ static func _term_view(term: Dictionary, player_id: int) -> Dictionary:
 		if votes.has(player_id):
 			view["act"]["my_vote"] = votes[player_id]
 	return view
+
+
+# Open questions to several players: everyone sees who has answered, you also see your own answer.
+static func _polls_view(polls: Array, player_id: int) -> Array:
+	var result: Array = []
+	for poll in polls:
+		var view: Dictionary = poll.duplicate(true)
+		var answers: Dictionary = view["answers"]
+		var answered: Array = answers.keys()
+		answered.sort()
+		view.erase("answers")
+		view["answered"] = answered
+		if answers.has(player_id):
+			view["my_answer"] = answers[player_id]
+		result.append(view)
+	return result
 
 
 static func _copy(value: Variant) -> Variant:

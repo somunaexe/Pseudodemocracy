@@ -54,6 +54,8 @@ const UnionsScript = preload("res://scripts/unions.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const EffectClockScript = preload("res://scripts/effect_clock.gd")
 const PeeksScript = preload("res://scripts/peeks.gd")
+const SpecialCardsScript = preload("res://scripts/special_cards.gd")
+const ChoicesScript = preload("res://scripts/choices.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const ViceScript = preload("res://scripts/vice.gd")
@@ -72,7 +74,14 @@ static func apply(state: GameStateScript, player_id: int, deck: String, card: in
 			state.hands[player_id] = []
 		state.hands[player_id].append({"deck": deck, "card": card})   # kept to play later; nothing happens yet
 		data["kept"] = true
-		return [_log(state, "card_applied", data)]
+		var kept_events: Array = [_log(state, "card_applied", data)]
+		kept_events.append_array(SpecialCardsScript.refresh(state, player_id))   # a card for a seat works at once if they hold it
+		return kept_events
+	if effect.has("special"):
+		# A card with a rule of its own (see SpecialCards).
+		var special_events: Array = [_log(state, "card_applied", data)]
+		special_events.append_array(SpecialCardsScript.apply(state, player_id, deck, card, str(effect["special"])))
+		return special_events
 	_apply_money(state, player_id, effect, data)
 	if effect.has("collect_each"):
 		_collect_each(state, player_id, effect["collect_each"], data)
@@ -96,7 +105,7 @@ static func apply(state: GameStateScript, player_id: int, deck: String, card: in
 	var events: Array = [_log(state, "card_applied", data)]
 	events.append_array(_log_all(state, extra))
 	if effect.has("choose"):
-		events.append_array(_ask(state, player_id, deck, card, effect["choose"]))
+		events.append_array(ChoicesScript.ask(state, player_id, deck, card, effect["choose"]))
 	return events
 
 
@@ -184,64 +193,6 @@ static func _log_all(state: GameStateScript, events: Array) -> Array:
 	return events
 
 
-# --- asking ------------------------------------------------------------------------------
-
-static func _ask(state: GameStateScript, player_id: int, deck: String, card: int, spec: Dictionary, parent: int = -1) -> Array:
-	var kind: String = spec["kind"]
-	var seconds: int = GameDataScript.get_int("choiceSeconds")
-	var ends_at: int = state.clock_ms + seconds * 1000
-	var chooser: int = player_id
-	if spec.get("chooser", "") == "leader":
-		chooser = state.leader_id
-		if chooser == player_id or chooser == -1 or state.eliminated.get(chooser, false):
-			return [_log(state, "choice_unavailable", {"player": player_id, "deck": deck, "card": card, "kind": kind})]
-	var pending: Dictionary = {"player": chooser, "subject": player_id, "deck": deck, "card": card, "kind": kind, "deadline": ends_at}
-	var shown: Dictionary = {"player": chooser, "subject": player_id, "deck": deck, "card": card, "kind": kind, "seconds": seconds, "ends_at_ms": ends_at}
-	if parent >= 0:
-		pending["parent"] = parent   # the second question of an option that was chosen
-		shown["parent"] = parent
-	match kind:
-		"option":
-			var labels: Array = []
-			for option in spec["options"]:
-				labels.append(option["label"])
-			pending["labels"] = labels
-			shown["labels"] = labels
-		"role":
-			pending["candidates"] = _role_candidates(state, player_id)
-			shown["candidates"] = pending["candidates"]
-		"player":
-			pending["candidates"] = _player_candidates(state, player_id, str(spec.get("who", "")))
-			shown["candidates"] = pending["candidates"]
-	if pending.has("candidates") and pending["candidates"].is_empty():
-		return [_log(state, "choice_unavailable", {"player": player_id, "deck": deck, "card": card, "kind": kind})]
-	state.choice = pending
-	return [_log(state, "choice_needed", shown)]
-
-
-static func _role_candidates(state: GameStateScript, player_id: int) -> Array:
-	var result: Array = []
-	for role in RolesScript.names():
-		if RolesScript.problem_granting(state, player_id, role) == "":
-			result.append(role)
-	return result
-
-
-static func _player_candidates(state: GameStateScript, player_id: int, who: String) -> Array:
-	var result: Array = []
-	for id in state.player_ids:
-		if id == player_id or state.eliminated.get(id, false):
-			continue
-		if who == "has_role" and RolesScript.is_civilian(state, id):
-			continue
-		result.append(id)
-	if who == "rival":
-		return RivalsScript.candidates(state, player_id)
-	if who == "loyalist":
-		return result.filter(func(id): return LoyalistsScript.problem_appointing(state, player_id, id) == "")
-	return result
-
-
 # --- commands ----------------------------------------------------------------------------
 
 static func handle(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
@@ -267,6 +218,8 @@ static func play(state: GameStateScript, player_id: int, command: Dictionary) ->
 		return [_reject(player_id, "Choose a card in your hand by its number.")]
 	var kept: Dictionary = hand[index]
 	var effect: Dictionary = CardsScript.effects(kept["deck"], kept["card"])
+	if effect.has("special"):
+		return [_reject(player_id, "That card works by itself; it can't be played.")]
 	if not effect.has("truce"):   # the other kept cards found a union
 		var problem: String = UnionsScript.problem_founding(state, player_id)
 		if problem != "":
@@ -278,7 +231,7 @@ static func play(state: GameStateScript, player_id: int, command: Dictionary) ->
 	if effect.has("found_union"):
 		events.append_array(_log_all(state, UnionsScript.found(state, player_id, effect["found_union"])))
 	else:
-		events.append_array(_ask(state, player_id, kept["deck"], kept["card"], effect["choose"]))   # which kind of union?
+		events.append_array(ChoicesScript.ask(state, player_id, kept["deck"], kept["card"], effect["choose"]))   # which kind of union?
 	return events
 
 
@@ -292,10 +245,12 @@ static func choose(state: GameStateScript, player_id: int, command: Dictionary) 
 	if player_id != pending["player"]:
 		return [_reject(player_id, "It isn't your choice.")]
 	var value = command.get("choice", null)
-	var problem: String = _problem_with(pending, value)
+	var problem: String = ChoicesScript.problem_with(pending, value)
 	if problem != "":
 		return [_reject(player_id, problem)]
-	return _make_choice(state, pending, value, false)
+	var events: Array = _make_choice(state, pending, value, false)
+	events.append_array(ChoicesScript.next(state))
+	return events
 
 
 # The time is up: choose at random for the player. Called from the game loop when the clock passes the
@@ -304,13 +259,9 @@ static func time_out(state: GameStateScript) -> Array:
 	if state.choice.is_empty() or state.clock_ms < int(state.choice["deadline"]):
 		return []
 	var pending: Dictionary = state.choice
-	var value: Variant = 0
-	match pending["kind"]:
-		"option":
-			value = RngScript.below(state, pending["labels"].size())
-		"role", "player":
-			value = RngScript.pick(state, pending["candidates"])
-	return _make_choice(state, pending, value, true)
+	var events: Array = _make_choice(state, pending, ChoicesScript.default_answer(state, pending), true)
+	events.append_array(ChoicesScript.next(state))
+	return events
 
 
 static func _make_choice(state: GameStateScript, pending: Dictionary, value: Variant, auto: bool) -> Array:
@@ -318,6 +269,8 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 	var player_id: int = pending.get("subject", chooser)   # whose card it is; the Leader may be the one choosing
 	state.choice = {}
 	var effect: Dictionary = CardsScript.effects(pending["deck"], pending["card"])
+	if pending.has("special"):
+		return SpecialCardsScript.answered(state, pending, value, auto)
 	if pending.has("parent"):
 		return _second_answer(state, pending, value, auto)
 	var data: Dictionary = {"player": chooser, "subject": player_id, "deck": pending["deck"], "card": pending["card"], "kind": pending["kind"], "choice": value, "auto": auto}
@@ -329,7 +282,7 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 			if option.has("then"):
 				# This option asks a second question (whom to snitch on); nothing happens until it is answered.
 				var follow: Array = [_log(state, "choice_made", data)]
-				follow.append_array(_ask(state, player_id, pending["deck"], pending["card"], option["then"], int(value)))
+				follow.append_array(ChoicesScript.ask(state, player_id, pending["deck"], pending["card"], option["then"], int(value)))
 				return follow
 			_apply_money(state, player_id, option, data)
 			if option.get("share", "") == "half":
@@ -363,7 +316,7 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 			if effect.has("accord"):
 				events.append_array(RivalsScript.accord(state, player_id, value, int(effect["accord"]["rounds"]), int(effect["accord"]["loss"])))
 			if effect.has("target_role"):
-				var roles: Array = _role_candidates(state, value)
+				var roles: Array = ChoicesScript.role_candidates(state, value)
 				if roles.is_empty():
 					skipped.append("a random role: they can't be given one")
 				else:
@@ -428,22 +381,6 @@ static func _second_answer(state: GameStateScript, pending: Dictionary, value: V
 		state.event_log.append(event)
 		result.append(event)
 	return result
-
-
-# Why this answer is not acceptable, or "" if it is. The answer comes from a client: check its type
-# and that it is one of the choices offered. Nothing else about it is trusted.
-static func _problem_with(pending: Dictionary, value: Variant) -> String:
-	match pending["kind"]:
-		"option":
-			if typeof(value) != TYPE_INT or value < 0 or value >= pending["labels"].size():
-				return "Choose one of the %d options by its number." % pending["labels"].size()
-		"role":
-			if typeof(value) != TYPE_STRING or not value in pending["candidates"]:
-				return "Choose one of: %s." % ", ".join(pending["candidates"])
-		"player":
-			if typeof(value) != TYPE_INT or not value in pending["candidates"]:
-				return "Choose one of the players offered."
-	return ""
 
 
 # Give the drawer a role if they still can; otherwise say why not. (The offer was made when the card

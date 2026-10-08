@@ -126,6 +126,8 @@
  "windowSeconds": 60,
  "amendVoteSeconds": 45,
  "grammarReferee": 0,
+ "cardOfferSeconds": 30,
+ "pollSeconds": 30,
  "debateSeconds": 30,
  "debateTopicMax": 140,
  "amendCosignSeconds": 30,

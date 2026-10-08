@@ -24,6 +24,7 @@ class_name Vice
 # Like Roles and Sickness, nothing here logs: every function returns its events and the caller logs them.
 
 const GameStateScript = preload("res://scripts/game_state.gd")
+const SpecialCardsScript = preload("res://scripts/special_cards.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
@@ -65,6 +66,7 @@ static func keys_to_the_city(state: GameStateScript, player_id: int) -> Array:
 		var events: Array = [EventsScript.make("leader_swapped", {"new_leader": player_id, "old_leader": leader, "leader_type": state.leader_type})]
 		state.vice_id = -1 if state.vice_id == player_id else state.vice_id   # the old Vice becomes the Leader: no longer Vice
 		state.leader_id = player_id
+		events.append_array(SpecialCardsScript.leader_changed(state, leader, player_id))
 		events.append_array(appoint(state, leader))
 		return events
 	if is_vice(state, player_id):
@@ -77,7 +79,9 @@ static func succeed(state: GameStateScript) -> Array:
 	var old: int = state.leader_id
 	state.leader_id = state.vice_id
 	clear(state)
-	return [EventsScript.make("vice_succeeded", {"leader": state.leader_id, "old_leader": old})]
+	var events: Array = [EventsScript.make("vice_succeeded", {"leader": state.leader_id, "old_leader": old})]
+	events.append_array(SpecialCardsScript.leader_changed(state, old, state.leader_id))
+	return events
 
 
 # The new Leader of a coup is in: the Vice stays, unless they are the new Leader or the card drawn is a Dictator.

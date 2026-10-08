@@ -266,4 +266,4 @@ static func can_use_pledge(state: GameStateScript, player_id: int, role: String)
 # At -50 or lower a player is CANCELLED: they keep their cards but have no roles, so no powers and no role
 # income, until their popularity climbs back above the line.
 static func is_cancelled(state: GameStateScript, player_id: int) -> bool:
-	return PopularityScript.effective(state, player_id) <= GameDataScript.get_int("cancelledAt")
+	return PopularityScript.is_cancelled(state, player_id)

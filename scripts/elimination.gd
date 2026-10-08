@@ -29,6 +29,11 @@ const UnionsScript = preload("res://scripts/unions.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const NepoScript = preload("res://scripts/nepo.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
+const ScheduleScript = preload("res://scripts/schedule.gd")
+const CardTradeScript = preload("res://scripts/card_trade.gd")
+const SpecialCardsScript = preload("res://scripts/special_cards.gd")
+const PollsScript = preload("res://scripts/polls.gd")
+const ModifiersScript = preload("res://scripts/modifiers.gd")
 const PeeksScript = preload("res://scripts/peeks.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
@@ -53,6 +58,10 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 	CorruptionScript.release(state, player_id)
 	RivalsScript.remove_player(state, player_id)
 	PeeksScript.remove_player(state, player_id)
+	ModifiersScript.remove_player(state, player_id)
+	PollsScript.remove_player(state, player_id)
+	CardTradeScript.remove_player(state, player_id)
+	ScheduleScript.remove_player(state, player_id)
 	LoyalistsScript.remove_player(state, player_id)
 	if ViceScript.remove_player(state, player_id):
 		events.append(EventsScript.make("vice_vacant", {"player": player_id}))
@@ -162,7 +171,9 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 # and an amendment in progress is abandoned. Its window stays used.
 static func _vacate_seat(state: GameStateScript) -> Array:
 	var events: Array = _abandon_amendment(state, "the Leader was eliminated")
+	var gone: int = state.leader_id
 	state.leader_id = -1
+	events.append_array(SpecialCardsScript.leader_changed(state, gone, -1))
 	state.term = {}   # the term ends with its Leader; the next one starts when a new Leader is installed
 	events.append(EventsScript.make("leader_vacant", {}))
 	return events

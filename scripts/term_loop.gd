@@ -35,6 +35,10 @@ const PermissionsScript = preload("res://scripts/permissions.gd")
 const ElectionScript = preload("res://scripts/election.gd")
 const LevyBandScript = preload("res://scripts/levy_band.gd")
 const AmendmentFlowScript = preload("res://scripts/amendment_flow.gd")
+const ModifiersScript = preload("res://scripts/modifiers.gd")
+const CardTradeScript = preload("res://scripts/card_trade.gd")
+const ChoicesScript = preload("res://scripts/choices.gd")
+const PollsScript = preload("res://scripts/polls.gd")
 const IncomeScript = preload("res://scripts/income.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const CommandPerformanceScript = preload("res://scripts/command_performance.gd")
@@ -92,10 +96,12 @@ static func _end_turn(state: GameStateScript, player_id: int) -> Array:
 		return [_reject(player_id, "It isn't your turn.")]
 	if state.term.get("act", {}).get("phase", -1) != GameStateScript.ActPhase.DONE:
 		return [_reject(player_id, "Finish your performance first.")]
-	if not state.choice.is_empty() and state.choice.get("subject", state.choice["player"]) == player_id:
+	if ChoicesScript.blocks(state, player_id):
 		return [_reject(player_id, "Make your choice first.")]
 	if not state.command.is_empty():
 		return [_reject(player_id, "A Command Performance is under way.")]
+	if PollsScript.open_for(state, player_id):
+		return [_reject(player_id, "Wait for the others to answer your question.")]
 	state.term.erase("act")
 	waiting.pop_front()
 	state.term["played"].append(player_id)
@@ -124,6 +130,12 @@ static func settle(state: GameStateScript) -> Array:
 static func _step(state: GameStateScript) -> Array:
 	if state.game_over:
 		return []
+	var trades: Array = CardTradeScript.step(state)   # an offer to sell a card that nobody answered
+	if not trades.is_empty():
+		return trades
+	var polls: Array = PollsScript.step(state)   # a question to several players whose time is up
+	if not polls.is_empty():
+		return polls
 	var election: Array = ElectionScript.step(state)   # an exam or a ballot that ran out of time
 	if not election.is_empty():
 		return election
@@ -215,7 +227,13 @@ static func _collect_levy(state: GameStateScript) -> Dictionary:
 	for id in state.player_ids:
 		if state.eliminated.get(id, false):
 			continue
-		var owed: int = DebtScript.charge(state, id, DebtScript.TREASURY_ID, levy)
+		var due: int = levy
+		if ModifiersScript.active(state, id, "double_levy"):
+			ModifiersScript.use(state, id, "double_levy")   # "your tax break was ruled illegal"
+			due *= 2
+		if id == state.leader_id and ModifiersScript.active(state, id, "levy_cut"):
+			due = due * 75 / 100   # a 25% reduction for as long as they lead
+		var owed: int = DebtScript.charge(state, id, DebtScript.TREASURY_ID, due)
 		if owed > 0:
 			unpaid[id] = owed
 	return _log(state, "levy_collected", {"levy": levy, "unpaid": unpaid})

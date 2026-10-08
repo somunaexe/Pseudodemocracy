@@ -74,6 +74,22 @@ static func draw(state: GameStateScript, deck: String) -> int:
 	return card
 
 
+# The top card of a draw pile, without drawing it (-1 if the pile is empty: a fresh shuffle would come next).
+static func top(state: GameStateScript, deck: String) -> int:
+	var pile: Array = state.decks.get(deck, [])
+	if pile.is_empty():
+		state.decks[deck] = _shuffled(state, count(deck))   # the next draw would shuffle it anyway; do it now so the top card exists
+		pile = state.decks[deck]
+	return int(pile[pile.size() - 1])
+
+
+# Put the top card at the bottom of its pile.
+static func bury_top(state: GameStateScript, deck: String) -> void:
+	top(state, deck)
+	var pile: Array = state.decks[deck]
+	pile.insert(0, pile.pop_back())
+
+
 # Fisher-Yates, with the game's own generator so a saved game shuffles the same way.
 static func _shuffled(state: GameStateScript, size: int) -> Array:
 	var cards: Array = range(size)

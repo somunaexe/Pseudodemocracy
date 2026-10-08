@@ -35,6 +35,7 @@ class_name Doctor
 const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const DebtScript = preload("res://scripts/debt.gd")
+const ModifiersScript = preload("res://scripts/modifiers.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
 const EliminationScript = preload("res://scripts/elimination.gd")
@@ -130,7 +131,8 @@ static func _respond(state: GameStateScript, player_id: int, command: Dictionary
 		if problem != "":
 			return _void(state, problem)
 	# The patient pays, and the payment is lost whatever the bead says.
-	var owed: int = DebtScript.charge(state, dose["patient"], dose["doctor"], dose["price"])
+	var bonus: int = int(ModifiersScript.get_record(state, dose["doctor"], "fee_bonus").get("amount", 0)) if ModifiersScript.active(state, dose["doctor"], "fee_bonus") else 0   # a card quietly raises the fee
+	var owed: int = DebtScript.charge(state, dose["patient"], dose["doctor"], dose["price"] + bonus)
 	state.doctor_used[dose["doctor"]] = int(state.doctor_used.get(dose["doctor"], 0)) + 1
 	var events: Array = []
 	var data: Dictionary = {"doctor": dose["doctor"], "patient": dose["patient"], "dose": dose["dose"], "kind": dose["kind"], "price": dose["price"]}

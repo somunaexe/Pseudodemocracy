@@ -30,6 +30,8 @@ const PopularityScript = preload("res://scripts/popularity.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const RoundEndScript = preload("res://scripts/round_end.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
+const ModifiersScript = preload("res://scripts/modifiers.gd")
+const SpecialCardsScript = preload("res://scripts/special_cards.gd")
 const ViceScript = preload("res://scripts/vice.gd")
 const LeaderCardsScript = preload("res://scripts/leader_cards.gd")
 const EventsScript = preload("res://scripts/events.gd")
@@ -96,6 +98,7 @@ static func recheck(state: GameStateScript) -> Array:
 static func install_leader(state: GameStateScript, winner: int, how: String) -> Array:
 	var reason: String = str(state.election.get("reason", "coup"))
 	var leader_type: int = LeaderCardsScript.draw(state)
+	var old_leader: int = state.leader_id
 	state.leader_id = winner
 	state.leader_type = leader_type
 	state.turns_played = 0
@@ -108,6 +111,7 @@ static func install_leader(state: GameStateScript, winner: int, how: String) -> 
 		state.current_round += 1
 	state.election = {}
 	var events: Array = [EventsScript.make("leader_installed", {"leader": winner, "leader_type": leader_type, "how": how, "round": state.current_round})]
+	events.append_array(SpecialCardsScript.leader_changed(state, old_leader, winner))
 	events.append_array(ViceScript.after_coup(state, winner))   # after a coup the Vice stays, unless they are the new Leader or a Dictator is
 	return events
 
@@ -292,8 +296,8 @@ static func _maybe_reveal(state: GameStateScript) -> Array:
 	if state.election.get("phase", GameStateScript.ElectionPhase.NONE) != GameStateScript.ElectionPhase.EXAM_ANSWERING:
 		return []
 	for id in _active_takers(state):
-		if not state.election["answers"].has(id):
-			return []   # still waiting for someone
+		if not state.election["answers"].has(id) and not ModifiersScript.active(state, id, "exam_pass"):
+			return []   # still waiting for someone (a player excused by a card needn't sit it)
 	return _reveal(state)
 
 
@@ -314,11 +318,18 @@ static func _reveal(state: GameStateScript) -> Array:
 		var difference: int = correct * 100 - mark * total   # compared without fractions
 		if direction * difference > 0:
 			passed.append(id)
+	var excused: Array = []
+	for id in _active_takers(state):
+		if ModifiersScript.active(state, id, "exam_pass"):
+			ModifiersScript.use(state, id, "exam_pass")   # "you may skip your next exam": counted as having passed
+			excused.append(id)
+			if not id in passed:
+				passed.append(id)
 	# The Leader wrote the exam and is counted as having passed it.
 	if state.leader_id != -1 and not state.leader_id in passed:
 		passed.append(state.leader_id)
 	passed.sort()
-	var events: Array = [EventsScript.make("exam_revealed", {"key": key.duplicate(), "total": total, "scores": scores, "passed": passed.duplicate()})]
+	var events: Array = [EventsScript.make("exam_revealed", {"key": key.duplicate(), "total": total, "scores": scores, "passed": passed.duplicate(), "excused": excused})]
 	var voters: Array = passed.filter(func(id): return _can_vote(state, id))
 	var candidates: Array = _eligible_candidates(state, voters)
 	if candidates.is_empty():
@@ -417,6 +428,7 @@ static func _elect(state: GameStateScript, winner: int, how: String, detail: Dic
 	data["how"] = how
 	var events: Array = [EventsScript.make("leader_elected", data)]
 	events.append_array(install_leader(state, winner, how))
+	events.append_array(SpecialCardsScript.election_over(state, detail.get("votes", {})))
 	return events
 
 
@@ -433,7 +445,7 @@ static func _can_vote(state: GameStateScript, id: int) -> bool:
 
 # A CANCELLED player can't hold a role, and being Leader is one.
 static func _can_stand(state: GameStateScript, id: int) -> bool:
-	return _can_vote(state, id) and PopularityScript.effective(state, id) > GameDataScript.get_int("cancelledAt")
+	return _can_vote(state, id) and not PopularityScript.is_cancelled(state, id)
 
 
 static func _can_use_pledges(state: GameStateScript, id: int) -> bool:

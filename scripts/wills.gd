@@ -28,6 +28,7 @@ class_name Wills
 const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const DebtScript = preload("res://scripts/debt.gd")
+const ModifiersScript = preload("res://scripts/modifiers.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
@@ -101,7 +102,8 @@ static func _respond(state: GameStateScript, lawyer: int, command: Dictionary) -
 		return [_reject(lawyer, power)]
 	# Signed: the fee is paid now; a new will replaces the old one.
 	state.will_offers.erase(testator)
-	var owed: int = DebtScript.charge(state, testator, lawyer, offer["fee"])
+	var bonus: int = int(ModifiersScript.get_record(state, lawyer, "fee_bonus").get("amount", 0)) if ModifiersScript.active(state, lawyer, "fee_bonus") else 0   # a card quietly raises the fee
+	var owed: int = DebtScript.charge(state, testator, lawyer, offer["fee"] + bonus)
 	state.wills[testator] = {"psd_heir": offer["psd_heir"], "role_heir": offer["role_heir"], "on_hold": false, "lawyer": lawyer, "upkeep": offer["upkeep"], "arrears": 0}
 	var terms: Dictionary = {"testator": testator, "lawyer": lawyer, "fee": offer["fee"], "upkeep": offer["upkeep"], "psd_heir": offer["psd_heir"], "role_heir": offer["role_heir"]}
 	if owed > 0:

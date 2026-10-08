@@ -62,6 +62,15 @@ static func appoint(state: GameStateScript, owner: int, follower: int, rounds: i
 	return [EventsScript.make("loyalist_appointed", {"owner": owner, "loyalist": follower, "rounds": rounds})]
 
 
+# A Loyalist for the rest of this round only ("they must vote with you for the rest of the term").
+static func appoint_for_term(state: GameStateScript, owner: int, follower: int) -> Array:
+	var problem: String = problem_appointing(state, owner, follower)
+	if problem != "":
+		return [EventsScript.make("loyalist_unavailable", {"owner": owner, "loyalist": follower, "reason": problem})]
+	state.loyalists[follower] = {"owner": owner, "left": 1, "since": state.current_round - 1}   # ends when this round does
+	return [EventsScript.make("loyalist_appointed", {"owner": owner, "loyalist": follower, "rounds": 0})]
+
+
 # One of the owner's Loyalists, chosen at random, defects ("your current Loyalist (if any) defects"). Nothing happens
 # if they have none.
 static func defect_one(state: GameStateScript, owner: int) -> Array:

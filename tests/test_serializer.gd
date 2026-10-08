@@ -210,6 +210,12 @@ func rich_state() -> GameStateScript:
 	s.accords = [{"a": 2, "b": 4, "left": 2, "loss": 10}]
 	s.skip_draw = {5: true}
 	s.grammar_referee = false
+	s.choice_queue = [{"pending": {"player": 2, "deck": "settlement", "card": 22, "kind": "option", "deadline": 5000, "labels": ["a", "b"]}, "shown": {"player": 2}}]
+	s.card_offers = {3: {"buyer": 4, "deck": "settlement", "card": 12, "price": 100, "deadline": 777}}
+	s.poll_counter = 4
+	s.polls = [{"id": 4, "special": "flyover", "drawer": 2, "targets": [3, 4], "labels": ["a", "b", "c"], "default": 0, "answers": {3: 1}, "deadline": 9999, "mode": "each", "data": {"share": 50}, "deck": "settlement", "card": 6}]
+	s.schedule = [{"kind": "stipend", "player": 3, "source": "treasury", "amount": 50, "from": 2, "until": 3, "while_popular": false}]
+	s.mods = {3: {"halve_loss": {"from": 2, "until": 2, "uses": -1}}}
 	s.peeks = [{"holder": 4, "target": 2, "kinds": ["coup", "bead"], "round_only": true}]
 	s.loyalists = {4: {"owner": 2, "left": 2}}
 	s.frozen = {2: {"left": 2, "drop": 30}}

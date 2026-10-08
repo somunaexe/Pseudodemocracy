@@ -160,4 +160,15 @@ var skip_draw: Dictionary = {}      # player id -> true
 var loyalists: Dictionary = {}
 # Free checks started by cards (see Peeks). SECRET: whether one has been used must not show.
 var peeks: Array = []               # { "holder", "target", "kinds", "round_only" }
+# Temporary rules cards put on players (see Modifiers). Public.
+var mods: Dictionary = {}           # player id -> { name -> { "from", "until", "uses", ... } }
+# Payments and penalties that card effects schedule for later rounds (see Schedule). Public.
+var schedule: Array = []
+# Questions a card put to several players at once (see Polls). The answers are SECRET until the poll closes.
+var polls: Array = []
+var poll_counter: int = 0
+# Kept cards offered for sale (see CardTrade). Public.
+var card_offers: Dictionary = {}    # seller id -> { "buyer", "deck", "card", "price", "deadline" }
+# Questions about cards waiting for the open one (state.choice) to be answered. Public.
+var choice_queue: Array = []
 var frozen: Dictionary = {}         # player id -> { "left": rounds until the freeze runs out, "drop": popularity lost }

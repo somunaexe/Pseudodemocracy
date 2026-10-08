@@ -36,6 +36,8 @@ const PopularityScript = preload("res://scripts/popularity.gd")
 const CardsScript = preload("res://scripts/cards.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
+const ModifiersScript = preload("res://scripts/modifiers.gd")
+const SpecialCardsScript = preload("res://scripts/special_cards.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
@@ -274,6 +276,9 @@ static func _resolve(state: GameStateScript, act: Dictionary) -> Array:
 		var deck: String = "settlement" if good > bad else "scandal"
 		if deck == "settlement" and state.frozen.has(act["player"]):
 			data["frozen"] = true   # corruption: no Settlement cards for them
+		elif deck == "settlement" and ModifiersScript.active(state, act["player"], "skip_settlement"):
+			ModifiersScript.use(state, act["player"], "skip_settlement")
+			data["draw_skipped"] = true   # a Scandal card: no Settlement card this time
 		elif state.skip_draw.has(act["player"]):
 			state.skip_draw.erase(act["player"])
 			data["draw_skipped"] = true   # a card made them lose this draw entirely
@@ -286,7 +291,16 @@ static func _resolve(state: GameStateScript, act: Dictionary) -> Array:
 	act["phase"] = DONE
 	var events: Array = [_log(state, "performance_resolved", data)]
 	if data.has("card"):
-		events.append_array(CardEffectsScript.apply(state, act["player"], data["deck"], data["card"]))   # logs its own event
+		if ModifiersScript.active(state, act["player"], "reroll"):
+			ModifiersScript.use(state, act["player"], "reroll")   # "you may reroll one Result card draw": the player is asked
+			events.append_array(SpecialCardsScript.reroll_offer(state, act["player"], data["deck"], data["card"]))
+		else:
+			events.append_array(CardEffectsScript.apply(state, act["player"], data["deck"], data["card"]))   # logs its own event
+	if ModifiersScript.active(state, act["player"], "free_settlement") and not state.frozen.has(act["player"]):
+		ModifiersScript.use(state, act["player"], "free_settlement")   # "take a free Settlement card on your next performance"
+		var free: int = CardsScript.draw(state, "settlement")
+		events.append(_log(state, "free_card", {"player": act["player"], "deck": "settlement", "card": free, "text": CardsScript.text("settlement", free)}))
+		events.append_array(CardEffectsScript.apply(state, act["player"], "settlement", free))
 	return events
 
 

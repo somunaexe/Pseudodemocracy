@@ -37,7 +37,13 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 }
 
 function validate(deck, prefix, text, effect) {
-  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband', 'loyalist', 'target_role', 'popularity_per_loyalist', 'defect', 'keys', 'peek', 'peek_rival', 'favor'];
+  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband', 'loyalist', 'target_role', 'popularity_per_loyalist', 'defect', 'keys', 'peek', 'peek_rival', 'favor', 'special'];
+  const SPECIALS = ['old_boys', 'diaspora', 'hospital', 'flyover', 'statue', 'levy_cut', 'heckler', 'youth_wing', 'free_settlement', 'fundraiser', 'exam_pass', 'salary', 'deck_peek', 'loan', 'halve_loss', 'fee_bonus', 'vote_with', 'reroll', 'pop_floor', 'petrol', 'hero', 'benefits', 'holiday'];   // the names in scripts/special_cards.gd (a test keeps the two lists equal)
+  if ('special' in effect) {
+    if (!SPECIALS.includes(effect.special)) fail(deck, prefix, `unknown special "${effect.special}"`);
+    for (const key of Object.keys(effect)) if (!['special', 'keep'].includes(key)) fail(deck, prefix, `a special card has no other effects ("${key}")`);
+    return;
+  }
   const PEEK_KINDS = ['coup', 'bead'];
   for (const key of ['peek', 'peek_rival']) if (key in effect && (!Array.isArray(effect[key].kinds) || !effect[key].kinds.length || effect[key].kinds.some((k) => !PEEK_KINDS.includes(k)))) fail(deck, prefix, `"${key}" needs kinds from ${PEEK_KINDS}`);
   if ('peek' in effect && !(effect.choose && effect.choose.kind === 'player')) fail(deck, prefix, '"peek" needs a player choice');

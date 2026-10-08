@@ -19,7 +19,7 @@ static func leader_powers_problem(state: GameStateScript, player_id: int) -> Str
 			return leaders
 		if state.sick.get(player_id, false):
 			return "A sick Vice can't amend."
-		if PopularityScript.effective(state, player_id) <= GameDataScript.get_int("cancelledAt"):
+		if PopularityScript.is_cancelled(state, player_id):
 			return "A CANCELLED Vice can't amend."
 		return ""
 	if player_id != state.leader_id:
@@ -28,7 +28,7 @@ static func leader_powers_problem(state: GameStateScript, player_id: int) -> Str
 		return "A Commander can't amend."
 	if state.sick.get(player_id, false):
 		return "A sick Leader can't amend."
-	if PopularityScript.effective(state, player_id) <= GameDataScript.get_int("cancelledAt"):
+	if PopularityScript.is_cancelled(state, player_id):
 		return "A CANCELLED Leader can't amend."
 	return ""
 
@@ -53,7 +53,7 @@ static func cosigner(state: GameStateScript, proposer: int) -> int:
 	var other: int = state.vice_id if proposer == state.leader_id else state.leader_id
 	if other == state.leader_id and (state.eliminated.get(other, false) or state.sick.get(other, false)):
 		return 0
-	if other == state.vice_id and (state.eliminated.get(other, false) or state.sick.get(other, false) or PopularityScript.effective(state, other) <= GameDataScript.get_int("cancelledAt")):
+	if other == state.vice_id and (state.eliminated.get(other, false) or state.sick.get(other, false) or PopularityScript.is_cancelled(state, other)):
 		return 0
 	return other
 

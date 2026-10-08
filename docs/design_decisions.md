@@ -567,6 +567,39 @@ Every start-of-step event carries `ends_at_ms` for the clients' timers. All valu
 
 **The grammar referee is switched off** (`grammarReferee: 0`, `GameState.grammar_referee`): every wording is accepted and the vote opens at once. The ruling command still exists for when a referee is decided.
 
+## The remaining cards (built: special_cards.gd, modifiers.gd, schedule.gd, polls.gd, choices.gd, card_trade.gd)
+
+Plumbing: a card with a rule of its own says `special` in its data. **Modifiers** (`state.mods`) are temporary rules on a player, with a first and a last round ("next term" = the next round; "for 2 terms" = the 2 further rounds) and a number of uses. The **schedule** holds payments and penalties for later rounds. A **poll** is a question to several players at once: each answers once (`poll_answer`), silence is the card's default option after `pollSeconds` (30), answers are secret until it closes, and the drawer's turn waits. Questions about cards queue if one is already open. Rounding for money is always in the player's favour.
+
+### Settlement cards
+
+| Card | Rule | Status |
+|---|---|---|
+| The Old Boys | The drawer picks up to 3 men (the genders at the table). Each man answers in a poll: give 50 PSD, show a role card (the drawer alone sees whether each of his role cards has a coup sticker), or refuse and lose 10 popularity. Silence gives the 50. | Assumed (default) |
+| A diaspora relative | 150 now, then 50 at the end of each later round, stopping for good the first time the player's popularity is 0 or below. | Confirmed (card text) |
+| You are now a doctor (hospital) | The drawer becomes a Doctor if a card is left, collects 150. Three Doctors share it (the drawer counts as one if they are one): each other Doctor in that share takes 50 of it; each further Doctor, lowest id first after the share, is paid 50 from the drawer's own pocket (debt if short). | Assumed |
+| You crowdfunded a flyover | The other players split 200 (rounded up); each chooses in a poll: give their share to the drawer, pay it to the treasury, or lose 10 popularity instead. Silence gives it to the drawer. | Assumed |
+| A statue of yourself | The drawer chooses: the Leader pays them 100 at the end of each of the next 2 rounds, or the treasury does and the Leader loses 15 popularity (outed). If the drawer is the Leader the treasury pays and nobody is outed. | Assumed |
+| 25% levy reduction | A kept card. It does nothing until its holder is Leader; then it leaves the hand and cuts their own levy by 25% (rounded down in their favour) until they lose the seat. Drawn or bought by the sitting Leader it works at once. It can be sold (`sell_card`, `buy_card`, buyer must have the cash, 30 seconds to answer). | Assumed |
+| 20-v-1, designated heckler | The chosen player draws a random Scandal card and it applies to them. | Assumed ("pick" read as draw) |
+| The youth wing backs you | A kept card. At the end of the next election everyone who has never been Leader and was seen voting for the holder gets +5 popularity. Then the card is gone, even if they lost. | Assumed |
+| Free Settlement card | At their next performance's result the player also draws a Settlement card, whatever the vote said. | Assumed |
+| A bloc fundraiser | 20 PSD from the treasury for each other member of the union or mob the drawer is in. | Assumed |
+| Skip your next exam | They needn't answer and count as having passed; once. | Confirmed |
+| You cut your own salary | +20 popularity. A Civilian loses 50 PSD; someone with a role chooses: lose 50, or skip their next income. | Assumed |
+| Look at the top cards | The drawer privately sees the top Settlement and top Scandal cards and may bury each at the bottom (silence leaves them). | Confirmed |
+| Lend you 15 PSD | The chosen player hands over 15 PSD now; the drawer repays at the end of the 3rd further round (debt if short). | Assumed |
+| Survive a scandal unscathed | Next round only, popularity losses are halved (rounded down). | Confirmed |
+| Raise your Doctor/Lawyer fee | Next round the player's dose price or will fee is quietly 20 more (the patient or client pays it). Without either role they choose one to become. | Assumed |
+| Up to 2 players must vote with you | Each chosen player answers in a poll: be the drawer's Loyalist for the rest of the term, or lose 5 popularity. Silence agrees. | Assumed |
+| Reroll one Result card draw | Next round, the first Result card they draw: they may keep it, or reroll: the first card goes to a player they name (and applies to them) and they draw again. Silence keeps it. | Assumed |
+| Popularity floor | Next round, the player's popularity can't be pushed below what it was when the card was drawn. A player already below it gets no protection. | Confirmed |
+| Petrol subsidy | 60 PSD at the end of each of the next 2 rounds. | Confirmed |
+| National hero | +20 popularity and no CANCELLED status this round. | Confirmed |
+| Qualified for benefits | Their next income is not taxed. ("Tax collection" read as the income tax, not the levy.) | Assumed |
+| Public holiday | Every other player's next income is skipped. | Assumed |
+| Appointee under investigation (Settlement) | The drawer picks a player; both get +20 popularity and 100 PSD from the treasury. | Confirmed |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.

@@ -65,6 +65,8 @@ const V = {
   windowSeconds: 60,             // ... the Leader this long at the Inauguration and the Farewell to propose, else the window is passed
   amendVoteSeconds: 45,          // ... the voters this long on an amendment; those who didn't abstain
   grammarReferee: 0,             // 1 = the server must rule on the grammar of an amendment (rule_grammar); 0 = no referee yet: every wording is accepted
+  cardOfferSeconds: 30,          // (digital version) a buyer has this long to answer an offer to sell a kept card; silence is a refusal
+  pollSeconds: 30,               // (digital version) players have this long to answer a card's question to several players; silence is its default answer
   debateSeconds: 30,             // each side of a debate (a Performance card)
   debateTopicMax: 140,           // longest topic a debate challenge may name
   amendCosignSeconds: 30,        // (digital version) the Leader or the Vice has this long to agree to the other's proposal to amend; silence is a refusal
