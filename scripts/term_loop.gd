@@ -29,6 +29,7 @@ class_name TermLoop
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const LawScript = preload("res://scripts/law.gd")
+const GameDataScript = preload("res://scripts/game_data.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const ElectionScript = preload("res://scripts/election.gd")
@@ -123,6 +124,9 @@ static func settle(state: GameStateScript) -> Array:
 static func _step(state: GameStateScript) -> Array:
 	if state.game_over:
 		return []
+	var election: Array = ElectionScript.step(state)   # an exam or a ballot that ran out of time
+	if not election.is_empty():
+		return election
 	var dose: Array = DoctorScript.step(state)   # a dose in progress moves on with the clock, whatever the term is doing
 	if not dose.is_empty():
 		return dose
@@ -150,11 +154,17 @@ static func _step(state: GameStateScript) -> Array:
 			if state.election.is_empty() and state.leader_id != -1:
 				return _start_term(state)
 		GameStateScript.TermPhase.INAUGURATION:
+			var late_inauguration: Array = _window_timeout(state, GameStateScript.AmendWindow.INAUGURATION)
+			if not late_inauguration.is_empty():
+				return late_inauguration
 			if _window_finished(state, GameStateScript.AmendWindow.INAUGURATION):
 				return _begin_turns(state)
 		GameStateScript.TermPhase.TURNS:
 			return _advance_turns(state)
 		GameStateScript.TermPhase.FAREWELL:
+			var late_farewell: Array = _window_timeout(state, GameStateScript.AmendWindow.FAREWELL)
+			if not late_farewell.is_empty():
+				return late_farewell
 			if _window_finished(state, GameStateScript.AmendWindow.FAREWELL):
 				return _end_term(state)
 	return []
@@ -169,8 +179,24 @@ static func _window_finished(state: GameStateScript, window: int) -> bool:
 
 
 static func _start_term(state: GameStateScript) -> Array:
-	state.term = {"phase": GameStateScript.TermPhase.INAUGURATION}
-	return [_log(state, "term_started", {"leader": state.leader_id, "leader_type": state.leader_type, "round": state.current_round})]
+	var ends_at: int = _start_window_clock(state)
+	state.term = {"phase": GameStateScript.TermPhase.INAUGURATION, "window_deadline": ends_at}
+	return [_log(state, "term_started", {"leader": state.leader_id, "leader_type": state.leader_type, "round": state.current_round, "window_ends_at_ms": ends_at})]
+
+
+static func _start_window_clock(state: GameStateScript) -> int:
+	return state.clock_ms + GameDataScript.get_int("windowSeconds") * 1000
+
+
+# The Leader (and the Vice, if they are the ones to propose) have windowSeconds at the Inauguration and at the Farewell. When
+# it runs out, a window nobody used is passed for them. An amendment or a proposal under way has clocks of its own.
+static func _window_timeout(state: GameStateScript, window: int) -> Array:
+	if state.clock_ms < int(state.term.get("window_deadline", 1 << 60)) or not state.amend.is_empty() or not state.amend_offer.is_empty():
+		return []
+	if state.windows_used[window]:
+		return []
+	state.windows_used[window] = true
+	return [_log(state, "window_passed", {"leader": state.leader_id, "window": window, "timed_out": true})]
 
 
 # The Inauguration is over: collect the levy, then set the turn order.
@@ -220,7 +246,8 @@ static func _advance_turns(state: GameStateScript) -> Array:
 	var waiting: Array = state.term["waiting"]
 	if waiting.is_empty():
 		state.term["phase"] = GameStateScript.TermPhase.FAREWELL
-		return [_log(state, "farewell_opened", {"leader": state.leader_id})]
+		state.term["window_deadline"] = _start_window_clock(state)
+		return [_log(state, "farewell_opened", {"leader": state.leader_id, "window_ends_at_ms": int(state.term["window_deadline"])})]
 	if state.term["announced"] != waiting[0]:
 		state.term["announced"] = waiting[0]
 		return [_log(state, "turn_started", {"player": waiting[0]})]

@@ -155,7 +155,7 @@ func _init() -> void:
 		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
 
 	# Choices come up too (only some cards ask for one, so across all the ordinary games).
-	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed", "amendment_offered", "debate_started", "debate_turn", "debate_vote_cast", "union_pitch_unavailable"]:
+	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed", "amendment_offered", "debate_started", "debate_turn", "debate_vote_cast", "union_pitch_unavailable", "exam_skipped", "exam_timeout", "vote_timeout", "window_passed"]:
 		expect("the twelve ordinary games produced a '%s' event (%d times)" % [kind, all_types.count(kind)], all_types.has(kind), true)
 
 	# The same seed always plays out the same way, to the last byte.
@@ -763,11 +763,15 @@ func window_used(s: GameStateScript) -> bool:
 func election_move(s: GameStateScript) -> Dictionary:
 	match s.election["phase"]:
 		EXAM_WRITING:
+			if s.current_round % 3 == 2:
+				return {"tick": int(s.election["deadline"])}   # the Leader never writes it
 			var questions: Array = []
 			for i in 5:
 				questions.append({"text": "Question %d?" % (i + 1), "options": ["A", "B", "C"], "answer": (i + s.current_round) % 3})
 			return {"player": s.leader_id, "command": {"type": "write_exam", "questions": questions}}
 		EXAM_ANSWERING:
+			if s.current_round % 4 == 1 and not s.election["answers"].is_empty():
+				return {"tick": int(s.election["deadline"])}   # the slow ones fail
 			for id in s.election["takers"]:
 				if id in s.election["answers"] or s.eliminated.get(id, false) or s.sick.get(id, false):
 					continue
@@ -777,6 +781,8 @@ func election_move(s: GameStateScript) -> Dictionary:
 					answers.append(key if (id + s.current_round) % 3 != 0 else (key + 1) % 3)
 				return {"player": id, "command": {"type": "answer_exam", "answers": answers}}
 		VOTING:
+			if s.current_round % 5 == 0 and not s.election["votes"].is_empty():
+				return {"tick": int(s.election["deadline"])}   # the rest abstain
 			for id in s.election["voters"]:
 				if id in s.election["votes"] or s.eliminated.get(id, false) or s.sick.get(id, false):
 					continue

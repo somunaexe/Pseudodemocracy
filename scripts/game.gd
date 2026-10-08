@@ -83,6 +83,7 @@ static func new_game(player_ids: Array, seed_value: int = 0, genders: Dictionary
 	for id in genders:
 		assert(id in player_ids and genders[id] in GendersScript.names(), "a gender for a player who isn't at the table, or one that doesn't exist")
 		state.genders[id] = genders[id]
+	state.grammar_referee = GameDataScript.get_int("grammarReferee") == 1   # off for now: no ruling on the grammar of amendments
 	RolesScript.setup(state)   # the 25 role cards, with their coup stickers, are dealt out of sight
 	ElectionScript.begin(state, "first")
 	return state

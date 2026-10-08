@@ -59,6 +59,12 @@ const V = {
   doseOfferSeconds: 30,           // (digital version) a patient has this long to accept or reject a dose; silence is a rejection
   doseGuessSeconds: 10,           // (digital version) after a cure is accepted, anyone may guess Sabotage for this long
   commandVoteMultiplier: 2,      // in a Command Performance the commanding union's or mob's total popularity vote is doubled (Article 16)
+  examWriteSeconds: 120,         // (digital version) the Leader has this long to write the exam, else the exam is skipped
+  examAnswerSeconds: 90,         // ... the takers this long to answer; those who didn't fail
+  electionVoteSeconds: 60,       // ... the voters this long; those who didn't abstain
+  windowSeconds: 60,             // ... the Leader this long at the Inauguration and the Farewell to propose, else the window is passed
+  amendVoteSeconds: 45,          // ... the voters this long on an amendment; those who didn't abstain
+  grammarReferee: 0,             // 1 = the server must rule on the grammar of an amendment (rule_grammar); 0 = no referee yet: every wording is accepted
   debateSeconds: 30,             // each side of a debate (a Performance card)
   debateTopicMax: 140,           // longest topic a debate challenge may name
   amendCosignSeconds: 30,        // (digital version) the Leader or the Vice has this long to agree to the other's proposal to amend; silence is a refusal

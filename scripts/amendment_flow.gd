@@ -129,6 +129,12 @@ static func _put_out(state: GameStateScript, player_id: int, window: int, articl
 		"votes": {},           # voter id -> bool. Secret until the vote is resolved.
 		"activists": [],       # ids of Activist unions that have confronted
 	}
+	if not state.grammar_referee:
+		# No referee yet (a design question left open): every wording is accepted and the vote opens at once.
+		var ruled: Dictionary = {"ok": true, "referee": false}
+		_start_vote_clock(state, ruled)
+		events.append(EventsScript.make("grammar_ruled", ruled))
+		events.append_array(_maybe_resolve(state))
 	return events
 
 
@@ -167,6 +173,11 @@ static func _agree(state: GameStateScript, player_id: int, command: Dictionary) 
 
 # A proposal nobody agreed to in time is dropped, and so is one whose pair has broken up.
 static func step(state: GameStateScript) -> Array:
+	if state.amend.get("phase", GameStateScript.AmendPhase.NONE) == GameStateScript.AmendPhase.VOTING and state.clock_ms >= int(state.amend.get("deadline", 1 << 60)):
+		var late: Array = [EventsScript.make("amendment_vote_timeout", {"article_id": state.amend["article_id"]})]   # the rest abstain
+		late.append_array(_resolve(state))
+		state.event_log.append_array(late)
+		return late
 	var offer: Dictionary = state.amend_offer
 	if offer.is_empty():
 		return []
@@ -214,13 +225,24 @@ static func _rule_grammar(state: GameStateScript, player_id: int, command: Dicti
 	var ok = command.get("ok", null)
 	if typeof(ok) != TYPE_BOOL:
 		return [_reject(player_id, "A grammar ruling must be true or false.")]
-	var events: Array = [EventsScript.make("grammar_ruled", {"ok": ok})]
+	var ruled: Dictionary = {"ok": ok}
+	if ok:
+		_start_vote_clock(state, ruled)
+	var events: Array = [EventsScript.make("grammar_ruled", ruled)]
 	if not ok:
 		events.append_array(_fail(state, state.amend["article_id"], "The new wording isn't correct English."))
 		return events
-	state.amend["phase"] = GameStateScript.AmendPhase.VOTING
 	events.append_array(_maybe_resolve(state))   # in case nobody is left who can vote
 	return events
+
+
+# The vote opens: the voters have amendVoteSeconds, and those who don't vote abstain. The ruling event says how long.
+static func _start_vote_clock(state: GameStateScript, ruled: Dictionary) -> void:
+	var seconds: int = GameDataScript.get_int("amendVoteSeconds")
+	state.amend["phase"] = GameStateScript.AmendPhase.VOTING
+	state.amend["deadline"] = state.clock_ms + seconds * 1000
+	ruled["seconds"] = seconds
+	ruled["ends_at_ms"] = int(state.amend["deadline"])
 
 
 # A failed check: the article keeps its old wording, the window stays used, the Leader

@@ -20,6 +20,9 @@ var windows_used: Dictionary = {    # AmendWindow -> bool
 # The Vice: a second Leader for the rest of a term (see Vice). -1 when there is none.
 var vice_id: int = -1
 
+# Does an amendment wait for the server's ruling on its grammar (rule_grammar)? New games set it from the game data (off for now).
+var grammar_referee: bool = true
+
 # A proposal to amend that waits for the other of the Leader and the Vice to agree (see AmendmentFlow). Public.
 var amend_offer: Dictionary = {}    # { "by", "other", "window", "article_id", "texts", "deadline" }
 

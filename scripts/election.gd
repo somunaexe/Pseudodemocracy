@@ -8,6 +8,10 @@ class_name Election
 #   EXAM_WRITING --skip_exam--> VOTING       (server only: the Leader didn't write one in time)
 #   VOTING --last ballot--> a winner (or a runoff) --> the role card draw --> NONE
 #
+# Every step has a clock (the digital version; Game.tick moves it, see step()): the Leader has examWriteSeconds to write the
+# exam or it is skipped; the takers have examAnswerSeconds and those who haven't answered fail it; the voters have
+# electionVoteSeconds and those who haven't voted abstain (a tie is still run again, and then decided by lot).
+#
 # Reasons: "first" (no exam), "term_ended" (the Leader writes the exam), "vacancy" (the Leader
 # was eliminated: no exam, because there is nobody to write it).
 #
@@ -63,6 +67,7 @@ static func begin(state: GameStateScript, reason: String) -> Array:
 	events.append(EventsScript.make("election_started", {"reason": reason, "exam": exam}))
 	if exam:
 		state.election["phase"] = GameStateScript.ElectionPhase.EXAM_WRITING
+		events[events.size() - 1]["ends_at_ms"] = _start_clock(state, "examWriteSeconds")
 	else:
 		events.append_array(_start_voting(state, _eligible_voters(state), _eligible_candidates(state, _eligible_voters(state))))
 	state.event_log.append_array(events)
@@ -134,6 +139,43 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 	return events
 
 
+# --- the clock ---------------------------------------------------------------------------
+
+# Start the clock of the step that is beginning; returns when it runs out.
+static func _start_clock(state: GameStateScript, key: String) -> int:
+	state.election["deadline"] = state.clock_ms + GameDataScript.get_int(key) * 1000
+	return int(state.election["deadline"])
+
+
+# The clock ran out on the step the election is in: the exam is skipped, the slow fail it, the voters who didn't vote
+# abstain. Returns the events, or [] if there is nothing to do yet.
+static func step(state: GameStateScript) -> Array:
+	if state.election.is_empty() or not state.election.has("deadline") or state.clock_ms < int(state.election["deadline"]):
+		return []
+	var events: Array = []
+	match state.election.get("phase", GameStateScript.ElectionPhase.NONE):
+		GameStateScript.ElectionPhase.EXAM_WRITING:
+			events = [EventsScript.make("exam_skipped", {"reason": "the Leader ran out of time"})]
+			var voters: Array = _eligible_voters(state)
+			events.append_array(_start_voting(state, voters, _eligible_candidates(state, voters)))
+		GameStateScript.ElectionPhase.EXAM_ANSWERING:
+			if state.election["answers"].is_empty():
+				# Nobody handed in anything: the exam decided nothing, so it is skipped and everyone votes.
+				events = [EventsScript.make("exam_skipped", {"reason": "nobody answered in time"})]
+				var everyone: Array = _eligible_voters(state)
+				events.append_array(_start_voting(state, everyone, _eligible_candidates(state, everyone)))
+			else:
+				events = [EventsScript.make("exam_timeout", {"missing": _active_takers(state).filter(func(id): return not state.election["answers"].has(id))})]
+				events.append_array(_reveal(state))
+		GameStateScript.ElectionPhase.VOTING:
+			events = [EventsScript.make("vote_timeout", {"missing": state.election["voters"].filter(func(id): return _can_vote(state, id) and not state.election["votes"].has(id))})]
+			events.append_array(_count(state))
+		_:
+			state.election.erase("deadline")
+	state.event_log.append_array(events)
+	return events
+
+
 # --- the exam ----------------------------------------------------------------------------
 
 static func _write_exam(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
@@ -153,6 +195,7 @@ static func _write_exam(state: GameStateScript, player_id: int, command: Diction
 	var events: Array = [EventsScript.make("exam_written", {
 		"leader": player_id,
 		"questions": parsed["questions"],      # the questions are public; the key is not
+		"ends_at_ms": _start_clock(state, "examAnswerSeconds"),
 	})]
 	events.append_array(_maybe_reveal(state))
 	return events
@@ -297,7 +340,7 @@ static func _start_voting(state: GameStateScript, voters: Array, candidates: Arr
 	state.election["voters"] = voters
 	state.election["candidates"] = candidates
 	state.election["votes"] = {}   # voter id -> candidate id. SECRET until the result.
-	var events: Array = [EventsScript.make("vote_started", {"candidates": candidates.duplicate(), "voters": voters.duplicate(), "runoff": state.election["runoff"]})]
+	var events: Array = [EventsScript.make("vote_started", {"candidates": candidates.duplicate(), "voters": voters.duplicate(), "runoff": state.election["runoff"], "ends_at_ms": _start_clock(state, "electionVoteSeconds")})]
 	if candidates.size() == 1:
 		events.append_array(_elect(state, candidates[0], "unopposed", {}))   # nothing to decide
 	else:

@@ -550,6 +550,23 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | Debate a rival (Performance) | The performance becomes a debate. The performer challenges one of their rivals (anyone if they have none) with a topic. They speak 30 seconds each (either can end early), then everyone else votes for the winner (Loyalists vote with their owner). The winner moves +swing and the loser -swing, both. The performer draws a Settlement card if they win and a Scandal if they lose; a tie draws nothing; the rival draws nothing. A performer who doesn't challenge in time is given a rival at random. The rival can't refuse. | Confirmed |
 | A rival union wants your backing (Performance) | A union or mob led by one of the performer's rivals (otherwise another union) pitches the performer through a 30-second invitation they answer with `union_respond`; silence is a refusal. The performance goes on as usual. Nothing happens, and it is said, if there is no such union or the performer can't join (the Leader, the Vice, a union member). | Assumed |
 
+## Clocks and the grammar referee (built)
+
+The digital game needs a clock on every step, or one absent player stalls a table. `Game.tick` moves the clock; all deadlines are checked in the game loop.
+
+| Step | Clock | When it runs out |
+|---|---|---|
+| The Leader writes the exam | `examWriteSeconds` 120 | The exam is skipped and everyone votes. |
+| The takers answer | `examAnswerSeconds` 90 | Those who didn't answer have failed. If nobody answered the exam is skipped and everyone votes. |
+| A ballot (and each runoff) | `electionVoteSeconds` 60 | Those who didn't vote abstain. A tie runs again, then is decided by lot, so an election always ends. |
+| The Inauguration and the Farewell window | `windowSeconds` 60 | A window nobody used is passed for the Leader. A proposal or a vote under way has its own clock. |
+| A proposal waiting for the Vice | `amendCosignSeconds` 30 | Refused. |
+| The vote on an amendment | `amendVoteSeconds` 45 | Those who didn't vote abstain; the votes cast decide. |
+
+Every start-of-step event carries `ends_at_ms` for the clients' timers. All values are assumed and are in `game_data.js`.
+
+**The grammar referee is switched off** (`grammarReferee: 0`, `GameState.grammar_referee`): every wording is accepted and the vote opens at once. The ruling command still exists for when a referee is decided.
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.

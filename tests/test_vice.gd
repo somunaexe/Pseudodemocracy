@@ -482,6 +482,7 @@ func views_and_saves() -> void:
 # A running term where player 4 holds a coup card, is far ahead in popularity and has the cash. Null for seeds with no President.
 func coup_ready(seed_value: int) -> GameStateScript:
 	var s := GameScript.new_game([1, 2, 3, 4, 5], seed_value)
+	s.grammar_referee = true   # these tests play the referee themselves
 	for id in [1, 2, 3, 4, 5]:
 		GameScript.handle(s, id, {"type": "cast_vote", "candidate": LEADER})
 	if s.leader_type != PRESIDENT:
@@ -500,6 +501,7 @@ func coup_ready(seed_value: int) -> GameStateScript:
 func inaugurated() -> GameStateScript:
 	for seed_value in range(1, 400):
 		var s := GameScript.new_game([1, 2, 3, 4, 5], seed_value)
+		s.grammar_referee = true   # these tests play the referee themselves
 		for id in [1, 2, 3, 4, 5]:
 			GameScript.handle(s, id, {"type": "cast_vote", "candidate": LEADER})
 		if s.leader_type == PRESIDENT:
@@ -526,6 +528,7 @@ func card_number(deck: String, prefix: String) -> int:
 func new_turn() -> GameStateScript:
 	for seed_value in range(1, 400):
 		var s := GameScript.new_game([1, 2, 3, 4, 5], seed_value)
+		s.grammar_referee = true   # these tests play the referee themselves
 		for id in [1, 2, 3, 4, 5]:
 			GameScript.handle(s, id, {"type": "cast_vote", "candidate": LEADER})
 		if s.leader_type == PRESIDENT:

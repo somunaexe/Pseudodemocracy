@@ -380,6 +380,7 @@ func every_event_is_logged_once() -> void:
 func new_term(leader_type: int) -> GameStateScript:
 	for seed_value in range(1, 400):
 		var s := GameScript.new_game([1, 2, 3, 4, 5], seed_value)
+		s.grammar_referee = true   # these tests play the referee themselves
 		for id in [1, 2, 3, 4, 5]:
 			GameScript.handle(s, id, {"type": "cast_vote", "candidate": 2})
 		if s.leader_type == leader_type:
