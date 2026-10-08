@@ -13,6 +13,8 @@ class_name CardEffects
 #   no_coup > 0  the player can't attempt a coup for that many rounds
 #   collect_each   every other player of a gender pays the drawer an amount (what they can't pay becomes debt)
 #   marker       the player gets a corruption marker (see Corruption)
+#   popularity_per_loyalist   more popularity moved for each of the player's Loyalists of a gender (see Loyalists)
+#   defect       one of the player's Loyalists, at random, leaves them
 #   disband      the player's union or mob disperses and its other members become the player's rivals (see Rivals)
 # A card with "keep" goes into the player's hand instead (state.hands), to be played later with the command
 # "play_card" (see play()). The union cards do that: playing one founds a union (see Unions).
@@ -26,6 +28,8 @@ class_name CardEffects
 #            With who = "rival" the choice is among the drawer's rivals (anyone, if they have none) and the one chosen
 #            becomes their rival; the card can then make a truce (the two can't coup each other this round), an accord
 #            (if either is couped within some rounds the other loses popularity) or skip the chosen player's next draw.
+#            With who = "loyalist" it is among the players who can become the drawer's Loyalist, and the card can make them
+#            one for some rounds (loyalist) and give them a random role card they can hold (target_role).
 #   option with chooser "leader"   the Leader chooses, not the drawer: stay quiet, share (the Leader takes half of the card's
 #            money from the drawer) or expose (the drawer gets a marker). The drawer's turn waits for it. (Assumed: if the
 #            drawer IS the Leader, or the seat is empty, nobody chooses and the drawer keeps it all.)
@@ -47,6 +51,7 @@ const GendersScript = preload("res://scripts/genders.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
+const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const RngScript = preload("res://scripts/rng.gd")
@@ -69,6 +74,15 @@ static func apply(state: GameStateScript, player_id: int, deck: String, card: in
 	var extra: Array = _apply_status(state, player_id, effect, data)
 	if effect.has("disband"):
 		extra.append_array(_disband(state, player_id, data))
+	if effect.has("popularity_per_loyalist"):
+		var spec: Dictionary = effect["popularity_per_loyalist"]
+		var each: int = LoyalistsScript.count_of_gender(state, player_id, str(spec["gender"]))
+		var before: int = PopularityScript.effective(state, player_id)
+		PopularityScript.change_base(state, player_id, each * int(spec["popularity"]))
+		data["loyalists_counted"] = each
+		data["popularity"] = data.get("popularity", 0) + PopularityScript.effective(state, player_id) - before
+	if effect.has("defect"):
+		extra.append_array(LoyalistsScript.defect_one(state, player_id))
 	data["asks_choice"] = effect.has("choose")
 	var events: Array = [_log(state, "card_applied", data)]
 	events.append_array(_log_all(state, extra))
@@ -210,6 +224,8 @@ static func _player_candidates(state: GameStateScript, player_id: int, who: Stri
 		result.append(id)
 	if who == "rival":
 		return RivalsScript.candidates(state, player_id)
+	if who == "loyalist":
+		return result.filter(func(id): return LoyalistsScript.problem_appointing(state, player_id, id) == "")
 	return result
 
 
@@ -326,6 +342,18 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 				events.append_array(RivalsScript.truce(state, player_id, value))
 			if effect.has("accord"):
 				events.append_array(RivalsScript.accord(state, player_id, value, int(effect["accord"]["rounds"]), int(effect["accord"]["loss"])))
+			if effect.has("target_role"):
+				var roles: Array = _role_candidates(state, value)
+				if roles.is_empty():
+					skipped.append("a random role: they can't be given one")
+				else:
+					_gain_role(state, value, str(RngScript.pick(state, roles)), events, skipped)
+			if effect.has("loyalist"):
+				var why_not: String = LoyalistsScript.problem_appointing(state, player_id, value)
+				if why_not != "":
+					skipped.append("a Loyalist: " + why_not)
+				else:
+					events.append_array(LoyalistsScript.appoint(state, player_id, value, int(effect["loyalist"]["rounds"])))
 			if effect.has("skip_draw"):
 				events.append_array(RivalsScript.skip_next_draw(state, value))
 			if effect.has("pay_chosen"):

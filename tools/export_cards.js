@@ -37,7 +37,19 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 }
 
 function validate(deck, prefix, text, effect) {
-  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband'];
+  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband', 'loyalist', 'target_role', 'popularity_per_loyalist', 'defect'];
+  if ('popularity_per_loyalist' in effect) {
+    const spec = effect.popularity_per_loyalist;
+    if (!GENDERS.includes(spec.gender)) fail(deck, prefix, `unknown gender "${spec.gender}"`);
+    checkAmounts(deck, prefix, text, { popularity: spec.popularity }, ['popularity']);
+  }
+  if ('loyalist' in effect) {
+    checkAmounts(deck, prefix, text, { psd: effect.loyalist.rounds }, ['psd']);
+    if (effect.loyalist.rounds <= 0) fail(deck, prefix, 'a loyalty lasts at least one round');
+    if (!effect.choose || effect.choose.kind !== 'player') fail(deck, prefix, '"loyalist" needs a player choice');
+  }
+  if ('target_role' in effect && (effect.target_role !== 'random' || !effect.choose || effect.choose.kind !== 'player')) fail(deck, prefix, '"target_role" must be "random" and needs a player choice');
+  if ('defect' in effect && effect.defect !== true) fail(deck, prefix, '"defect" must be true');
   for (const flag of ['truce', 'skip_draw', 'disband']) if (flag in effect && effect[flag] !== true) fail(deck, prefix, `"${flag}" must be true`);
   if ('accord' in effect) {
     checkAmounts(deck, prefix, text, { psd: effect.accord.rounds, popularity: effect.accord.loss }, ['psd', 'popularity']);
@@ -83,7 +95,7 @@ function validate(deck, prefix, text, effect) {
     for (const key of ['gain_role', 'swap_with', 'target']) if (key in effect) fail(deck, prefix, `"${key}" doesn't go with an option choice`);
   }
   if (choose.kind === 'player') {
-    if ('who' in choose && !['has_role', 'rival'].includes(choose.who)) fail(deck, prefix, `unknown "who": ${choose.who}`);
+    if ('who' in choose && !['has_role', 'rival', 'loyalist'].includes(choose.who)) fail(deck, prefix, `unknown "who": ${choose.who}`);
     if (effect.gain_role === '$choice') fail(deck, prefix, '"$choice" for a role needs a role choice');
     if ('swap_with' in effect && effect.swap_with !== '$choice') fail(deck, prefix, 'swap_with must be "$choice"');
     if ('target' in effect) checkAmounts(deck, prefix, text, effect.target, MONEY_KEYS);

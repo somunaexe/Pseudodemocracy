@@ -171,6 +171,19 @@
      "who": "rival"
     }
    },
+   "5": {
+    "choose": {
+     "kind": "player",
+     "who": "loyalist"
+    },
+    "target": {
+     "psd": 100
+    },
+    "target_role": "random",
+    "loyalist": {
+     "rounds": 3
+    }
+   },
    "7": {
     "keep": true,
     "found_union": "activist"
@@ -302,6 +315,13 @@
    }
   },
   "scandal": {
+   "1": {
+    "popularity": -15,
+    "popularity_per_loyalist": {
+     "gender": "male",
+     "popularity": -5
+    }
+   },
    "5": {
     "psd": -100,
     "marker": 1
@@ -317,6 +337,10 @@
    },
    "8": {
     "disband": true
+   },
+   "15": {
+    "popularity": -20,
+    "defect": true
    },
    "17": {
     "psd": -150,

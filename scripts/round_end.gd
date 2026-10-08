@@ -9,6 +9,7 @@ const SicknessScript = preload("res://scripts/sickness.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
+const LoyalistsScript = preload("res://scripts/loyalists.gd")
 
 
 static func run(state: GameStateScript) -> Array:
@@ -22,4 +23,5 @@ static func run(state: GameStateScript) -> Array:
 	events.append_array(SicknessScript.end_of_round(state))
 	events.append_array(CorruptionScript.end_of_round(state))
 	events.append_array(RivalsScript.end_of_round(state))
+	events.append_array(LoyalistsScript.end_of_round(state))
 	return events

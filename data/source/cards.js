@@ -199,6 +199,9 @@ const effects = {
     // Rival cards: who 'rival' offers the drawer's rivals, or anyone if they have none; the one chosen becomes their rival.
     // truce: the two can't coup each other until the round ends; accord: for that many rounds, if either is couped the
     // other loses that much popularity; skip_draw: the chosen player's next Settlement or Scandal draw is lost.
+    // loyalist: the chosen player becomes the drawer's Loyalist for that many rounds (who 'loyalist' offers the players that
+    // can be); target_role 'random' gives them a random role card they can hold.
+    ['You appointed an unqualified friend', { choose: { kind: 'player', who: 'loyalist' }, target: { psd: 100 }, target_role: 'random', loyalist: { rounds: 3 } }],
     ['You survived a vote of no confidence', { keep: true, truce: true, choose: { kind: 'player', who: 'rival' } }],
     ["A rival's scandal breaks", { popularity: 5, choose: { kind: 'player', who: 'rival' }, target: { popularity: -15 } }],
     ['Peace Accord', { choose: { kind: 'player', who: 'rival' }, accord: { rounds: 3, loss: 10 } }],
@@ -225,6 +228,10 @@ const effects = {
     // Leader about the drawer: share 'half' takes half of the card's psd off the drawer for the Leader.
     // disband: the drawer's union or mob disperses and its other members become the drawer's rivals.
     ['Your mob got caught on camera', { disband: true }],
+    // popularity_per_loyalist: the drawer loses that much more for each Loyalist of that gender; defect: one of the drawer's
+    // Loyalists (chosen at random) leaves them.
+    ['The men playing the game', { popularity: -15, popularity_per_loyalist: { gender: 'male', popularity: -5 } }],
+    ['You were caught fraternizing', { popularity: -20, defect: true }],
     ['You paid an official', { psd: -100, marker: 1 }],
     ['Your appointee turns out', { marker: 1, choose: { kind: 'player' }, target: { marker: 1 } }],
     ['Your ghost workers', { psd: -150, marker: 1 }],

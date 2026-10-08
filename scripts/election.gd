@@ -25,6 +25,7 @@ const LawScript = preload("res://scripts/law.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const RoundEndScript = preload("res://scripts/round_end.gd")
+const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 # Only the server may skip the exam (it knows the Leader ran out of time).
@@ -301,11 +302,18 @@ static func _cast_vote(state: GameStateScript, player_id: int, command: Dictiona
 		return [_reject(player_id, "You can't vote in this election.")]
 	if state.election["votes"].has(player_id):
 		return [_reject(player_id, "You have already voted.")]
+	var may: Callable = func(id): return id in state.election["voters"] and _can_vote(state, id)
+	var blocked: String = LoyalistsScript.problem_voting(state, player_id, state.election["votes"], may)
+	if blocked != "":
+		return [_reject(player_id, blocked)]
 	var candidate = command.get("candidate", null)
 	if typeof(candidate) != TYPE_INT or not candidate in state.election["candidates"]:
 		return [_reject(player_id, "That isn't one of the candidates.")]
+	candidate = LoyalistsScript.vote_for(state, player_id, candidate, state.election["votes"], may)   # a Loyalist votes as their owner did
 	state.election["votes"][player_id] = candidate
 	var events: Array = [EventsScript.make("ballot_cast", {"voter": player_id})]   # THAT, never FOR WHOM
+	for pair in LoyalistsScript.mirror(state, player_id, candidate, state.election["votes"], may):
+		events.append(EventsScript.make("ballot_cast", {"voter": pair[0], "with": pair[1]}))   # their Loyalists vote the same
 	events.append_array(_maybe_finish_vote(state))
 	return events
 

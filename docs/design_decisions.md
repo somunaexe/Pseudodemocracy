@@ -500,6 +500,24 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | A rival may check your coup card, Doctor bead or role draw for free. | Not built: it needs a Secret-Agent-style peek for a rival. The table plays it as before. | Known gap |
 | Debate a rival, choose a rival to challenge (Performance cards). | The table plays them. | Known gap |
 
+## Loyalists (built: scripts/loyalists.gd)
+
+| Question | Decision | Status |
+|---|---|---|
+| What is a Loyalist? | A player who "votes with you on anything at all" for the number of rounds a card says. You can have many. | Confirmed (glossary) |
+| Which votes? | All of them: amendments, elections, performances and Command Performances. | Confirmed ("anything at all") |
+| How is "votes with you" played? | The owner votes first. The moment they do, each Loyalist who may vote in that ballot casts the same vote (and their own Loyalists after them). A Loyalist can't vote for themselves while their owner can still vote. The ballot event for them says `with` the owner and never how they voted. | Assumed |
+| What if the owner can't vote in that ballot (the performer, the Leader in an amendment, sick, eliminated)? | The Loyalist votes freely. | Assumed |
+| What if the loyalty began after the owner voted? | The Loyalist's vote becomes the owner's. | Assumed |
+| Can someone follow two owners? | No: a new appointment replaces the old. | Assumed |
+| Can there be circles (A follows B who follows A)? | No: an appointment that would make one is refused (the card doesn't offer that player). A chain (A > B > C) is fine. | Assumed |
+| What about a Loyalist of an Activist union's member when the union confronts? | The member's vote is automatic (and doubled). Their Loyalists, and theirs, vote against the Leader too, once each, without the doubling. | Assumed |
+| How long is "3 terms"? | A round counts down at each round end, the round of the appointment included (as for sickness). | Assumed |
+| The appointment card. | The chosen player gets 100 PSD from the treasury and a random role card they can hold (none if they can't hold any: it says so), and becomes the Loyalist. | **Built** |
+| "Your current Loyalist (if any) defects" | One Loyalist, chosen at random, leaves. | Assumed |
+| "An extra 5 for each male Loyalist you have". | Counts the drawer's own Loyalists (direct) who are male. | **Built** |
+| Elimination. | A player who leaves follows nobody and nobody follows them. | **Built** |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.
@@ -524,7 +542,7 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | The heir already holds that role. | They can't hold it twice, so that card goes back in the box. | Assumed |
 | How are roles gained? | From Settlement cards: choose any role, swap roles, gain the Lawyer role (all built, see Choices). Others (found a union, become a Doctor/Lawyer if you hold neither) wait for their mechanics. | **Built** (3 cards) |
 
-Not built yet, and the next steps: the Vice and Loyalists, choices of several players, the other kept cards, and a first Godot screen. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
+Not built yet, and the next steps: the Vice, choices of several players, the other kept cards, and a first Godot screen. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

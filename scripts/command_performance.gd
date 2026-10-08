@@ -30,6 +30,7 @@ const GameDataScript = preload("res://scripts/game_data.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const LawScript = preload("res://scripts/law.gd")
+const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 const PERFORMING := GameStateScript.CommandPhase.PERFORMING
@@ -114,11 +115,19 @@ static func _vote(state: GameStateScript, player_id: int, command: Dictionary) -
 		return [_reject(player_id, "You can't vote on this performance.")]
 	if state.command["votes"].has(player_id):
 		return [_reject(player_id, "You have already voted.")]
+	var may: Callable = func(id): return id in _voters(state)
+	var blocked: String = LoyalistsScript.problem_voting(state, player_id, state.command["votes"], may)
+	if blocked != "":
+		return [_reject(player_id, blocked)]
 	var good = command.get("good", null)
 	if typeof(good) != TYPE_BOOL:
 		return [_reject(player_id, "Vote Good or Bad.")]
+	good = LoyalistsScript.vote_for(state, player_id, good, state.command["votes"], may)   # a Loyalist votes as their owner did
 	state.command["votes"][player_id] = good
-	return [_log(state, "command_vote_cast", {"voter": player_id})]   # that they voted, never how
+	var events: Array = [_log(state, "command_vote_cast", {"voter": player_id})]   # that they voted, never how
+	for pair in LoyalistsScript.mirror(state, player_id, good, state.command["votes"], may):
+		events.append(_log(state, "command_vote_cast", {"voter": pair[0], "with": pair[1]}))
+	return events
 
 
 # --- the automatic steps -----------------------------------------------------------------

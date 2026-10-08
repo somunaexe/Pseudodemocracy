@@ -144,4 +144,6 @@ var rivals: Dictionary = {}         # owner id -> list of player ids
 var truces: Array = []              # [a, b] pairs
 var accords: Array = []             # { "a", "b", "left": rounds, "loss": popularity }
 var skip_draw: Dictionary = {}      # player id -> true
+# Loyalists (see Loyalists): follower id -> { "owner": the player they vote with, "left": rounds to go }. Public.
+var loyalists: Dictionary = {}
 var frozen: Dictionary = {}         # player id -> { "left": rounds until the freeze runs out, "drop": popularity lost }

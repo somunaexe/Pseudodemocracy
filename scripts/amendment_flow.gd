@@ -24,6 +24,7 @@ const AmendmentScript = preload("res://scripts/amendment.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
+const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 # Only the server may rule on grammar. How it decides (a referee, a tool, word lists)
@@ -236,11 +237,20 @@ static func _vote(state: GameStateScript, player_id: int, command: Dictionary) -
 		return [_reject(player_id, "You can't vote on this amendment.")]
 	if player_id in _auto_voters(state):
 		return [_reject(player_id, "Your union's vote is cast automatically.")]
+	if player_id in _auto_followers(state):
+		return [_reject(player_id, "You vote with the player you are loyal to, and their union's vote is cast automatically.")]
 	if state.amend["votes"].has(player_id):
 		return [_reject(player_id, "You have already voted.")]
+	var may: Callable = func(id): return id in _eligible_voters(state) and not id in _auto_voters(state)
+	var blocked: String = LoyalistsScript.problem_voting(state, player_id, state.amend["votes"], may)
+	if blocked != "":
+		return [_reject(player_id, blocked)]
+	keep = LoyalistsScript.vote_for(state, player_id, keep, state.amend["votes"], may)   # a Loyalist votes as their owner did
 	state.amend["votes"][player_id] = keep
 	# Everyone learns THAT you voted, never HOW. The votes stay in server state until the result.
 	var events: Array = [EventsScript.make("vote_cast", {"voter": player_id})]
+	for pair in LoyalistsScript.mirror(state, player_id, keep, state.amend["votes"], may):
+		events.append(EventsScript.make("vote_cast", {"voter": pair[0], "with": pair[1]}))
 	events.append_array(_maybe_resolve(state))
 	return events
 
@@ -268,6 +278,22 @@ static func _auto_voters(state: GameStateScript) -> Array:
 	return result
 
 
+# The Loyalists of a confronting union's members (and theirs, down the chain) vote against the Leader too, one vote each,
+# without the union's multiplier. A member of the union is an automatic voter and not counted here.
+static func _auto_followers(state: GameStateScript) -> Array:
+	var eligible: Array = _eligible_voters(state)
+	var auto: Array = _auto_voters(state)
+	var result: Array = []
+	var queue: Array = auto.duplicate()
+	while not queue.is_empty():
+		var owner: int = queue.pop_front()
+		for follower in LoyalistsScript.followers_of(state, owner):
+			if follower in eligible and not follower in auto and not follower in result:
+				result.append(follower)
+				queue.append(follower)
+	return result
+
+
 # Call after anything that changes who can vote (an elimination): the vote may now be complete.
 static func recheck(state: GameStateScript) -> Array:
 	var events: Array = _maybe_resolve(state)
@@ -279,19 +305,21 @@ static func _maybe_resolve(state: GameStateScript) -> Array:
 	if state.amend.get("phase", GameStateScript.AmendPhase.NONE) != GameStateScript.AmendPhase.VOTING:
 		return []
 	var auto: Array = _auto_voters(state)
+	var following: Array = _auto_followers(state)
 	for id in _eligible_voters(state):
-		if not id in auto and not state.amend["votes"].has(id):
+		if not id in auto and not id in following and not state.amend["votes"].has(id):
 			return []   # still waiting for someone
 	return _resolve(state)
 
 
 static func _resolve(state: GameStateScript) -> Array:
 	var auto: Array = _auto_voters(state)
+	var following: Array = _auto_followers(state)
 	var keep: int = 0
-	var against: int = 0
+	var against: int = following.size()   # the Loyalists of the union's members vote against, one each
 	var revealed: Dictionary = {}
 	for id in state.amend["votes"]:
-		if id in auto:
+		if id in auto or id in following:
 			continue   # a vote cast before the union confronted no longer counts
 		revealed[id] = state.amend["votes"][id]
 		if state.amend["votes"][id]:

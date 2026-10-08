@@ -14,6 +14,7 @@ const UnionsScript = preload("res://scripts/unions.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
+const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const ScoringScript = preload("res://scripts/scoring.gd")
 
 const EXAM_WRITING = GameStateScript.ElectionPhase.EXAM_WRITING
@@ -84,11 +85,14 @@ func _init() -> void:
 
 	# A Lawyer at the table: wills proposed, signed, charged upkeep, put on hold and reactivated.
 	var will_types: Array = []
+	var mirrored_votes: int = 0
 	for seed_value in range(1, 9):
 		var run := play(5, 400 + seed_value, 7, 3, 0, 0, 2, 4)
 		will_types.append_array(run["types"])
+		mirrored_votes += run["mirrored"]
 		expect("Lawyer game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
 		expect("Lawyer game %d: no rule was ever broken" % seed_value, run["problems"], [])
+	expect("Loyalists voted with their owners in these games (%d votes)" % mirrored_votes, mirrored_votes > 0, true)
 	for kind in ["will_proposed", "will_signed", "will_terms", "will_refused", "will_expired", "will_upkeep_paid", "will_on_hold"]:
 		expect("the Lawyer games produced a '%s' event (%d times)" % [kind, will_types.count(kind)], will_types.has(kind), true)
 	expect("... and wills reached their end: read out or void (%d read, %d void)" % [will_types.count("will_read"), will_types.count("will_void")], will_types.has("will_read") or will_types.has("will_void"), true)
@@ -209,6 +213,10 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		s.hands[5] = [{"deck": "settlement", "card": 9}]
 		RolesScript.grant(s, 3, "Agbero")
 		RolesScript.grant(s, 4, "Agbero")
+	if seed_value >= 300 and seed_value < 500 and seed_value % 2 == 1:
+		# Loyalty chains from the start (3 > 4 > 5, for the length of the game), so ballots of every kind are mirrored.
+		LoyalistsScript.appoint(s, 3, 4, 100)
+		LoyalistsScript.appoint(s, 4, 5, 100)
 	if corrupt != 0:
 		# Frozen by corruption from the start, with two roles to lose. pay_fines says whether they pay the fine as soon
 		# as they can or wait the freeze out. A second player holds one marker, which stays unfrozen.
@@ -228,6 +236,7 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 	var types_seen: Array = []
 	var leaders: Array = []
 	var windfalls: int = 0
+	var mirrored: int = 0   # votes a Loyalist cast with their owner
 	var log_size: int = 0
 	while s.current_round <= terms and not s.game_over and steps < 4000:
 		var move := next_move(s)
@@ -245,6 +254,8 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 			break
 		for event in events:
 			types_seen.append(event["type"])
+			if event.has("with"):
+				mirrored += 1
 			if event["type"] == "leader_installed":
 				leaders.append(event["leader"])
 			if event["type"] in ["card_applied", "choice_made"] and event["player"] == poor and event.get("psd", 0) > 0:
@@ -273,7 +284,7 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		if s.eliminated[id]:
 			eliminated.append(id)
 	return {"steps": steps, "finished": s.current_round > terms, "problems": problems.duplicate(), "types": types_seen,
-		"eliminated": eliminated, "leaders": leaders, "windfalls": windfalls, "final": SerializerScript.state_to_json(s)}
+		"eliminated": eliminated, "leaders": leaders, "windfalls": windfalls, "mirrored": mirrored, "final": SerializerScript.state_to_json(s)}
 
 
 # What a sensible player does next, in the order the game needs it: an election first, then an
@@ -405,7 +416,8 @@ func command_move(s: GameStateScript) -> Dictionary:
 					waiting.append(id)
 			if cmd["votes"].size() >= 2 and (cmd["target"] + s.turns_played) % 3 == 0:
 				return {"tick": int(cmd["deadline"])}   # the rest never voted
-			return {"player": waiting[0], "command": {"type": "command_vote", "good": (waiting[0] + count_events(s, "command_started")) % 3 != 0}}
+			var voter: int = first_free(s, waiting)
+			return {"player": voter, "command": {"type": "command_vote", "good": (voter + count_events(s, "command_started")) % 3 != 0}}
 	return {}
 
 
@@ -676,7 +688,8 @@ func performance_move(s: GameStateScript) -> Dictionary:
 					waiting.append(id)
 			if act["votes"].size() >= 2 and act["card"] % 2 == 0:
 				return {"tick": int(act["deadline"])}   # the rest never voted
-			return {"player": waiting[0], "command": {"type": "performance_vote", "good": (waiting[0] * 7 + act["card"]) % 3 != 0}}
+			var voter: int = first_free(s, waiting)
+			return {"player": voter, "command": {"type": "performance_vote", "good": (voter * 7 + act["card"]) % 3 != 0}}
 	return {"player": performer, "command": {"type": "end_turn"}}
 
 
@@ -705,19 +718,32 @@ func election_move(s: GameStateScript) -> Dictionary:
 			for id in s.election["voters"]:
 				if id in s.election["votes"] or s.eliminated.get(id, false) or s.sick.get(id, false):
 					continue
+				var waiting: Array = s.election["voters"].filter(func(v): return not v in s.election["votes"] and not s.eliminated.get(v, false) and not s.sick.get(v, false))
+				var voter: int = first_free(s, waiting)
 				var candidates: Array = s.election["candidates"]
-				return {"player": id, "command": {"type": "cast_vote", "candidate": candidates[(id + s.current_round) % candidates.size()]}}
+				return {"player": voter, "command": {"type": "cast_vote", "candidate": candidates[(voter + s.current_round) % candidates.size()]}}
 	return {}
 
 
 func amendment_move(s: GameStateScript) -> Dictionary:
 	if s.amend["phase"] == GameStateScript.AmendPhase.PROPOSED:
 		return {"player": SERVER, "command": {"type": "rule_grammar", "ok": true}}
+	var waiting: Array = []
 	for id in s.player_ids:
 		if id == s.leader_id or s.eliminated.get(id, false) or s.sick.get(id, false) or s.amend["votes"].has(id):
 			continue
-		return {"player": id, "command": {"type": "vote", "keep": true}}
-	return {}
+		waiting.append(id)
+	if waiting.is_empty():
+		return {}
+	return {"player": first_free(s, waiting), "command": {"type": "vote", "keep": true}}
+
+
+# Of the players still to vote, the first who is not waiting on their owner's vote (a Loyalist votes with them).
+func first_free(s: GameStateScript, waiting: Array) -> int:
+	for id in waiting:
+		if not LoyalistsScript.owner_of(s, id) in waiting:
+			return id
+	return waiting[0]
 
 
 func tax_amendment(s: GameStateScript) -> Dictionary:
@@ -780,6 +806,17 @@ func check_rules(s: GameStateScript, step: int) -> void:
 	for id in s.skip_draw:
 		if s.eliminated.get(id, false):
 			problems.append(where + "an eliminated player %d still loses a draw" % id)
+	for follower in s.loyalists:
+		var owner: int = s.loyalists[follower]["owner"]
+		if s.eliminated.get(follower, false) or s.eliminated.get(owner, false) or owner == follower or s.loyalists[follower]["left"] <= 0:
+			problems.append(where + "malformed loyalty: %d follows %d" % [follower, owner])
+		var up: int = owner
+		var hops: int = 0
+		while up != 0 and hops < 20:
+			up = LoyalistsScript.owner_of(s, up)
+			hops += 1
+		if hops >= 20:
+			problems.append(where + "a circle of loyalty through %d" % follower)
 	var in_union: Dictionary = {}
 	for union_id in s.unions:
 		var union: Dictionary = s.unions[union_id]
