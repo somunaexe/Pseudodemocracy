@@ -34,7 +34,18 @@ has a test (`tools/run_tests.sh`).
    `data/articles.json`, both generated from `data/source/*.js` by `tools/`. No game number
    is typed into GDScript.
 
+## The law (scripts/law.gd)
+
+Leaders can rewrite the Constitution, so a number it governs (tax, levy, the Agbero steal) is never
+fixed in the data: it is whatever the current wording says. `Law.get_int(state, "rule")` reads it
+from `state.articles`. A rule is a *binding*: one highlighted word of one article and how to read
+it (data/source/articles.js). A Leader may only write a bound word the game can read; unreadable
+words are refused for free. Unbound highlighted words stay free text for the table to enforce.
+`test_law_guard.gd` fails if any script reads a governed number from game_data directly.
+
 ## Rules of the codebase
+
+- **Never read a Constitution-governed number from game_data. Use `Law`.**
 
 - Money only moves through `Debt.charge` and `Debt.receive`.
 - Anything a player sends is untrusted: check its type before using it.

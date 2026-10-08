@@ -19,7 +19,6 @@ func _init() -> void:
 	# The swing table, including its ranges ("8–10") and open end ("11+").
 	for pair in [[3, 10], [4, 7], [5, 6], [6, 5], [7, 4], [8, 3], [9, 3], [10, 3], [11, 1], [15, 1], [2, 10]]:
 		expect("base swing for %d players" % pair[0], GameDataScript.base_swing(pair[0]), pair[1])
-	expect("activist votes count double", GameDataScript.activist_vote_multiplier(), 2)
 
 	# Gotcha made visible: JSON numbers arrive as floats, get_int converts them.
 	expect("raw JSON number is a float", typeof(GameDataScript.values()["cancelledAt"]), TYPE_FLOAT)

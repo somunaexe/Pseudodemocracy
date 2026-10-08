@@ -51,10 +51,3 @@ static func base_swing(players: int) -> int:
 		elif players == int(label):
 			return swing
 	return int(rows[0][1])
-
-
-# How many times a confronting Activist union's votes count (the data says "double").
-static func activist_vote_multiplier() -> int:
-	var word: String = values()["activistVote"]
-	assert(word == "double", "activistVote is '%s'; only 'double' is understood" % word)
-	return 2

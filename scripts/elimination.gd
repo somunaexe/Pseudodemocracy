@@ -12,11 +12,14 @@ class_name Elimination
 # Debts owed TO the dead player go to the heir too, or are cleared if there is no heir.
 # Their union memberships end (Article 25).
 #
-# Not built yet: roles, the Nepo Baby popularity debuff, and what happens when the
-# eliminated player is the Leader. See docs/design_decisions.md.
+# If the eliminated player is the Leader the seat becomes vacant (a new Leader is voted for).
+#
+# Not built yet: roles, the Nepo Baby debuff, and the election itself.
+# See docs/design_decisions.md.
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const DebtScript = preload("res://scripts/debt.gd")
+const LawScript = preload("res://scripts/law.gd")
 const EventsScript = preload("res://scripts/events.gd")
 const FlowScript = preload("res://scripts/amendment_flow.gd")
 
@@ -86,7 +89,25 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 		"claims_cleared": claims_cleared,
 	}))
 	events.append_array(_leave_unions(state, player_id))
+	if player_id == state.leader_id:
+		events.append_array(_vacate_seat(state))
 	events.append_array(FlowScript.recheck(state))   # an amendment vote may now be complete
+	return events
+
+
+# The Leader is eliminated: the seat is empty until a new Leader is voted for (the election
+# itself is not built yet) and an amendment in progress is abandoned. Its window stays used.
+static func _vacate_seat(state: GameStateScript) -> Array:
+	var events: Array = []
+	if not state.amend.is_empty():
+		state.amendment_record.append({
+			"round": state.current_round, "leader": state.leader_id, "article_id": state.amend["article_id"],
+			"outcome": "abandoned", "for": 0, "against": 0, "text": "",
+		})
+		state.amend = {}
+		events.append(EventsScript.make("amendment_abandoned", {"reason": "the Leader was eliminated"}))
+	state.leader_id = -1
+	events.append(EventsScript.make("leader_vacant", {}))
 	return events
 
 
@@ -117,7 +138,7 @@ static func _leave_unions(state: GameStateScript, player_id: int) -> Array:
 		if not player_id in union["members"]:
 			continue
 		union["members"].erase(player_id)
-		if union["members"].size() <= 1 or union["owner"] == player_id:
+		if union["members"].size() <= LawScript.get_int(state, "unionDissolveAt") or union["owner"] == player_id:
 			state.unions.erase(union_id)
 			events.append(EventsScript.make("union_dissolved", {"union_id": union_id}))
 	return events

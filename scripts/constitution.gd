@@ -27,6 +27,27 @@ static func initial_articles() -> Dictionary:
 	return result
 
 
+# Every rule the game enforces from the Constitution: rule name -> binding.
+# A binding says which highlighted word holds the value (see data/source/articles.js).
+static func bindings() -> Dictionary:
+	var result: Dictionary = {}
+	for chapter in _load()["chapters"]:
+		for article in chapter["articles"]:
+			for binding in article.get("bindings", []):
+				var entry: Dictionary = binding.duplicate(true)
+				entry["article_id"] = int(article["id"])
+				result[binding["name"]] = entry
+	return result
+
+
+static func bindings_for(article_id: int) -> Array:
+	var result: Array = []
+	for binding in bindings().values():
+		if binding["article_id"] == article_id:
+			result.append(binding)
+	return result
+
+
 static func title(article_id: int) -> String:
 	for chapter in _load()["chapters"]:
 		for article in chapter["articles"]:

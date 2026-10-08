@@ -17,6 +17,7 @@ class_name AmendmentFlow
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
+const LawScript = preload("res://scripts/law.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const AmendmentScript = preload("res://scripts/amendment.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")
@@ -80,10 +81,18 @@ static func _propose(state: GameStateScript, player_id: int, command: Dictionary
 		if typeof(text) != TYPE_STRING:
 			return [_reject(player_id, "Every new word must be text.")]
 
-	# Accepted. From here the attempt uses up the window whatever happens next.
-	state.windows_used[window] = true
 	var old_words: Array = state.articles[article_id]
 	var cleaned: Array = _normalise(old_words, texts)   # validate and store the same strings
+	var structural: String = AmendmentScript.validate_words(old_words, cleaned)
+	if structural.is_empty():
+		# A word the game can't apply as a rule is refused outright: no fine, the window is
+		# not used, and the Leader can try again.
+		var unreadable: String = LawScript.check_new_wording(article_id, old_words, cleaned)
+		if not unreadable.is_empty():
+			return [_reject(player_id, unreadable)]
+
+	# Accepted. From here the attempt uses up the window whatever happens next.
+	state.windows_used[window] = true
 	var events: Array = [EventsScript.make("amendment_proposed", {
 		"leader": player_id,
 		"window": window,
@@ -92,7 +101,6 @@ static func _propose(state: GameStateScript, player_id: int, command: Dictionary
 		"old_text": ConstitutionScript.to_text(old_words),
 		"proposed": cleaned,
 	})]
-	var structural: String = AmendmentScript.validate_words(old_words, cleaned)
 	if not structural.is_empty():
 		events.append_array(_fail(state, article_id, structural))
 		return events
@@ -175,7 +183,7 @@ static func _confront(state: GameStateScript, player_id: int, command: Dictionar
 		return [_reject(player_id, "Only the unionizer decides for a union.")]
 	if state.eliminated.get(player_id, false) or state.sick.get(player_id, false):
 		return [_reject(player_id, "A sick or eliminated unionizer can't use role powers.")]
-	if union["members"].size() < GameDataScript.get_int("unionMin"):
+	if union["members"].size() < LawScript.get_int(state, "unionMin"):
 		return [_reject(player_id, "The union is too small to act.")]
 	if union["confront_used"]:
 		return [_reject(player_id, "This union has already confronted the Leader.")]
@@ -199,7 +207,7 @@ static func _confront(state: GameStateScript, player_id: int, command: Dictionar
 # Agbero confront: the amendment is blocked (its window stays used) and the Leader pays
 # each member the steal amount. Assumption: that is "50 x union size" in total, 50 each.
 static func _block(state: GameStateScript, union_id: int, union: Dictionary) -> Array:
-	var steal: int = GameDataScript.get_int("agberoSteal")
+	var steal: int = LawScript.get_int(state, "agberoSteal")
 	var became_debt: int = 0
 	for member in union["members"]:
 		became_debt += DebtScript.charge(state, state.leader_id, member, steal)
@@ -286,7 +294,8 @@ static func _resolve(state: GameStateScript) -> Array:
 			keep += 1
 		else:
 			against += 1
-	against += auto.size() * GameDataScript.activist_vote_multiplier()
+	var multiplier: int = LawScript.get_int(state, "activistVote")
+	against += auto.size() * multiplier
 
 	var swing: int = GameDataScript.base_swing(_active_players(state).size())
 	var delta: int = (keep - against) * swing
@@ -304,7 +313,7 @@ static func _resolve(state: GameStateScript) -> Array:
 		"article_id": article_id,
 		"for": keep,
 		"against": against,
-		"auto_against": auto.size() * GameDataScript.activist_vote_multiplier(),
+		"auto_against": auto.size() * multiplier,
 		"popularity_delta": delta,
 		"stands": stands,
 		"votes": revealed,
