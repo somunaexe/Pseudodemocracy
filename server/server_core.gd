@@ -35,9 +35,10 @@ const MAX_ROOMS := 200
 const BURST := 20              # a connection may send this many messages at once...
 const REFILL_PER_SECOND := 8   # ...and gets this many more every second
 const PRUNE_EVERY_MS := 60000
-const LOBBY_IDLE_MS := 3600000          # a room that never started and has nobody in it is dropped after an hour
-const FINISHED_KEEP_MS := 86400000      # a finished game is kept for a day
-const ABANDONED_KEEP_MS := 604800000    # a running game that nobody has touched or joined for a week is dropped
+const LOBBY_IDLE_MS := 1800000          # a room that never started and has nobody in it is dropped after 30 minutes
+const FINISHED_KEEP_MS := 3600000       # a finished game is kept for an hour (long enough to look at the result and rematch)
+const ABANDONED_KEEP_MS := 10800000     # a running game with nobody connected for 3 hours is dropped. A game left alone normally
+										# ends long before: absent players are eliminated after two missed turns (see Absence)
 const SAVE_VERSION := 1
 const CLIENT_TYPES := ["create_room", "join_room", "resume", "start_game", "command", "sync", "leave"]
 

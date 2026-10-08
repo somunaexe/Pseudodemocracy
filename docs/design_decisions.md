@@ -701,7 +701,7 @@ What it says, and what it cannot say:
 | Abuse | Messages over 64 KB, bad JSON, unknown types and floods (20 at once, 8 more per second) get an error and change nothing. Clients can't end the game or rule on grammar (server only). | **Built** |
 | Saving | Every accepted move is saved to its own file (`<CODE>.json`, written then renamed so a crash never leaves half a file) BEFORE players are told. A refused move or a look at the table is not saved. | **Built** |
 | Restart | `load_saved` brings rooms back; players resume with their token. The game clock continues from where it was (downtime costs no deadlines) and downtime is not idle time. Bad or other-version saves are skipped. | **Built** |
-| Clean-up | Unstarted empty room: 1 hour; finished game: 1 day; running game nobody touched: 1 week. The clock moving a game does not count as touching it. | Assumed |
+| Clean-up | Unstarted empty room: 30 minutes; finished game: 1 hour; running game with nobody connected: 3 hours (a backstop: an abandoned game plays itself out, as absent players are eliminated after two missed turns). Your call: shorter, to save memory. The clock moving a game does not count as touching it. | Assumed |
 | Accounts | None: a name and a secret token per room is the identity (see docs/deploying.md). | Assumed |
 | Hosting | Dockerfile, compose with Caddy for TLS, systemd unit: written, **untested**. | Written |
 

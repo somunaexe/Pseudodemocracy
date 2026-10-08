@@ -115,6 +115,8 @@ func the_clock_does_not_run_while_down() -> void:
 
 
 func cleaning_up() -> void:
+	var minute: int = 60 * 1000
+	var hour: int = 60 * minute
 	var store = MemoryStoreScript.new()
 	var core = CoreScript.new(4)
 	core.store = store
@@ -122,20 +124,29 @@ func cleaning_up() -> void:
 	say(core, 1, {"type": "create_room", "name": "Ada"})
 	var code: String = last(1, "welcome")["code"]
 	core.disconnect_peer(1, 0)
-	core.tick(30 * 60 * 1000)
-	expect("a lobby nobody is in survives half an hour", core.rooms.has(code), true)
-	core.tick(2 * 3600 * 1000)
-	expect("... but not two hours: it is dropped, and its file", [core.rooms.has(code), store.files.has(code), core.members.size()], [false, false, 0])
+	core.tick(15 * minute)
+	expect("a lobby nobody is in survives a quarter of an hour", core.rooms.has(code), true)
+	core.tick(45 * minute)
+	expect("... but not 45 minutes more: it is dropped, and its file", [core.rooms.has(code), store.files.has(code), core.members.size()], [false, false, 0])
 	var busy = started(store)
 	var busy_code: String = last(1, "welcome")["code"]
-	busy.tick(2 * 3600 * 1000)
+	busy.tick(5 * hour)
 	expect("a game with people connected is never dropped", busy.rooms.has(busy_code), true)
 	for id in [1, 2, 3]:
-		busy.disconnect_peer(id, 2 * 3600 * 1000)
-	busy.tick(2 * 3600 * 1000 + 3 * 86400 * 1000)
-	expect("a running game left alone for three days is kept", busy.rooms.has(busy_code), true)
-	busy.tick(2 * 3600 * 1000 + 8 * 86400 * 1000)
-	expect("... and dropped after a week", busy.rooms.has(busy_code), false)
+		busy.disconnect_peer(id, 5 * hour)
+	busy.tick(7 * hour + 59 * minute)
+	expect("a running game with nobody connected is kept for under 3 hours", busy.rooms.has(busy_code), true)
+	busy.tick(8 * hour + 1 * minute)
+	expect("... and dropped after 3", busy.rooms.has(busy_code), false)
+	var done = started(store)
+	var done_code: String = last(1, "welcome")["code"]
+	done.rooms[done_code]["state"].game_over = true
+	for id in [1, 2, 3]:
+		done.disconnect_peer(id, 0)
+	done.tick(30 * minute)
+	expect("a finished game is kept for half an hour", done.rooms.has(done_code), true)
+	done.tick(90 * minute)
+	expect("... and dropped by two hours", done.rooms.has(done_code), false)
 
 
 func seats_close_up() -> void:

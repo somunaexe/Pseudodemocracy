@@ -15,7 +15,7 @@ A small VPS (1 vCPU, 512 MB) is plenty: a game is a few hundred kilobytes and a 
 
 ## What survives what
 - **A crash or restart:** every accepted move is written to disk before anyone is told, so at most the move in progress is lost. Players reconnect with the token the game stored (`resume`) and find their seat. The game's clock carries on from where it was, so a night of downtime does not skip everyone's turn.
-- **Cleanup:** an unstarted room nobody is in goes after an hour, a finished game after a day, a running game nobody touched for a week.
+- **Cleanup:** an unstarted room nobody is in goes after 30 minutes, a finished game after an hour, a running game with nobody connected after 3 hours (it normally ends sooner: absent players are eliminated after two missed turns).
 - **Updating the game:** a save from an older engine version (`SCHEMA_VERSION` in `scripts/serializer.gd`) is skipped with a message, not guessed at. Finish or abandon running games before a release that changes the state.
 
 ## Identity (there are no accounts, on purpose)
