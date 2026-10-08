@@ -322,6 +322,17 @@ Some Settlement cards say "keep this card" or "play anytime". They go into the p
 | Are role cards secret? | No. Everyone can see who holds which roles. (I wrongly assumed they were secret from the card text; you corrected this.) | Confirmed |
 | How are roles gained? | From Settlement cards. So dealing roles comes with the card effects. | Confirmed |
 
+## Gender (built: scripts/genders.gd)
+
+The handbook's online-version note: "players enter their gender so gendered cards work."
+
+| Question | Decision | Status |
+|---|---|---|
+| What can a player enter? | Female, male or other. A player who hasn't said is in none of the groups the cards name, and neither is "other". | Assumed (the three options are mine) |
+| When? | In the lobby: pass it to `new_game`, or each player sends `set_gender`, and may change it until the first Leader is installed. After that it is fixed, so nobody can change it to dodge a card. | Assumed |
+| Who can see it? | Everyone: the cards name groups at the table ("every woman"). | Assumed |
+| Which cards use it? | One so far: "Collect 5 PSD from every woman at the table" (each other woman pays the drawer; what she can't pay becomes debt). The others need things that aren't built (choosing up to 3 men, Loyalists, a recurring apology). | **Built** (1 card) |
+
 ## Sickness (built: scripts/sickness.gd)
 
 From the handbook (Doctor & Health, Articles 21 to 24). A round is a term.

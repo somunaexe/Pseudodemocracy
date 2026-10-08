@@ -120,3 +120,7 @@ var union_invites: Dictionary = {}  # invited player id -> { "union_id": int, "d
 # Agbero who may form a new mob straight away because their last one dispersed and they still hold an Agbero
 # role card (see Unions). Public.
 var reform: Dictionary = {}         # player id -> true
+
+# Each player's gender, so gendered cards ("every woman at the table") can work. Public. Set in the lobby (before the
+# first Leader) and then fixed. A player who has said nothing is in none of the groups.
+var genders: Dictionary = {}        # player id -> "female", "male" or "other"

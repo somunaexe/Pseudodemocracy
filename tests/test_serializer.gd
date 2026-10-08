@@ -202,6 +202,7 @@ func rich_state() -> GameStateScript:
 	s.dose = {"phase": GameStateScript.DosePhase.GUESSING, "doctor": 2, "patient": 3, "kind": "heal", "dose": "Agbo", "price": 40, "deadline": 99000, "guesser": 4}
 	s.role_cards = {0: {"role": "Doctor", "sticker": true, "holder": 2}, 1: {"role": "Doctor", "sticker": false, "holder": 0}}
 	s.agent_used = {4: true}
+	s.genders = {2: "female", 3: "male"}
 	s.union_invites = {5: {"union_id": 10, "deadline": 7777}}
 	s.reform = {4: true}
 	s.choice = {"player": 2, "deck": "settlement", "card": 22, "kind": "option", "deadline": 5000, "labels": ["a", "b"]}

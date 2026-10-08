@@ -15,6 +15,7 @@ for (const name of DECKS) {
 
 const ROLES = V.components.roleCards;
 const UNIONS = ['activist', 'agbero'];
+const GENDERS = V.genders;
 const MONEY_KEYS = ['psd', 'popularity'];
 const SELF_KEYS = ['psd', 'popularity', 'sick', 'immune'];   // what a card can do to its drawer (sick and immune must be positive)
 
@@ -31,7 +32,13 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 }
 
 function validate(deck, prefix, text, effect) {
-  const known = [...SELF_KEYS, 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union'];
+  const known = [...SELF_KEYS, 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each'];
+  if ('collect_each' in effect) {
+    const spec = effect.collect_each;
+    if (!GENDERS.includes(spec.gender)) fail(deck, prefix, `unknown gender "${spec.gender}"`);
+    checkAmounts(deck, prefix, text, { psd: spec.amount }, ['psd']);
+    if (spec.amount <= 0) fail(deck, prefix, 'collect_each must collect a positive amount');
+  }
   if ('keep' in effect) {
     if (effect.keep !== true) fail(deck, prefix, '"keep" must be true');
     for (const key of Object.keys(effect)) if (!['keep', 'found_union', 'choose'].includes(key)) fail(deck, prefix, `a kept card can't also have "${key}"`);

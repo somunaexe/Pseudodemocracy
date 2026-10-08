@@ -157,6 +157,12 @@
  ],
  "effects": {
   "settlement": {
+   "0": {
+    "collect_each": {
+     "gender": "female",
+     "amount": 5
+    }
+   },
    "7": {
     "keep": true,
     "found_union": "activist"

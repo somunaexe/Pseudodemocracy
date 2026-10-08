@@ -10,6 +10,7 @@ class_name CardEffects
 #
 #   sick > 0     the player is sick for that many rounds (unless already sick or immune: skipped, and said)
 #   immune > 0   the player can't be sickened for that many rounds
+#   collect_each   every other player of a gender pays the drawer an amount (what they can't pay becomes debt)
 # A card with "keep" goes into the player's hand instead (state.hands), to be played later with the command
 # "play_card" (see play()). The union cards do that: playing one founds a union (see Unions).
 # A card with "choose" stops the turn until the player chooses (command "choose", see choose()):
@@ -32,6 +33,7 @@ const CardsScript = preload("res://scripts/cards.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
+const GendersScript = preload("res://scripts/genders.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
@@ -50,6 +52,8 @@ static func apply(state: GameStateScript, player_id: int, deck: String, card: in
 		data["kept"] = true
 		return [_log(state, "card_applied", data)]
 	_apply_money(state, player_id, effect, data)
+	if effect.has("collect_each"):
+		_collect_each(state, player_id, effect["collect_each"], data)
 	var extra: Array = _apply_status(state, player_id, effect, data)
 	data["asks_choice"] = effect.has("choose")
 	var events: Array = [_log(state, "card_applied", data)]
@@ -79,6 +83,25 @@ static func _apply_money(state: GameStateScript, player_id: int, effect: Diction
 		var before: int = PopularityScript.effective(state, player_id)
 		PopularityScript.change_base(state, player_id, int(effect["popularity"]))
 		data[prefix + "popularity"] = PopularityScript.effective(state, player_id) - before   # what actually changed
+
+
+# "Collect 5 PSD from every woman at the table": each other player of that gender pays the drawer.
+static func _collect_each(state: GameStateScript, player_id: int, spec: Dictionary, data: Dictionary) -> void:
+	var payers: Array = []
+	var owing: Dictionary = {}
+	var total: int = 0
+	for payer in GendersScript.players(state, str(spec["gender"])):
+		if payer == player_id:
+			continue
+		var owed: int = DebtScript.charge(state, payer, player_id, int(spec["amount"]))
+		payers.append(payer)
+		total += int(spec["amount"]) - owed
+		if owed > 0:
+			owing[payer] = owed
+	data["collected_from"] = payers
+	data["collected"] = total   # what was actually paid at once; the rest is debt owed to the drawer
+	if not owing.is_empty():
+		data["new_debts"] = owing
 
 
 # sick and immune. Returns the sickness events (not yet logged); a sickness that can't happen is noted in data.

@@ -190,6 +190,8 @@ const effects = {
     ['Your cousin abroad wires funds', { psd: 80 }],
     ['You donate to charity live on camera', { psd: -30, popularity: 15 }],
     ['You lived by Dr. Sebi', { immune: 2 }],
+    // collect_each: every other player of that gender pays the drawer that much (what they can't pay becomes debt).
+    ['The Market Women', { collect_each: { gender: 'female', amount: 5 } }],
     // Cards the drawer KEEPS to play later ("play anytime"): keep: true. A union card founds a union when played;
     // the player becomes its Unionizer (an Agbero mob's Capon). The third lets them choose which when they play it.
     ["You've had enough", { keep: true, found_union: 'activist' }],

@@ -30,7 +30,7 @@ func the_table_of_effects() -> void:
 	expect("a collect card", CardsScript.effects("settlement", 19), {"psd": 75})
 	expect("a pay card", CardsScript.effects("scandal", 20), {"psd": -40})
 	expect("a card with both", CardsScript.effects("settlement", 37), {"psd": -50, "popularity": 10})
-	expect("a card that needs other players isn't listed", CardsScript.effects("settlement", 0), {})
+	expect("a card that needs other players isn't listed", CardsScript.effects("settlement", 1), {})
 	expect("a Performance card has no effect", CardsScript.effects("performance", 0), {})
 
 
@@ -39,7 +39,7 @@ func every_listed_card() -> void:
 	for deck in ["settlement", "scandal"]:
 		for card in CardsScript.count(deck):
 			var effect: Dictionary = CardsScript.effects(deck, card)
-			if effect.is_empty() or effect.has("choose") or effect.has("keep"):
+			if effect.is_empty() or effect.has("choose") or effect.has("keep") or effect.has("collect_each"):
 				continue   # the cards that ask for a choice are tested in test_card_choices.gd
 			listed += 1
 			var s := new_game()
@@ -106,7 +106,7 @@ func popularity() -> void:
 func cards_the_table_carries_out() -> void:
 	var s := new_game()
 	var before: String = JSON.stringify([s.psd, s.treasury, s.popularity])
-	var ev := CardEffectsScript.apply(s, 3, "settlement", 0)
+	var ev := CardEffectsScript.apply(s, 3, "settlement", 1)
 	expect("a card the game doesn't know is announced for the table", [ev[0]["by_table"], ev[0].has("psd"), ev[0].has("popularity")], [true, false, false])
 	expect("... and nothing changes", JSON.stringify([s.psd, s.treasury, s.popularity]), before)
 

@@ -21,6 +21,7 @@ const DoctorScript = preload("res://scripts/doctor.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const SecretAgentScript = preload("res://scripts/secret_agent.gd")
+const GendersScript = preload("res://scripts/genders.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
@@ -37,6 +38,7 @@ const SERVER_ID := 0
 
 const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
 const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
+const GENDER_COMMANDS := ["set_gender"]
 const UNION_COMMANDS := ["union_recruit", "union_respond", "union_leave", "union_kick", "union_disperse", "union_reform"]
 const CARD_COMMANDS := ["choose", "play_card"]
 const AGENT_COMMANDS := ["agent_check"]
@@ -48,7 +50,9 @@ const TERM_COMMANDS := ["pass_window", "end_turn", "finish_performance", "perfor
 # A new game for 3 to 10 players with ids 1, 2, 3, ... in seat order. Everyone starts with the
 # starting money, the rest of the box goes to the treasury, and the first election begins (no
 # exam: there is no Leader yet). seed_value 0 seeds the random numbers from the clock.
-static func new_game(player_ids: Array, seed_value: int = 0) -> GameStateScript:
+# genders (optional): player id -> "female", "male" or "other", as entered in the lobby; players can also say
+# theirs with set_gender until the first Leader is installed.
+static func new_game(player_ids: Array, seed_value: int = 0, genders: Dictionary = {}) -> GameStateScript:
 	assert(player_ids.size() >= GameDataScript.get_int("minPlayers") and player_ids.size() <= GameDataScript.get_int("boxPlayers"),
 		"a game needs %d to %d players" % [GameDataScript.get_int("minPlayers"), GameDataScript.get_int("boxPlayers")])
 	var state: GameStateScript = GameStateScript.new()
@@ -67,6 +71,9 @@ static func new_game(player_ids: Array, seed_value: int = 0) -> GameStateScript:
 		RngScript.seed_from_clock(state)
 	else:
 		RngScript.seed_with(state, seed_value)
+	for id in genders:
+		assert(id in player_ids and genders[id] in GendersScript.names(), "a gender for a player who isn't at the table, or one that doesn't exist")
+		state.genders[id] = genders[id]
 	RolesScript.setup(state)   # the 25 role cards, with their coup stickers, are dealt out of sight
 	ElectionScript.begin(state, "first")
 	return state
@@ -83,6 +90,8 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 		events = ElectionScript.handle(state, player_id, command)
 	elif type in TERM_COMMANDS:
 		events = TermLoopScript.handle(state, player_id, command)
+	elif type in GENDER_COMMANDS:
+		events = GendersScript.handle(state, player_id, command)
 	elif type in UNION_COMMANDS:
 		events = UnionsScript.handle(state, player_id, command)
 	elif type in CARD_COMMANDS:
