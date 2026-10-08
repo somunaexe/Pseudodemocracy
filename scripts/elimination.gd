@@ -97,6 +97,11 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 	if heir != 0:
 		events.append_array(NepoScript.become(state, heir))   # an heir cannot refuse, so every heir is one (Article 30)
 	events.append_array(_leave_unions(state, player_id))
+	_leave_term(state, player_id)
+
+	# Every event is logged exactly once, in order. The election and the re-checks log their own,
+	# so ours are written to the log first.
+	var logged: int = 0
 	if player_id == state.leader_id:
 		# If an election is already under way the term was credited when it ended. Otherwise it was
 		# cut short, which counts half a round (1 half-round), like a coup. It is kept for the
@@ -106,14 +111,18 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 			state.half_rounds[player_id] = int(state.half_rounds.get(player_id, 0)) + 1
 		events.append_array(_vacate_seat(state))
 		if mid_term:
+			state.event_log.append_array(events)
+			logged = events.size()
 			events.append_array(ElectionScript.begin(state, "vacancy"))   # a new Leader is voted for
+			logged = events.size()
+	state.event_log.append_array(events.slice(logged))
 	events.append_array(FlowScript.recheck(state))        # an amendment vote may now be complete
 	events.append_array(ElectionScript.recheck(state))    # so may an exam or an election
 	return events
 
 
-# The Leader is eliminated: the seat is empty until a new Leader is voted for (the election
-# itself is not built yet) and an amendment in progress is abandoned. Its window stays used.
+# The Leader is eliminated: the seat is empty until a new Leader is voted for, the term ends,
+# and an amendment in progress is abandoned. Its window stays used.
 static func _vacate_seat(state: GameStateScript) -> Array:
 	var events: Array = []
 	if not state.amend.is_empty():
@@ -124,8 +133,19 @@ static func _vacate_seat(state: GameStateScript) -> Array:
 		state.amend = {}
 		events.append(EventsScript.make("amendment_abandoned", {"reason": "the Leader was eliminated"}))
 	state.leader_id = -1
+	state.term = {}   # the term ends with its Leader; the next one starts when a new Leader is installed
 	events.append(EventsScript.make("leader_vacant", {}))
 	return events
+
+
+# A player who is out no longer waits for, or counts as having had, a turn.
+static func _leave_term(state: GameStateScript, player_id: int) -> void:
+	if not state.term.has("waiting"):
+		return
+	state.term["waiting"].erase(player_id)
+	state.term["played"].erase(player_id)
+	state.turns_played = state.term["played"].size()
+	state.player_count = state.term["played"].size() + state.term["waiting"].size()
 
 
 # Debts that others owe the dead player move to the heir, or are cleared. Returns the amount cleared.

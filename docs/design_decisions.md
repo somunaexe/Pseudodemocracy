@@ -222,3 +222,31 @@ Random numbers: `Rng` is a small seedable generator whose whole state is one who
 Not built yet: the exam's effect cards (skip an exam, rig the marking), Loyalists voting with you, "can't run for 2 terms" (Scandal 20), and the trigger that starts `Election.begin("term_ended")` when the Farewell window closes.
 
 Handbook to update: how ties, self-votes and the "running" step work, and that the Leader keeps their role card until the next draw.
+
+## The turn and round loop (built: scripts/term_loop.gd and game.gd; 94 + 75 checks)
+
+`Game.new_game(player_ids, seed)` creates a game (3 to 10 players, 1,000 PSD each, the rest of the box in the treasury, the first election begun). After that everything goes through `Game.handle(state, player, command)`, which routes the command and then lets `TermLoop.settle` move the game on by itself as far as it can. Nothing runs on a timer.
+
+A term: **Inauguration** (the Leader may amend, or `pass_window`) then the **levy**, then every player's **turn** (`end_turn`), then the **Farewell** (amend or `pass_window`), then the term ends and the election begins.
+
+| Question | Decision | Status |
+|---|---|---|
+| Who takes the first turn? | The Leader, then round the table in seat order, skipping the eliminated. (The handbook says this for the term after a coup; I applied it to every term.) | Assumed, please confirm |
+| What is the order within the term? | Inauguration amendment, then the levy, then the turns. So a Leader who amends the levy at the Inauguration changes what is collected that round. | **Built** (tested) |
+| Who pays the levy? | Every player who is not eliminated, the Leader included, at the rate in the Constitution (Article 3). What a player can't cover becomes debt. | **Built** |
+| Does passing a window use it up? | Yes. A passed window is gone, so the Inauguration amendment can't be made later in the term. | **Built** |
+| When can each amendment be made? | Inauguration window: only at the Inauguration. Mid-term: once half the players (rounded up) have played, until the term ends. Farewell: only at the Farewell. None between terms or during an election. | **Built** |
+| Does the term wait for an amendment? | At the Inauguration and the Farewell, yes: the term moves on only when the amendment has been decided. The Mid-term amendment doesn't pause the turns. | **Built** |
+| A Leader who can't amend (Commander, sick, CANCELLED). | Both windows are skipped automatically. | **Built** |
+| Do sick players take their turn? | Yes. (A turn has no content yet.) | Assumed |
+| A player eliminated mid-term. | Leaves the turn order, and the counts that open the Mid-term and Farewell windows follow. | **Built** |
+| The Leader eliminated mid-term. | The term ends, a vacancy election starts, and a new term begins by itself when a Leader is installed. | **Built** |
+| How does a term end? | The Leader is credited 2 half-rounds and the election begins (with an exam if the Leader can write one). | **Built** |
+| How does the game end? | The server sends `finish_game`. A running term counts as a full round, and the winners are worked out. The game is then closed. | **Built** |
+| Is every event in the log exactly once? | Yes: an event is logged by the module that creates it, and a test compares what the commands returned with the log. | **Built** |
+
+Not built yet, and the next steps: what a turn contains (Performance cards), income and tax, the Leader setting the levy within its band (Article 4) and the Levy Band Shift at the end of a term (Article 5, which also needs its numbers bound as rules), coups.
+
+Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
+
+The simulation (`tests/test_game_simulation.gd`) plays whole games with scripted players, including a poor player who falls into debt and is eliminated, and checks after every move: money is neither made nor lost, a player in debt holds no cash, popularity stays on the track, the turn order matches the counts, no dead player is still in play, and a game restored from its save carries on exactly as the original would.

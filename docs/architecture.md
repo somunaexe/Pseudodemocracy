@@ -64,9 +64,23 @@ The answer key, exam answers and ballots are secret in server state; events carr
 answered or voted. `Rng` is a one-number seedable generator whose state (`rng_state`) never leaves the
 server.
 
+## The game loop (scripts/game.gd and term_loop.gd)
+
+`Game.handle(state, player, command)` is the single door. It sends the command to the amendment flow, the
+election or the term loop, and then calls `TermLoop.settle`, which looks at the state and advances every
+step that needs no decision from a player (start the term, collect the levy, announce the next turn, open
+the Farewell, end the term and start the election). It can be called at any time, as often as you like.
+
+```
+election --> Leader installed --> INAUGURATION --(amend or pass)--> levy --> TURNS --(each end_turn)--> FAREWELL
+                  ^                                                                     |
+                  +------------------------ term ends: Election.begin("term_ended") <---+
+```
+
 ## Rules of the codebase
 
 - **Never read `state.popularity` directly. Use `Popularity.effective` (or `.base`).**
+- **Every event is logged once, by the module that creates it.** Callers don't log events they receive.
 
 - **Never read a Constitution-governed number from game_data. Use `Law`.**
 

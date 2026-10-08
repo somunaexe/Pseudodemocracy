@@ -51,3 +51,8 @@ var election: Dictionary = {}       # {} when there is no election under way
 
 # The server's random number generator (see Rng). SECRET: whoever knew it could predict every draw.
 var rng_state: int = 2463534242
+
+# The term in progress: Inauguration, the levy, every player's turn, then the Farewell (see TermLoop).
+enum TermPhase { NONE, INAUGURATION, TURNS, FAREWELL }
+var term: Dictionary = {}           # {} between terms; in TURNS and FAREWELL it lists the players who have "played" and who are "waiting", in turn order
+var game_over: bool = false

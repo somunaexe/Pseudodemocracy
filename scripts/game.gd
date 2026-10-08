@@ -1,0 +1,120 @@
+class_name Game
+
+# The front door. A game is created with new_game(); after that EVERYTHING a player or the server
+# does goes through handle(), which sends the command to the right part of the game and then lets
+# the term loop move on by itself as far as it can. Returns the events; a refused command comes
+# back as a single "rejected" event and changes nothing.
+#
+# Commands, by who sends them:
+#   any player, during a term    propose, rule_grammar (server only), confront, vote   (amending)
+#   the Leader, in an election   write_exam;  skip_exam (server only)
+#   players, in an election      answer_exam, cast_vote
+#   the Leader                   pass_window       (decline to amend at the Inauguration or Farewell)
+#   the player whose turn it is  end_turn
+#   the server                   finish_game       (the group has decided to stop)
+#
+# The server calls tick() after anything it did itself (a timer running out, say), so the loop
+# can move on.
+
+const GameStateScript = preload("res://scripts/game_state.gd")
+const GameDataScript = preload("res://scripts/game_data.gd")
+const ConstitutionScript = preload("res://scripts/constitution.gd")
+const AmendmentFlowScript = preload("res://scripts/amendment_flow.gd")
+const ElectionScript = preload("res://scripts/election.gd")
+const TermLoopScript = preload("res://scripts/term_loop.gd")
+const ScoringScript = preload("res://scripts/scoring.gd")
+const RngScript = preload("res://scripts/rng.gd")
+const PopularityScript = preload("res://scripts/popularity.gd")
+const EventsScript = preload("res://scripts/events.gd")
+
+const SERVER_ID := 0
+
+const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
+const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
+const TERM_COMMANDS := ["pass_window", "end_turn"]
+
+
+# A new game for 3 to 10 players with ids 1, 2, 3, ... in seat order. Everyone starts with the
+# starting money, the rest of the box goes to the treasury, and the first election begins (no
+# exam: there is no Leader yet). seed_value 0 seeds the random numbers from the clock.
+static func new_game(player_ids: Array, seed_value: int = 0) -> GameStateScript:
+	assert(player_ids.size() >= GameDataScript.get_int("minPlayers") and player_ids.size() <= GameDataScript.get_int("boxPlayers"),
+		"a game needs %d to %d players" % [GameDataScript.get_int("minPlayers"), GameDataScript.get_int("boxPlayers")])
+	var state: GameStateScript = GameStateScript.new()
+	var start: int = GameDataScript.get_int("startMoney")
+	state.player_ids = player_ids.duplicate()
+	state.player_count = player_ids.size()
+	for id in player_ids:
+		assert(id >= 1, "player ids start at 1")
+		state.psd[id] = start
+		PopularityScript.change_base(state, id, 0)   # everyone starts at 0
+		state.sick[id] = false
+	state.treasury = GameDataScript.get_int("boxTotal") - start * player_ids.size()
+	state.articles = ConstitutionScript.initial_articles()
+	if seed_value == 0:
+		RngScript.seed_from_clock(state)
+	else:
+		RngScript.seed_with(state, seed_value)
+	ElectionScript.begin(state, "first")
+	return state
+
+
+static func handle(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
+	if state.game_over:
+		return [_reject(player_id, "The game is over.")]
+	var type: String = str(command.get("type", ""))
+	var events: Array = []
+	if type in AMENDMENT_COMMANDS:
+		events = _amendment(state, player_id, command)
+	elif type in ELECTION_COMMANDS:
+		events = ElectionScript.handle(state, player_id, command)
+	elif type in TERM_COMMANDS:
+		events = TermLoopScript.handle(state, player_id, command)
+	elif type == "finish_game":
+		events = _finish(state, player_id)
+	else:
+		return [_reject(player_id, "Unknown command '%s'." % type)]
+	if events.size() == 1 and events[0]["type"] == "rejected":
+		return events
+	events.append_array(TermLoopScript.settle(state))
+	return events
+
+
+# Let the game move on after something the server did itself.
+static func tick(state: GameStateScript) -> Array:
+	return TermLoopScript.settle(state)
+
+
+# Amendments happen at set moments of a term: the Inauguration window at the Inauguration, the
+# Mid-term window once half have played, the Farewell window at the Farewell.
+static func _amendment(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
+	if str(command.get("type", "")) == "propose":
+		var window = command.get("window", -1)
+		var phase: int = state.term.get("phase", GameStateScript.TermPhase.NONE)
+		if typeof(window) == TYPE_INT and window in GameStateScript.AmendWindow.values():
+			if phase == GameStateScript.TermPhase.NONE or not state.election.is_empty():
+				return [_reject(player_id, "The Constitution can only be amended during a term.")]
+			if window == GameStateScript.AmendWindow.INAUGURATION and phase != GameStateScript.TermPhase.INAUGURATION:
+				return [_reject(player_id, "The Inauguration amendment can only be made at the Inauguration.")]
+			if window == GameStateScript.AmendWindow.MID_TERM and phase == GameStateScript.TermPhase.INAUGURATION:
+				return [_reject(player_id, "The Mid-term amendment can't be made at the Inauguration.")]
+			if window == GameStateScript.AmendWindow.FAREWELL and phase != GameStateScript.TermPhase.FAREWELL:
+				return [_reject(player_id, "The Farewell amendment can only be made at the Farewell.")]
+	return AmendmentFlowScript.handle(state, player_id, command)
+
+
+# The group has decided to stop (server only). A term still running counts as a full round
+# (handbook, Part 1). Returns who won.
+static func _finish(state: GameStateScript, player_id: int) -> Array:
+	if player_id != SERVER_ID:
+		return [_reject(player_id, "Only the server can end the game.")]
+	if state.term.get("phase", GameStateScript.TermPhase.NONE) != GameStateScript.TermPhase.NONE and state.leader_id != -1:
+		state.half_rounds[state.leader_id] = int(state.half_rounds.get(state.leader_id, 0)) + 2
+	state.game_over = true
+	var event: Dictionary = EventsScript.make("game_over", {"winners": ScoringScript.final_winners(state)})
+	state.event_log.append(event)
+	return [event]
+
+
+static func _reject(player_id: int, reason: String) -> Dictionary:
+	return EventsScript.make("rejected", {"reason": reason}, [player_id])
