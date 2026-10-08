@@ -31,26 +31,67 @@ const V = {
   corruption: { limit: 3, pop: 30, fine: 200, wait: 3 },   // corruption markers (card glossary)
 
   // Votes
-  discussionMinutes: 1, malpracticeFine: 25,                // fine is an article
+  discussionMinutes: 1, malpracticeFine: 25,
+  performanceSeconds: 60,         // (digital version) a player performs their card for this long
+  choiceSeconds: 10,              // (digital version) a player who is asked to choose has this long; then the server chooses at random for them
+  missedTurnLimit: 2,             // a player whose turn the server has had to end this many times in a row (they did nothing) is eliminated
+  turnEndSeconds: 15,             // (digital version) after a performance is over the performer has this long to end their turn; then the server ends it for them
+  performanceVoteSeconds: 15,     // then everyone else has this long to vote Good or Bad; no vote, no count                // fine is an article
   amendPenalty: 100,                                        // failed amendment check
   swing: [['3', 10], ['4', 7], ['5', 6], ['6', 5], ['7', 4], ['8–10', 3], ['11+', 1]],
 
   // Physical components (print run)
   components: {
-    leaderCards: { Dictator: 1, President: 3, Commander: 1 },
+    leaderCards: { Dictator: 1, President: 1, Commander: 1 },
     roleCards: ['Doctor', 'Lawyer', 'Secret Agent', 'Activist', 'Agbero'], roleCopies: 5,
     willCards: 8, corruptionTokens: 15, coupStickers: 10,
   },
 
+  // Income, paid from the treasury on the player's own turn (tax is taken from it, rounded down). Roles stack.
+  leaderIncome: 100,
+  viceIncome: 90,                 // a Vice (a second Leader, made by a card) earns this; not built yet
+  roleIncome: { 'Doctor': 70, 'Lawyer': 50, 'Secret Agent': 80, 'Activist': 0, 'Agbero': 0 },   // Activists and Agberos earn nothing
+
+  // Gender (digital version): players enter it before the game so the gendered cards can work
+  genders: ['female', 'male'],
+
   // Health
   beads: { cure: 'blue', poison: 'red' },                   // Doctor's Cure/Poison beads (replace prescription cards)
   doctorCharges: 2, agboRounds: 1, concoctionRounds: 2,
+  doseOfferSeconds: 30,           // (digital version) a patient has this long to accept or reject a dose; silence is a rejection
+  doseGuessSeconds: 10,           // (digital version) after a cure is accepted, anyone may guess Sabotage for this long
+  commandVoteMultiplier: 2,      // in a Command Performance the commanding union's or mob's total popularity vote is doubled (Article 16)
+  examWriteSeconds: 120,         // (digital version) the Leader has this long to write the exam, else the exam is skipped
+  examAnswerSeconds: 90,         // ... the takers this long to answer; those who didn't fail
+  electionVoteSeconds: 60,       // ... the voters this long; those who didn't abstain
+  windowSeconds: 60,             // ... the Leader this long at the Inauguration and the Farewell to propose, else the window is passed
+  amendVoteSeconds: 45,          // ... the voters this long on an amendment; those who didn't abstain
+  grammarReferee: 0,             // 1 = the server must rule on the grammar of an amendment (rule_grammar); 0 = no referee yet: every wording is accepted
+  cardOfferSeconds: 30,          // (digital version) a buyer has this long to answer an offer to sell a kept card; silence is a refusal
+  pollSeconds: 30,               // (digital version) players have this long to answer a card's question to several players; silence is its default answer
+  debateSeconds: 30,             // each side of a debate (a Performance card)
+  debateTopicMax: 140,           // longest topic a debate challenge may name
+  amendCosignSeconds: 30,        // (digital version) the Leader or the Vice has this long to agree to the other's proposal to amend; silence is a refusal
+  agentOfferSeconds: 30,         // (digital version) a Secret Agent has this long to accept a hire; silence is a refusal
+  agentPriceMax: 5000,           // (digital version) the most a Secret Agent may charge for a check
+  scenarioMax: 280,              // (digital version) the most characters in a scenario a union or mob scripts for a Command Performance
+  unionInviteSeconds: 30,         // (digital version) a player asked to join a union has this long to answer; silence is a refusal
+  willOfferSeconds: 30,           // (digital version) a Lawyer has this long to accept a will; silence is a refusal
+  willPriceMax: 5000,             // (digital version) the most a Lawyer may ask as a fee, or as upkeep a round
+  dosePriceMax: 5000,             // (digital version) the most a Doctor may ask for a dose
 
   // Unions
   unionStart: 1, unionMin: 2, agberoSteal: 50, activistVote: 'double',
 
   // Inheritance
   nepoDebuff: [30, 20, 10],
+
+  // Elections (digital version)
+  electionRunoffs: 1,             // a tied vote is re-run among the tied candidates this many times, then decided by lot
+  examMaxQuestions: 10, examMaxOptions: 3, examTextMax: 200,   // limits on what a Leader may write in an exam
+
+  // Debt (digital version)
+  debtMaxTerms: 3,                // eliminated when still in debt at the end of this many of their own turns
 };
 
 // ---- Derived values (computed, never typed) ----
@@ -61,6 +102,7 @@ V.boxTotal = V.startMoney * V.boxPlayers + V.treasuryReserve;
 V.highestNote = Math.max(...Object.keys(V.playerNotes).map(Number));
 V.treasuryFor = (players) => V.boxTotal - V.startMoney * players;
 V.midTermAfter = (players) => Math.ceil(players / 2);
+V.tieBreakShift = -V.popMin + 1;   // tie-break score = (popularity + this) x PSD; the +1 keeps a CANCELLED player (-50) above 0
 
 // ---- Fail fast: sanity checks ----
 const EXPECTED_START_MONEY = 1000; // change this on purpose if you change starting money
@@ -68,6 +110,7 @@ if (V.startMoney !== EXPECTED_START_MONEY)
   throw new Error(`Starting money is ${V.startMoney} PSD, expected ${EXPECTED_START_MONEY}. Check the note counts, or update EXPECTED_START_MONEY if the change is intentional.`);
 if (V.cancelledAt < V.popMin || V.cancelledAt >= V.popMax) throw new Error('CANCELLED threshold must be inside the popularity range');
 if (V.coupCost > V.startMoney) throw new Error('Coup cost is more than a player starts with');
+for (const role of V.components.roleCards) if (typeof V.roleIncome[role] !== 'number') throw new Error(`The role ${role} has no income (use 0 for none)`);
 if (V.levy.start < V.levy.bandLow || V.levy.start > V.levy.bandHigh) throw new Error('Starting levy is outside the levy band');
 
 // ---- Formatting helpers ----

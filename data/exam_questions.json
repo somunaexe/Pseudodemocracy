@@ -1,0 +1,372 @@
+{
+ "questions": [
+  {
+   "text": "What does the Leader do first when the power goes out?",
+   "options": [
+    "Starts the generator",
+    "Lights a candle and complains",
+    "Goes straight to sleep"
+   ]
+  },
+  {
+   "text": "Which meal does the Leader order first at a buka?",
+   "options": [
+    "Jollof rice",
+    "Pounded yam and egusi",
+    "Suya"
+   ]
+  },
+  {
+   "text": "How does the Leader take their tea?",
+   "options": [
+    "With plenty of sugar",
+    "With no sugar",
+    "The Leader does not drink tea"
+   ]
+  },
+  {
+   "text": "What would the Leader do with an unexpected 50,000 naira?",
+   "options": [
+    "Save it",
+    "Spend it the same day",
+    "Share it with friends"
+   ]
+  },
+  {
+   "text": "Where would the Leader rather spend a holiday?",
+   "options": [
+    "At the beach",
+    "In the village",
+    "Abroad"
+   ]
+  },
+  {
+   "text": "How does the Leader get to a wedding?",
+   "options": [
+    "Early",
+    "Exactly on time",
+    "Two hours late"
+   ]
+  },
+  {
+   "text": "What does the Leader do in traffic?",
+   "options": [
+    "Stays calm and plays music",
+    "Hoots endlessly",
+    "Looks for a shortcut"
+   ]
+  },
+  {
+   "text": "Which football team does the Leader support?",
+   "options": [
+    "A Nigerian club",
+    "A European club",
+    "None, the Leader hates football"
+   ]
+  },
+  {
+   "text": "What is the Leader's favourite way to relax?",
+   "options": [
+    "Watching Nollywood",
+    "Sleeping",
+    "Meeting friends"
+   ]
+  },
+  {
+   "text": "How does the Leader answer a call from an unknown number?",
+   "options": [
+    "Picks up straight away",
+    "Lets it ring out",
+    "Sends a text instead"
+   ]
+  },
+  {
+   "text": "What does the Leader do when a bill arrives?",
+   "options": [
+    "Pays it at once",
+    "Pays on the last day",
+    "Pretends not to see it"
+   ]
+  },
+  {
+   "text": "Which of these would the Leader never miss?",
+   "options": [
+    "Sunday service or Friday prayers",
+    "A good party",
+    "A big match"
+   ]
+  },
+  {
+   "text": "How does the Leader eat pepper soup?",
+   "options": [
+    "As hot as possible",
+    "Mild, please",
+    "The Leader does not like it"
+   ]
+  },
+  {
+   "text": "When the Leader gets lost, what happens?",
+   "options": [
+    "Asks for directions",
+    "Checks the map app",
+    "Drives around hoping"
+   ]
+  },
+  {
+   "text": "What is the Leader's morning routine?",
+   "options": [
+    "Up at 5, ready for the day",
+    "Snoozes the alarm three times",
+    "The Leader is a night person"
+   ]
+  },
+  {
+   "text": "What does the Leader do at a long meeting?",
+   "options": [
+    "Takes notes",
+    "Checks their phone",
+    "Quietly dozes off"
+   ]
+  },
+  {
+   "text": "What kind of music does the Leader play most?",
+   "options": [
+    "Afrobeats",
+    "Gospel or highlife",
+    "Something else entirely"
+   ]
+  },
+  {
+   "text": "How does the Leader behave at a bargain market?",
+   "options": [
+    "Haggles hard",
+    "Pays the first price",
+    "Sends a friend to bargain"
+   ]
+  },
+  {
+   "text": "What would the Leader take to a desert island?",
+   "options": [
+    "A phone charger",
+    "A good book",
+    "Plenty of food"
+   ]
+  },
+  {
+   "text": "Who does the Leader call first with good news?",
+   "options": [
+    "A parent",
+    "A best friend",
+    "Nobody, they keep it quiet"
+   ]
+  },
+  {
+   "text": "What does the Leader do with leftover jollof?",
+   "options": [
+    "Eats it cold at midnight",
+    "Packs it for lunch",
+    "Gives it away"
+   ]
+  },
+  {
+   "text": "How does the Leader handle a heated argument?",
+   "options": [
+    "Shouts back",
+    "Walks away",
+    "Cracks a joke"
+   ]
+  },
+  {
+   "text": "What is the Leader's best trait, in their own opinion?",
+   "options": [
+    "Generosity",
+    "Intelligence",
+    "Humour"
+   ]
+  },
+  {
+   "text": "Which would the Leader pick for a Saturday night?",
+   "options": [
+    "A house party",
+    "A quiet dinner",
+    "An early night"
+   ]
+  },
+  {
+   "text": "How does the Leader dress for a special occasion?",
+   "options": [
+    "In full traditional attire",
+    "In a sharp suit",
+    "In whatever is clean"
+   ]
+  },
+  {
+   "text": "What does the Leader say when asked \"How far?\"",
+   "options": [
+    "\"I dey\"",
+    "\"Fine, thank you\"",
+    "\"Don't ask me\""
+   ]
+  },
+  {
+   "text": "What does the Leader do when they win a game?",
+   "options": [
+    "Celebrates loudly",
+    "Stays modest",
+    "Reminds everyone for a week"
+   ]
+  },
+  {
+   "text": "What does the Leader do when they lose a game?",
+   "options": [
+    "Demands a rematch",
+    "Blames the rules",
+    "Laughs it off"
+   ]
+  },
+  {
+   "text": "Which drink does the Leader choose?",
+   "options": [
+    "Zobo or chapman",
+    "Malt",
+    "Plain water"
+   ]
+  },
+  {
+   "text": "How early does the Leader get to the airport?",
+   "options": [
+    "Three hours before",
+    "One hour before",
+    "Just as the gate closes"
+   ]
+  },
+  {
+   "text": "How does the Leader take a photo?",
+   "options": [
+    "Smiling widely",
+    "Serious and posed",
+    "Never, they hide from cameras"
+   ]
+  },
+  {
+   "text": "What would the Leader do first if they became president for a day?",
+   "options": [
+    "Fix the roads",
+    "Declare a holiday",
+    "Give themselves a raise"
+   ]
+  },
+  {
+   "text": "What does the Leader do with a chain message?",
+   "options": [
+    "Forwards it to everyone",
+    "Reads it and ignores it",
+    "Deletes it at once"
+   ]
+  },
+  {
+   "text": "What is the Leader's favourite snack?",
+   "options": [
+    "Puff puff",
+    "Suya",
+    "Plantain chips"
+   ]
+  },
+  {
+   "text": "How does the Leader feel about Mondays?",
+   "options": [
+    "Ready for them",
+    "Dreads them",
+    "Does not notice them"
+   ]
+  },
+  {
+   "text": "What does the Leader do when a friend asks for a loan?",
+   "options": [
+    "Lends it with a smile",
+    "Makes an excuse",
+    "Gives less and says it is a gift"
+   ]
+  },
+  {
+   "text": "Which sound does the Leader find the most annoying?",
+   "options": [
+    "A neighbour's generator",
+    "Loud phone calls on the bus",
+    "Someone chewing loudly"
+   ]
+  },
+  {
+   "text": "How does the Leader fix something that breaks at home?",
+   "options": [
+    "Does it themselves",
+    "Calls an expert",
+    "Leaves it broken"
+   ]
+  },
+  {
+   "text": "What is the Leader's biggest fear?",
+   "options": [
+    "Heights",
+    "Public speaking",
+    "Cockroaches"
+   ]
+  },
+  {
+   "text": "How does the Leader sleep?",
+   "options": [
+    "Like a log",
+    "Light and restless",
+    "With the TV on"
+   ]
+  },
+  {
+   "text": "What would the Leader do with a free afternoon?",
+   "options": [
+    "Nap",
+    "Cook for friends",
+    "Run errands"
+   ]
+  },
+  {
+   "text": "Which line would the Leader most likely say?",
+   "options": [
+    "\"It is not my fault\"",
+    "\"I told you so\"",
+    "\"Let me handle it\""
+   ]
+  },
+  {
+   "text": "How does the Leader react to spoilers?",
+   "options": [
+    "Furious",
+    "Does not care",
+    "Spoils things for others"
+   ]
+  },
+  {
+   "text": "What does the Leader do on a Sunday afternoon?",
+   "options": [
+    "Rests after a big lunch",
+    "Visits family",
+    "Catches up on work"
+   ]
+  },
+  {
+   "text": "What is the Leader's phone like?",
+   "options": [
+    "Spotless and organised",
+    "Full of unread messages",
+    "Always at 1% battery"
+   ]
+  },
+  {
+   "text": "What would the Leader haggle over most?",
+   "options": [
+    "Fruits at the market",
+    "A taxi fare",
+    "The price of a new phone"
+   ]
+  }
+ ]
+}

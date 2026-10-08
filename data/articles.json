@@ -67,6 +67,29 @@
        "amendable": false,
        "glue": false
       }
+     ],
+     "bindings": [
+      {
+       "name": "passCompare",
+       "slot": 0,
+       "type": "enum",
+       "label": "the exam pass comparison",
+       "expect": "more",
+       "source": null,
+       "values": {
+        "more": 1,
+        "less": -1,
+        "fewer": -1
+       }
+      },
+      {
+       "name": "passMark",
+       "slot": 1,
+       "type": "percent",
+       "label": "the exam pass mark",
+       "expect": 50,
+       "source": "passMark"
+      }
      ]
     },
     {
@@ -127,6 +150,16 @@
        "text": ".",
        "amendable": false,
        "glue": true
+      }
+     ],
+     "bindings": [
+      {
+       "name": "taxRate",
+       "slot": 0,
+       "type": "percent",
+       "label": "the tax rate",
+       "expect": 20,
+       "source": "taxRate"
       }
      ]
     },
@@ -253,6 +286,18 @@
        "text": "band.",
        "amendable": false,
        "glue": false
+      }
+     ],
+     "bindings": [
+      {
+       "name": "levy",
+       "slot": 3,
+       "type": "int",
+       "label": "the levy",
+       "expect": 25,
+       "source": "levy.start",
+       "min": 0,
+       "max": 99999
       }
      ]
     },
@@ -581,6 +626,28 @@
        "amendable": false,
        "glue": false
       }
+     ],
+     "bindings": [
+      {
+       "name": "levyRaiseBelow",
+       "slot": 4,
+       "type": "int",
+       "label": "the popularity a Leader must be below (as a minus number) to raise the levy band",
+       "expect": 20,
+       "source": "levy.trigger",
+       "min": 0,
+       "max": 50
+      },
+      {
+       "name": "levyLowerAbove",
+       "slot": 11,
+       "type": "int",
+       "label": "the popularity a Leader must be above to lower the levy band",
+       "expect": 20,
+       "source": "levy.trigger",
+       "min": 0,
+       "max": 50
+      }
      ]
     },
     {
@@ -672,6 +739,18 @@
        "amendable": false,
        "glue": true
       }
+     ],
+     "bindings": [
+      {
+       "name": "malpracticeFine",
+       "slot": 0,
+       "type": "int",
+       "label": "the malpractice fine",
+       "expect": 25,
+       "source": "malpracticeFine",
+       "min": 0,
+       "max": 99999
+      }
      ]
     }
    ]
@@ -742,6 +821,28 @@
        "text": "act.",
        "amendable": false,
        "glue": false
+      }
+     ],
+     "bindings": [
+      {
+       "name": "unionStart",
+       "slot": 0,
+       "type": "int",
+       "label": "the size a union starts with",
+       "expect": 1,
+       "source": "unionStart",
+       "min": 1,
+       "max": 99999
+      },
+      {
+       "name": "unionMin",
+       "slot": 1,
+       "type": "int",
+       "label": "the size a union needs to act",
+       "expect": 2,
+       "source": "unionMin",
+       "min": 1,
+       "max": 99999
       }
      ]
     },
@@ -1062,6 +1163,18 @@
        "amendable": false,
        "glue": false
       }
+     ],
+     "bindings": [
+      {
+       "name": "unionDissolveAt",
+       "slot": 0,
+       "type": "int",
+       "label": "the size at which a union dissolves",
+       "expect": 1,
+       "source": "unionStart",
+       "min": 0,
+       "max": 99999
+      }
      ]
     },
     {
@@ -1260,6 +1373,22 @@
        "amendable": false,
        "glue": false
       }
+     ],
+     "bindings": [
+      {
+       "name": "activistVote",
+       "slot": 0,
+       "type": "enum",
+       "label": "the Activist vote multiplier",
+       "expect": "double",
+       "source": "activistVote",
+       "values": {
+        "single": 1,
+        "double": 2,
+        "triple": 3,
+        "quadruple": 4
+       }
+      }
      ]
     },
     {
@@ -1330,6 +1459,18 @@
        "text": "size.",
        "amendable": false,
        "glue": false
+      }
+     ],
+     "bindings": [
+      {
+       "name": "agberoSteal",
+       "slot": 0,
+       "type": "int",
+       "label": "the Agbero steal",
+       "expect": 50,
+       "source": "agberoSteal",
+       "min": 0,
+       "max": 99999
       }
      ]
     },
@@ -2416,6 +2557,47 @@
        "text": "rounds.",
        "amendable": false,
        "glue": false
+      }
+     ],
+     "bindings": [
+      {
+       "name": "nepoSign1",
+       "slot": 0,
+       "type": "enum",
+       "label": "the sign of the first Nepo Baby change",
+       "expect": "−",
+       "source": null,
+       "values": {
+        "−": -1,
+        "-": -1,
+        "+": 1
+       }
+      },
+      {
+       "name": "nepoSign2",
+       "slot": 1,
+       "type": "enum",
+       "label": "the sign of the second Nepo Baby change",
+       "expect": "−",
+       "source": null,
+       "values": {
+        "−": -1,
+        "-": -1,
+        "+": 1
+       }
+      },
+      {
+       "name": "nepoSign3",
+       "slot": 2,
+       "type": "enum",
+       "label": "the sign of the third Nepo Baby change",
+       "expect": "−",
+       "source": null,
+       "values": {
+        "−": -1,
+        "-": -1,
+        "+": 1
+       }
       }
      ]
     }

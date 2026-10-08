@@ -1,0 +1,23 @@
+# Without Docker: copy the project to /opt/pseudodemocracy, install Godot as /usr/local/bin/godot, then
+#   sudo cp deploy/pseudodemocracy.service /etc/systemd/system/ && sudo systemctl enable --now pseudodemocracy
+# and put Caddy or nginx in front for TLS (see deploy/Caddyfile, use reverse_proxy 127.0.0.1:9080).
+[Unit]
+Description=Pseudodemocracy game server
+After=network.target
+
+[Service]
+User=game
+WorkingDirectory=/opt/pseudodemocracy
+Environment=PORT=9080
+Environment=DATA_DIR=/var/lib/pseudodemocracy
+ExecStart=/usr/local/bin/godot --headless --script server/ws_server.gd
+Restart=always
+RestartSec=2
+StateDirectory=pseudodemocracy
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

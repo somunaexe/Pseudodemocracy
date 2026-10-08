@@ -36,10 +36,44 @@ function toWords(raw) {
   return words;
 }
 
+// What a bound word may look like. The game reads the same rules (scripts/law.gd).
+const PARSERS = {
+  int: (word) => (/^\d{1,5}$/.test(word) ? Number(word) : null),
+  percent: (word) => (/^\d{1,3}%$/.test(word) ? Number(word.slice(0, -1)) : null),
+  enum: (word, b) => (Object.prototype.hasOwnProperty.call(b.values, word.toLowerCase()) ? b.values[word.toLowerCase()] : null),
+};
+
+// Check a binding against the article's starting words, and return it ready for the JSON.
+function checkBinding(title, words, b, seen) {
+  const where = `${title} / ${b.name}`;
+  if (seen.has(b.name)) throw new Error(`Binding name used twice: ${b.name}`);
+  seen.add(b.name);
+  if (!PARSERS[b.type]) throw new Error(`${where}: unknown type ${b.type}`);
+  const slots = words.filter((w) => w.amendable);
+  if (!slots[b.slot]) throw new Error(`${where}: the article has no highlighted word number ${b.slot}`);
+  const value = PARSERS[b.type](slots[b.slot].text, b);
+  if (value === null) throw new Error(`${where}: the starting word "${slots[b.slot].text}" is not readable as ${b.type}`);
+  const wanted = b.type === 'enum' ? PARSERS.enum(String(b.expect), b) : Number(b.expect);
+  if (value !== wanted) throw new Error(`${where}: the text says ${value} but the game data says ${wanted}`);
+  if (b.min !== undefined && value < b.min) throw new Error(`${where}: starting value ${value} is below its minimum`);
+  if (b.max !== undefined && value > b.max) throw new Error(`${where}: starting value ${value} is above its maximum`);
+  return b;
+}
+
 let id = 0;
+const seen = new Set();
+let slotsTotal = 0;
+let slotsBound = 0;
 const out = { chapters: chapters.map((c) => ({
   title: c.chapter,
-  articles: c.articles.map(([title, text]) => ({ id: ++id, title, words: toWords(text) })),
+  articles: c.articles.map(([title, text, binds = []]) => {
+    const words = toWords(text);
+    slotsTotal += words.filter((w) => w.amendable).length;
+    slotsBound += binds.length;
+    const article = { id: ++id, title, words };
+    if (binds.length) article.bindings = binds.map((b) => checkBinding(title, words, b, seen));
+    return article;
+  }),
 })) };
 
 // Safety check: rebuilding each article from its words must match the source text.
@@ -51,4 +85,4 @@ for (const c of out.chapters) for (const a of c.articles) {
 }
 
 fs.writeFileSync(path.join(__dirname, '../data/articles.json'), JSON.stringify(out, null, 1) + '\n');
-console.log(`${id} articles exported`);
+console.log(`${id} articles exported; the game enforces ${slotsBound} of ${slotsTotal} highlighted words`);

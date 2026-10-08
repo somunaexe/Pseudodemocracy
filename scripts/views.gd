@@ -1,0 +1,189 @@
+class_name Views
+
+# What each player is allowed to see. The server holds the whole truth (GameState);
+# a phone only ever gets a view built here.
+#
+# The rule is an ALLOW-LIST: a field is shown only if it is listed as public. A field
+# added to GameState later is hidden from everyone until someone classifies it, and the
+# test fails until they do. Forgetting a secret can never leak it.
+
+const GameStateScript = preload("res://scripts/game_state.gd")
+const SerializerScript = preload("res://scripts/serializer.gd")
+const PopularityScript = preload("res://scripts/popularity.gd")
+const RolesScript = preload("res://scripts/roles.gd")
+const WillsScript = preload("res://scripts/wills.gd")
+const PeeksScript = preload("res://scripts/peeks.gd")
+
+# Everyone at the table may see these.
+const PUBLIC_FIELDS = [
+	"player_count", "turns_played", "leader_id", "leader_type", "sick",
+	"windows_used", "treasury", "psd", "debts", "debt_terms", "missed_turns", "eliminated", "player_ids",
+	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "choice", "union_invites", "reform", "genders", "coup_ban", "effect_round", "markers", "frozen", "rivals", "truces", "accords", "skip_draw", "loyalists", "vice_id", "grammar_referee", "mods", "schedule", "poll_counter", "card_offers", "choice_queue", "block_rights", "delayed", "amend_offer", "last_turn_player", "leader_goes_first", "levy_band",
+]
+
+# Shown only after being cleaned up for the one asking (see state_view).
+const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term", "command", "polls"]
+
+# Extra keys a view carries that are not GameState fields.
+const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills", "my_hand", "hand_sizes", "my_coup_roles", "my_peeks"]
+
+# Never leave the server. A will is secret until its owner is eliminated; then it is read out
+# in an event. rng_state is secret because whoever knew it could predict every random draw. (Exam keys will go here when they exist.) dose_secret is the bead in the Doctor's hand.
+const SERVER_ONLY_FIELDS = ["wills", "will_offers", "rng_state", "decks", "dose_secret", "role_cards", "agent_used", "agent_offers", "hands", "peeks"]
+
+
+# Fields of GameState that are in none of the three lists.
+static func unclassified_fields(fields: Array) -> Array:
+	var result: Array = []
+	for name in fields:
+		if not name in PUBLIC_FIELDS and not name in REDACTED_FIELDS and not name in SERVER_ONLY_FIELDS:
+			result.append(name)
+	return result
+
+
+# The events this player may see: those for everyone (empty audience) and those addressed to them.
+static func visible_events(events: Array, player_id: int) -> Array:
+	var result: Array = []
+	for event in events:
+		var audience: Array = event.get("audience", [])
+		if audience.is_empty() or player_id in audience:
+			result.append(event.duplicate(true))
+	return result
+
+
+# Sorts a batch of new events into one list per player, ready to send.
+static func deliver(events: Array, player_ids: Array) -> Dictionary:
+	var result: Dictionary = {}
+	for id in player_ids:
+		result[id] = visible_events(events, id)
+	return result
+
+
+# A copy of the game as this player may see it. A player id that isn't at the table
+# (a spectator) gets the public parts only. Changing the copy never changes the game.
+static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
+	var unclassified: Array = unclassified_fields(SerializerScript.state_fields(state))
+	assert(unclassified.is_empty(), "GameState fields not classified in Views: %s" % str(unclassified))
+	var view: Dictionary = {}
+	for name in PUBLIC_FIELDS:
+		view[name] = _copy(state.get(name))
+	# "popularity" in a view is what counts (base plus the Nepo Baby change); the base is alongside.
+	var effective: Dictionary = {}
+	for id in state.player_ids:
+		effective[id] = PopularityScript.effective(state, id)
+	view["popularity"] = effective
+	view["popularity_base"] = PopularityScript.bases(state)
+	view["amend"] = _amend_view(state.amend, player_id)
+	view["election"] = _election_view(state.election, player_id)
+	view["term"] = _term_view(state.term, player_id)
+	view["command"] = _command_view(state.command, player_id)
+	view["polls"] = _polls_view(state.polls, player_id)
+	view["event_log"] = visible_events(state.event_log, player_id)
+	# Your own will, and if you are a Lawyer the wills you keep: the only wills anyone is shown.
+	view["my_will"] = _copy(state.wills.get(player_id, {}))
+	view["my_hand"] = _copy(state.hands.get(player_id, []))   # your own kept cards; everyone sees how many each holds
+	view["hand_sizes"] = {}
+	for id in state.hands:
+		view["hand_sizes"][id] = state.hands[id].size()
+	view["my_coup_roles"] = RolesScript.coup_cards(state, player_id).map(func(c): return c[1])   # only you can see which of your cards carry a sticker
+	view["my_peeks"] = PeeksScript.permits_of(state, player_id)   # your own free checks; nobody else knows whether you have one
+	view["kept_wills"] = {}
+	if RolesScript.has(state, player_id, "Lawyer"):
+		view["kept_wills"] = WillsScript.kept_by(state, player_id)
+	return view
+
+
+static func state_view_json(state: GameStateScript, player_id: int) -> String:
+	return SerializerScript.to_json(state_view(state, player_id))
+
+
+# The amendment in progress, without anyone's vote. Everyone sees WHO has voted;
+# you also see how YOU voted.
+static func _amend_view(amend: Dictionary, player_id: int) -> Dictionary:
+	if amend.is_empty():
+		return {}
+	var view: Dictionary = amend.duplicate(true)
+	var votes: Dictionary = view.get("votes", {})
+	view.erase("votes")
+	var voters: Array = votes.keys()
+	voters.sort()
+	view["voted"] = voters
+	if votes.has(player_id):
+		view["my_vote"] = votes[player_id]
+	return view
+
+
+# The election, without the answer key, anyone's exam answers or anyone's ballot. Everyone sees
+# WHO has answered and WHO has voted; you also see your own answers and ballot.
+static func _election_view(election: Dictionary, player_id: int) -> Dictionary:
+	if election.is_empty():
+		return {}
+	var view: Dictionary = election.duplicate(true)
+	view.erase("key")
+	view.erase("rigged")   # which way the Leader marked a taker is secret until the marks are read
+	var answers: Dictionary = view.get("answers", {})
+	var votes: Dictionary = view.get("votes", {})
+	view.erase("answers")
+	view.erase("votes")
+	var answered: Array = answers.keys()
+	answered.sort()
+	var voted: Array = votes.keys()
+	voted.sort()
+	view["answered"] = answered
+	view["voted"] = voted
+	if answers.has(player_id):
+		view["my_answers"] = answers[player_id]
+	if votes.has(player_id):
+		view["my_vote"] = votes[player_id]
+	return view
+
+
+# A Command Performance, without how anyone voted: everyone sees who has voted, you also see your own vote.
+static func _command_view(command: Dictionary, player_id: int) -> Dictionary:
+	var view: Dictionary = command.duplicate(true)
+	if view.has("votes"):
+		var votes: Dictionary = view["votes"]
+		var voted: Array = votes.keys()
+		voted.sort()
+		view.erase("votes")
+		view["voted"] = voted
+		if votes.has(player_id):
+			view["my_vote"] = votes[player_id]
+	return view
+
+
+# The term, without how anyone voted on the performance. Everyone sees WHO has voted; you also
+# see your own vote.
+static func _term_view(term: Dictionary, player_id: int) -> Dictionary:
+	var view: Dictionary = term.duplicate(true)
+	if view.has("act"):
+		var votes: Dictionary = view["act"]["votes"]
+		var voted: Array = votes.keys()
+		voted.sort()
+		view["act"].erase("votes")
+		view["act"]["voted"] = voted
+		if votes.has(player_id):
+			view["act"]["my_vote"] = votes[player_id]
+	return view
+
+
+# Open questions to several players: everyone sees who has answered, you also see your own answer.
+static func _polls_view(polls: Array, player_id: int) -> Array:
+	var result: Array = []
+	for poll in polls:
+		var view: Dictionary = poll.duplicate(true)
+		var answers: Dictionary = view["answers"]
+		var answered: Array = answers.keys()
+		answered.sort()
+		view.erase("answers")
+		view["answered"] = answered
+		if answers.has(player_id):
+			view["my_answer"] = answers[player_id]
+		result.append(view)
+	return result
+
+
+static func _copy(value: Variant) -> Variant:
+	if typeof(value) == TYPE_ARRAY or typeof(value) == TYPE_DICTIONARY:
+		return value.duplicate(true)
+	return value

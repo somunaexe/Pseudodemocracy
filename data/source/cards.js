@@ -157,7 +157,7 @@ const performance = [
     "Choose a player — apologize to them for something you didn't do, and make it sound sincere.",
     "You're being roasted by the press. Respond to three imagined headlines the table shouts at you.",
     "Deliver a farewell address as if you're leaving office forever (you're not).",
-    "Choose a rival — publicly challenge them to a debate on any topic, 30 seconds each side.",
+    "You have just been arrested for drugtrafficking and have to defend yourself in court.",
     "Convince the table that a recent scandal was actually a \"misunderstanding.\"",
     "Pitch a new tax to the table and get them to believe it's for their own good.",
     "Choose a player — try to recruit them into your union/mob with a single sentence.",
@@ -172,9 +172,177 @@ const performance = [
     "Choose a player — convince them to publicly endorse you, on the spot.",
   ];
 
+// EFFECTS the game applies by itself when a Settlement or Scandal card is drawn. A card is found by the
+// start of its text (the export fails if that matches no card or more than one). Only effects on the
+// drawer alone are listed: psd is money to (+) or from (-) the treasury, popularity moves the base,
+// sick makes the drawer sick for that many rounds and immune makes them immune to being sickened for that many,
+// no_coup bars the drawer from attempting a coup for that many rounds.
+// Cards not listed here are read out to the table and carried out by the table, as before.
+// The export also checks that every amount appears as a number in the card's own text.
+const effects = {
+  settlement: [
+    ['You found a loophole in your own tax', { psd: 75 }],
+    ['An old investment matures', { psd: 120 }],
+    ['A viral video shows you helping', { popularity: 10 }],
+    ['You cried at a funeral', { popularity: 5 }],
+    ['You privatized a public asset', { psd: 150, popularity: -10 }],
+    ['You quietly sold some government equipment', { psd: 90, popularity: -5, marker: 1 }],
+    ['A foreign government sends', { psd: 100 }],
+    ['You throw a lavish independence day party', { psd: -50, popularity: 10 }],
+    ['Your cousin abroad wires funds', { psd: 80 }],
+    ['You donate to charity live on camera', { psd: -30, popularity: 15 }],
+    ['You lived by Dr. Sebi', { immune: 2 }],
+    // collect_each: every other player of that gender pays the drawer that much (what they can't pay becomes debt).
+    ['The Market Women', { collect_each: { gender: 'female', amount: 5 } }],
+    // Cards the drawer KEEPS to play later ("play anytime"): keep: true. A union card founds a union when played;
+    // the player becomes its Unionizer (an Agbero mob's Capon). The third lets them choose which when they play it.
+    // Rival cards: who 'rival' offers the drawer's rivals, or anyone if they have none; the one chosen becomes their rival.
+    // truce: the two can't coup each other until the round ends; accord: for that many rounds, if either is couped the
+    // other loses that much popularity; skip_draw: the chosen player's next Settlement or Scandal draw is lost.
+    // loyalist: the chosen player becomes the drawer's Loyalist for that many rounds (who 'loyalist' offers the players that
+    // can be); target_role 'random' gives them a random role card they can hold.
+    ['You appointed an unqualified friend', { choose: { kind: 'player', who: 'loyalist' }, target: { psd: 100 }, target_role: 'random', loyalist: { rounds: 3 } }],
+    // keys: the keys to the city. The drawer takes the Leader's role if they are more popular (the Leader becomes Vice), else becomes Vice.
+    ["You've obtained the keys to the city", { keys: true }],
+    // special: a card with a rule of its own, written in scripts/special_cards.gd (see docs/design_decisions.md).
+    ['The Old Boys', { special: 'old_boys' }],
+    ['A diaspora relative', { special: 'diaspora' }],
+    ['You are now a doctor', { special: 'hospital' }],
+    ['You crowdfunded a new flyover', { special: 'flyover' }],
+    ['You commissioned a statue', { special: 'statue' }],
+    ['You have a 25% Levy reduction', { keep: true, special: 'levy_cut' }],
+    ['You spoke well at a 20-v-1', { special: 'heckler' }],
+    ['The youth wing backs you', { keep: true, special: 'youth_wing' }],
+    ['You settled a scandal before the press', { special: 'free_settlement' }],
+    ['A bloc allied with you', { special: 'fundraiser' }],
+    ['You may skip your next exam', { special: 'exam_pass' }],
+    ['You cut your own salary', { special: 'salary' }],
+    ['You may look at the top card', { special: 'deck_peek' }],
+    ['Choose a player \u2014 they must lend you', { special: 'loan' }],
+    ['You survive a scandal unscathed', { special: 'halve_loss' }],
+    ['You quietly raise your own', { special: 'fee_bonus' }],
+    ['Choose up to 2 players', { special: 'vote_with' }],
+    ['You may reroll one Result card', { special: 'reroll' }],
+    ['Your popularity floor', { special: 'pop_floor' }],
+    ['Petrol subsidy windfall', { special: 'petrol' }],
+    ["You're declared a national hero", { special: 'hero' }],
+    ['You qualified for benefits', { special: 'benefits' }],
+    ['You declared a public holiday', { special: 'holiday' }],
+    ['Your appointee turns out to be under investigation. ASK', { psd: 100, popularity: 20, choose: { kind: 'player' }, target: { psd: 100, popularity: 20 } }],
+    // favor: a Secret Agent shows the drawer the role cards of the chosen player (whether each has a coup sticker).
+    ['A Secret Agent owes you a favor', { choose: { kind: 'player', who: 'has_role' }, favor: true }],
+    ['You survived a vote of no confidence', { keep: true, truce: true, choose: { kind: 'player', who: 'rival' } }],
+    ["A rival's scandal breaks", { popularity: 5, choose: { kind: 'player', who: 'rival' }, target: { popularity: -15 } }],
+    ['Peace Accord', { choose: { kind: 'player', who: 'rival' }, accord: { rounds: 3, loss: 10 } }],
+    ['Choose a Rival', { choose: { kind: 'player', who: 'rival' }, skip_draw: true }],
+    ["You've had enough", { keep: true, found_union: 'activist' }],
+    ["You're ready to stir up trouble", { keep: true, found_union: 'agbero' }],
+    ['The people are ready to move', { keep: true, choose: { kind: 'option', options: [{ label: 'Found an Activist union', found_union: 'activist' }, { label: 'Found an Agbero mob', found_union: 'agbero' }] } }],
+    // Cards that ask the drawer to choose. `choose` is { kind: 'option' | 'role' | 'player', ... }:
+    //   option  one of `options`, each its own effects (with a label shown to the player)
+    //   role    any role the drawer can be given;   player  any other player in the game
+    //   player with who: 'has_role'  only players holding a role card
+    // After the choice: gain_role gives the DRAWER a role ('$choice' = the role they chose),
+    // swap_with: '$choice' swaps all roles with the chosen player, target: {...} applies
+    // psd/popularity to the chosen player.
+    ['You gave a heartfelt speech nobody expected', { choose: { kind: 'option', options: [{ label: 'Gain 15 popularity', popularity: 15 }, { label: 'Gain 70 PSD', psd: 70 }] } }],
+    ['You have many talents', { choose: { kind: 'role' }, gain_role: '$choice' }],
+    ['Choose a player to publicly praise you', { choose: { kind: 'player' }, target: { popularity: 5 }, gain_role: 'Lawyer' }],
+    ['Choose a player with a role card', { choose: { kind: 'player', who: 'has_role' }, swap_with: '$choice', target: { popularity: -5 } }],
+  ],
+  scandal: [
+    ['You overpaid for office supplies', { psd: -40 }],
+    // marker: 1 gives the drawer a corruption marker (see Corruption). In a player choice, target.marker gives one to the chosen
+    // player too, and pay_chosen is money the drawer pays the chosen player. A choice with chooser: 'leader' is made by the
+    // Leader about the drawer: share 'half' takes half of the card's psd off the drawer for the Leader.
+    // disband: the drawer's union or mob disperses and its other members become the drawer's rivals.
+    // Scandal cards with a rule of their own (see scripts/special_cards.gd), and a few that only need the usual effects.
+    ['The women playing the game are owed', { special: 'apology' }],
+    ['You owe the player 2 seats', { special: 'seat_debt' }],
+    ['You spoke horribly at a university debate', { special: 'civilian' }],
+    ['Nobody shows up to your rally', { special: 'rally' }],
+    ['The person seated closest to you', { special: 'tax_leak' }],
+    ['Your flyover collapsed', { special: 'flyover_collapse' }],
+    ['Your tax break gets ruled illegal', { special: 'tax_break' }],
+    ['You lost the 20-v-1', { special: 'lost_20v1' }],
+    ['Delayed Reckoning', { special: 'delayed_reckoning' }],
+    ['A satirist made you', { special: 'satirist' }],
+    ['You tried to extend term limits', { special: 'term_limits' }],
+    ['Your role card is frozen', { special: 'role_freeze' }],
+    ['You lose your next Settlement card draw', { special: 'skip_settlement' }],
+    ['Whoever is marking your exam answers', { special: 'exam_rig' }],
+    ['You have been infected with COVID', { special: 'covid' }],
+    ['You missed your own policy announcement', { special: 'skip_income' }],
+    ['You draw an extra Performance card', { special: 'extra_performance' }],
+    ['Your convoy hit a pothole', { choose: { kind: 'option', options: [
+      { label: 'Pay 50 PSD', psd: -50 },
+      { label: 'Ask someone to read it aloud: they pay half with you', then: { kind: 'player' }, each: { psd: -25 } },
+    ] } }],
+    ['Choose a player \u2014 you must repay a debt', { choose: { kind: 'player' }, pay_chosen: 50 }],
+    ['Choose a player \u2014 they publicly criticize you', { popularity: -5, choose: { kind: 'player' }, target: { popularity: 5 } }],
+    ['Choose a player \u2014 they may peek', { choose: { kind: 'player' }, peek: { kinds: ['coup'], round_only: false } }],
+    ['Choose a player of your choice \u2014 you must pay', { popularity: -7, choose: { kind: 'player' }, pay_chosen: 30 }],
+    // peek: the chosen player gets a free check of the drawer (kinds: coup = coup-card status, bead = the Doctor's bead), once,
+    // for the rest of the round if round_only. peek_rival: one of the drawer's rivals (either way round), at random, gets it.
+    ['A rival now has your number', { choose: { kind: 'player' }, peek: { kinds: ['bead', 'coup'], round_only: true } }],
+    ['A rival gets to check your coup-card status', { peek_rival: { kinds: ['coup'] } }],
+    ['Your mob got caught on camera', { disband: true }],
+    // An option with `then` asks a second question after it is chosen (here: whom to snitch on); `each` is what happens to the
+    // drawer AND the player then chosen.
+    ['Your embezzlement was traced', { choose: { kind: 'option', options: [
+      { label: 'Snitch and split it', then: { kind: 'player' }, each: { psd: -100, popularity: -10, marker: 1 } },
+      { label: 'Take it alone', psd: -200, popularity: -20, marker: 1 },
+    ] } }],
+    // popularity_per_loyalist: the drawer loses that much more for each Loyalist of that gender; defect: one of the drawer's
+    // Loyalists (chosen at random) leaves them.
+    ['The men playing the game', { popularity: -15, popularity_per_loyalist: { gender: 'male', popularity: -5 } }],
+    ['You were caught fraternizing', { popularity: -20, defect: true }],
+    ['You paid an official', { psd: -100, marker: 1 }],
+    ['Your appointee turns out', { marker: 1, choose: { kind: 'player' }, target: { marker: 1 } }],
+    ['Your ghost workers', { psd: -150, marker: 1 }],
+    ["You're fined for late paperwork", { psd: -50, marker: 1 }],
+    ['You bounce a check', { psd: -45, marker: 1 }],
+    ['Choose a player \u2014 they collect 70', { choose: { kind: 'player' }, pay_chosen: 70, target: { marker: 1 } }],
+    ['You embezzled funds', { psd: 200, choose: { kind: 'option', chooser: 'leader', options: [{ label: 'Stay quiet' }, { label: 'Split the money', share: 'half' }, { label: 'Expose them', marker: 1 }] } }],
+    ['An old speech resurfaces', { popularity: -8 }],
+    ['Your handshake photo ages badly', { popularity: -5 }],
+    ['Your motorcade damages a market stall', { psd: -70, popularity: -5 }],
+    ['A contractor overcharges you', { psd: -80 }],
+    ['Your official portrait is mocked online', { popularity: -7 }],
+    ['You skip a mandatory public event', { popularity: -10 }],
+    ['Your car breaks down on the way to a summit', { psd: -30 }],
+    ['A leaked memo embarrasses you', { popularity: -10 }],
+    ['Your response to a crisis lands flat', { popularity: -12 }],
+    ['Bad investment', { psd: -60 }],
+    ["You're forced to publicly refund a donor", { psd: -40, popularity: -5 }],
+    ['You lose a bet made in confidence', { psd: -35 }],
+    ["You're sickened by an unknown source", { sick: 1 }],
+    ["You can't attempt a coup", { no_coup: 1 }],
+  ],
+  // Performance cards that change how the turn is played:
+  //   pitch   a rival union's Unionizer pitches the performer, who may join it (the performer decides)
+  //   debate  the performer challenges a rival to a debate that the table judges
+  performance: [
+    ['A rival union wants your backing', { pitch: true }],
+    // special: a card with a consequence of its own, written in scripts/performance_cards.gd
+    ['You have a useless product', { special: 'sell_product' }],
+    ['Your neighbour (on your right)', { special: 'neighbour_dispute' }],
+    ['You and the 4th player', { special: 'custody' }],
+    ['You need a loan', { special: 'loan_pitch' }],
+    ['Your Doctor gave you a convenient', { special: 'excuse' }],
+    ["You're accused of election fraud", { special: 'fraud' }],
+    ['Mediate a live dispute', { special: 'mediation' }],
+    ['Pitch your union/mob', { special: 'pitch_union' }],
+    ['Choose a player \u2014 challenge them to a public arm-wrestle', { special: 'word_wrestle' }],
+    ['Choose a player \u2014 try to recruit them', { special: 'pitch_union' }],
+    ['Debate a rival', { debate: true }],
+  ],
+};
+
 module.exports = {
   glossary,
   settlement: settlement.map(fill),
   scandal: scandal.map(fill),
   performance: performance.map(fill),
+  effects,
 };

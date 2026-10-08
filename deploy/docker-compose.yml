@@ -1,0 +1,24 @@
+# The server plus Caddy, which gets a free TLS certificate and turns wss://YOUR.DOMAIN into ws:// for the game server.
+#   1. Point a DNS name at the machine.  2. Put that name in deploy/Caddyfile.  3. docker compose -f deploy/docker-compose.yml up -d
+services:
+  game:
+    build: ..
+    restart: unless-stopped
+    volumes:
+      - rooms:/data
+    expose:
+      - "9080"
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - game
+volumes:
+  rooms:
+  caddy_data:

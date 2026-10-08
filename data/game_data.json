@@ -1,0 +1,162 @@
+{
+ "minPlayers": 3,
+ "boxPlayers": 10,
+ "playerNotes": {
+  "1": 10,
+  "5": 10,
+  "10": 10,
+  "20": 12,
+  "50": 6,
+  "100": 3
+ },
+ "treasuryNotes": {
+  "1": 50,
+  "5": 20,
+  "10": 10,
+  "20": 15,
+  "50": 10,
+  "100": 15
+ },
+ "popMin": -50,
+ "popMax": 50,
+ "cancelledAt": -50,
+ "examQuestions": 5,
+ "examOptions": 2,
+ "passMark": 50,
+ "taxRate": 20,
+ "levy": {
+  "start": 25,
+  "bandLow": 25,
+  "bandHigh": 50,
+  "shift": 10,
+  "trigger": 20,
+  "floor": 25
+ },
+ "coupCost": 300,
+ "coupGap": 20,
+ "coupedScore": "½",
+ "goodCard": "Settlement",
+ "badCard": "Scandal",
+ "corruption": {
+  "limit": 3,
+  "pop": 30,
+  "fine": 200,
+  "wait": 3
+ },
+ "discussionMinutes": 1,
+ "malpracticeFine": 25,
+ "performanceSeconds": 60,
+ "choiceSeconds": 10,
+ "missedTurnLimit": 2,
+ "turnEndSeconds": 15,
+ "performanceVoteSeconds": 15,
+ "amendPenalty": 100,
+ "swing": [
+  [
+   "3",
+   10
+  ],
+  [
+   "4",
+   7
+  ],
+  [
+   "5",
+   6
+  ],
+  [
+   "6",
+   5
+  ],
+  [
+   "7",
+   4
+  ],
+  [
+   "8–10",
+   3
+  ],
+  [
+   "11+",
+   1
+  ]
+ ],
+ "components": {
+  "leaderCards": {
+   "Dictator": 1,
+   "President": 1,
+   "Commander": 1
+  },
+  "roleCards": [
+   "Doctor",
+   "Lawyer",
+   "Secret Agent",
+   "Activist",
+   "Agbero"
+  ],
+  "roleCopies": 5,
+  "willCards": 8,
+  "corruptionTokens": 15,
+  "coupStickers": 10
+ },
+ "leaderIncome": 100,
+ "viceIncome": 90,
+ "roleIncome": {
+  "Doctor": 70,
+  "Lawyer": 50,
+  "Secret Agent": 80,
+  "Activist": 0,
+  "Agbero": 0
+ },
+ "genders": [
+  "female",
+  "male"
+ ],
+ "beads": {
+  "cure": "blue",
+  "poison": "red"
+ },
+ "doctorCharges": 2,
+ "agboRounds": 1,
+ "concoctionRounds": 2,
+ "doseOfferSeconds": 30,
+ "doseGuessSeconds": 10,
+ "commandVoteMultiplier": 2,
+ "examWriteSeconds": 120,
+ "examAnswerSeconds": 90,
+ "electionVoteSeconds": 60,
+ "windowSeconds": 60,
+ "amendVoteSeconds": 45,
+ "grammarReferee": 0,
+ "cardOfferSeconds": 30,
+ "pollSeconds": 30,
+ "debateSeconds": 30,
+ "debateTopicMax": 140,
+ "amendCosignSeconds": 30,
+ "agentOfferSeconds": 30,
+ "agentPriceMax": 5000,
+ "scenarioMax": 280,
+ "unionInviteSeconds": 30,
+ "willOfferSeconds": 30,
+ "willPriceMax": 5000,
+ "dosePriceMax": 5000,
+ "unionStart": 1,
+ "unionMin": 2,
+ "agberoSteal": 50,
+ "activistVote": "double",
+ "nepoDebuff": [
+  30,
+  20,
+  10
+ ],
+ "electionRunoffs": 1,
+ "examMaxQuestions": 10,
+ "examMaxOptions": 3,
+ "examTextMax": 200,
+ "debtMaxTerms": 3,
+ "startMoney": 1000,
+ "treasuryReserve": 2550,
+ "boxTotal": 12550,
+ "highestNote": 100,
+ "tieBreakShift": 51
+}

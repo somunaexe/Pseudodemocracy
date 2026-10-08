@@ -1,0 +1,4 @@
+# Replace play.example.com with your own domain.
+play.example.com {
+	reverse_proxy game:9080
+}
