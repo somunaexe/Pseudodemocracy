@@ -460,8 +460,8 @@ func the_exam_excuse() -> void:
 	ModifiersScript.give(s, 3, "exam_pass", {"rounds": -1, "uses": 1})
 	var questions: Array = []
 	for i in 5:
-		questions.append({"text": "Q%d?" % i, "options": ["A", "B", "C"], "answer": 0})
-	send(s, 2, {"type": "write_exam", "questions": questions})
+		questions.append({"id": i, "answer": 0})
+	send(s, 2, {"type": "write_exam", "picks": questions})
 	for id in [1, 4, 5]:
 		send(s, id, {"type": "answer_exam", "answers": [1, 1, 1, 1, 1]})   # all wrong
 	var revealed: Dictionary = last_of(s, "exam_revealed")

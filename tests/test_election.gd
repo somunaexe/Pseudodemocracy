@@ -1,5 +1,6 @@
 extends SceneTree
 
+const ExamBankScript = preload("res://scripts/exam_bank.gd")
 const ElectionScript = preload("res://scripts/election.gd")
 const ElimScript = preload("res://scripts/elimination.gd")
 const RngScript = preload("res://scripts/rng.gd")
@@ -88,26 +89,23 @@ func writing_the_exam() -> void:
 		["4 questions are too few", good.slice(0, 4)],
 		["11 questions are too many", exam(11)],
 		["not a list", "questions"],
-		["a question that isn't an object", good.slice(0, 4) + [5]],
-		["a blank question", mutated(good, 0, "text", "   ")],
-		["a question that is too long", mutated(good, 0, "text", "x".repeat(201))],
-		["a control character in a question", mutated(good, 0, "text", "bad\ttext")],
-		["a question that isn't text", mutated(good, 0, "text", 7)],
-		["one option", mutated(good, 0, "options", ["A"])],
-		["four options are too many", mutated(good, 0, "options", ["A", "B", "C", "D"])],
-		["a blank option", mutated(good, 0, "options", ["A", " ", "C"])],
-		["the same option twice", mutated(good, 0, "options", ["A", "A", "C"])],
-		["options that aren't a list", mutated(good, 0, "options", "ABC")],
+		["a pick that isn't an object", good.slice(0, 4) + [5]],
+		["a question that isn't in the bank", mutated(good, 0, "id", 9999)],
+		["a negative question number", mutated(good, 0, "id", -1)],
+		["a question number that isn't a whole number", mutated(good, 0, "id", "3")],
+		["the same question twice", mutated(good, 1, "id", 0)],
 		["an answer out of range", mutated(good, 0, "answer", 3)],
 		["a negative answer", mutated(good, 0, "answer", -1)],
 		["an answer that isn't a whole number", mutated(good, 0, "answer", "A")],
+		["no answer at all", good.slice(0, 4) + [{"id": 4}]],
 	]:
-		var out := send(s, 1, {"type": "write_exam", "questions": case[1]})
+		var out := send(s, 1, write(case[1]))
 		expect("refused: " + case[0], types(out), ["rejected"])
+	expect("the old way, typing your own questions, is gone", types(send(s, 1, {"type": "write_exam", "questions": [{"text": "Free?", "options": ["A", "B"], "answer": 0}]})), ["rejected"])
 	expect("none of those changed anything", s.election["phase"], EXAM_WRITING)
 
-	# The limits are 5 to 10 questions and 2 to 3 options, and both ends are allowed.
-	for ok in [["5 questions", exam(5)], ["10 questions", exam(10)], ["2 options", mutated(good, 0, "options", ["A", "B"])], ["3 options", good]]:
+	# The limits are 5 to 10 questions, and both ends are allowed.
+	for ok in [["5 questions", exam(5)], ["10 questions", exam(10)]]:
 		var fresh := make_state()
 		ElectionScript.begin(fresh, "term_ended")
 		expect(ok[0] + " is allowed", types(send(fresh, 1, write(ok[1]))), ["exam_written"])
@@ -115,18 +113,19 @@ func writing_the_exam() -> void:
 	expect("a sick Leader can't write one", sick_leader_cannot_write(), true)
 	var accepted := send(s, 1, write(exam()))
 	expect("a valid exam is accepted", types(accepted), ["exam_written"])
-	expect("... the questions are public", accepted[0]["questions"].size(), 5)
+	expect("... the questions are public, and are the bank's own wording", [accepted[0]["questions"].size(), accepted[0]["questions"][0]], [5, ExamBankScript.question(0)])
 	expect("... the answer key is not in the event", accepted[0].has("key") or str(accepted[0]).contains("answer"), false)
 	expect("... the key is kept by the server", s.election["key"], [0, 1, 2, 0, 1])
 	expect("the exam is now being sat", s.election["phase"], EXAM_ANSWERING)
 	expect("... by everyone but the Leader", s.election["takers"], [2, 3, 4, 5])
-	expect("a second exam is refused", types(send(s, 1, write(exam()))), ["rejected"])
-
-	# Spaces round the text are trimmed.
-	s = make_state()
-	ElectionScript.begin(s, "term_ended")
-	send(s, 1, write(mutated(exam(), 0, "text", "  Padded?  ")))
-	expect("question text is trimmed", s.election["exam"]["questions"][0]["text"], "Padded?")
+	expect("a second exam is refused, so the answers are locked", types(send(s, 1, write(exam()))), ["rejected"])
+	expect("... and still the first key", s.election["key"], [0, 1, 2, 0, 1])
+	expect("the key is not in any view a player gets", ViewsScript.state_view(s, 2)["election"].has("key"), false)
+	expect("the bank is big enough for the longest exam, with room to choose", ExamBankScript.count() >= 30, true)
+	var every_question_ok: bool = true
+	for question in ExamBankScript.all():
+		every_question_ok = every_question_ok and question["options"].size() in [2, 3] and question["text"].length() <= 200
+	expect("every prepared question has 2 or 3 options", every_question_ok, true)
 
 
 func sitting_and_marking_the_exam() -> void:
@@ -513,7 +512,7 @@ func make_state() -> GameStateScript:
 func exam(count: int = 5) -> Array:
 	var questions: Array = []
 	for i in count:
-		questions.append({"text": "Question %d?" % (i + 1), "options": ["A", "B", "C"], "answer": i % 3})
+		questions.append({"id": i, "answer": i % 3})
 	return questions
 
 
@@ -532,8 +531,8 @@ func answers(count: int, right: int) -> Array:
 	return result
 
 
-func write(questions: Array) -> Dictionary:
-	return {"type": "write_exam", "questions": questions}
+func write(questions: Variant) -> Dictionary:
+	return {"type": "write_exam", "picks": questions}
 
 
 # The Leader's term has ended and they have written an exam that now waits for answers.

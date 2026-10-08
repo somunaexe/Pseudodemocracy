@@ -484,8 +484,8 @@ func at_exam() -> GameStateScript:
 func exam() -> Dictionary:
 	var questions: Array = []
 	for i in 5:
-		questions.append({"text": "Q%d?" % i, "options": ["A", "B", "C"], "answer": 0})
-	return {"type": "write_exam", "questions": questions}
+		questions.append({"id": i, "answer": 0})   # question i of the bank, true answer 0
+	return {"type": "write_exam", "picks": questions}
 
 
 func apply(s: GameStateScript, player: int, prefix: String) -> Array:

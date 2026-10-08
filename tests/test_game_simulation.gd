@@ -920,8 +920,8 @@ func election_move(s: GameStateScript) -> Dictionary:
 				return {"tick": int(s.election["deadline"])}   # the Leader never writes it
 			var questions: Array = []
 			for i in 5:
-				questions.append({"text": "Question %d?" % (i + 1), "options": ["A", "B", "C"], "answer": (i + s.current_round) % 3})
-			return {"player": s.leader_id, "command": {"type": "write_exam", "questions": questions}}
+				questions.append({"id": (i * 7 + s.current_round) % 40, "answer": (i + s.current_round) % 3})
+			return {"player": s.leader_id, "command": {"type": "write_exam", "picks": questions}}
 		EXAM_ANSWERING:
 			for id in s.election["takers"]:
 				if s.election["answers"].has(id) and ModifiersScript.active(s, id, "exam_rig") and not s.election.get("rigged", {}).has(id) and not s.eliminated.get(id, false):
