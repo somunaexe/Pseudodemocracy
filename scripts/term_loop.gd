@@ -90,7 +90,7 @@ static func _pass_window(state: GameStateScript, player_id: int, phase: int) -> 
 	return [_log(state, "window_passed", {"leader": player_id, "window": window})]
 
 
-static func _end_turn(state: GameStateScript, player_id: int) -> Array:
+static func _end_turn(state: GameStateScript, player_id: int, auto: bool = false) -> Array:
 	var waiting: Array = state.term["waiting"]
 	if waiting.is_empty() or player_id != waiting[0]:
 		return [_reject(player_id, "It isn't your turn.")]
@@ -107,7 +107,10 @@ static func _end_turn(state: GameStateScript, player_id: int) -> Array:
 	state.term["played"].append(player_id)
 	_sync_counts(state)
 	state.last_turn_player = player_id   # the next term carries on from here
-	var events: Array = [_log(state, "turn_ended", {"player": player_id})]
+	var ended: Dictionary = {"player": player_id}
+	if auto:
+		ended["auto"] = true   # they did not end it themselves
+	var events: Array = [_log(state, "turn_ended", ended)]
 	events.append_array(TurnEndScript.end_turn(state, player_id))   # a debt term, a Nepo step; may eliminate
 	return events
 
@@ -274,7 +277,27 @@ static func _advance_turns(state: GameStateScript) -> Array:
 		state.term["paid"] = waiting[0]
 		events.append_array(IncomeScript.pay(state, waiting[0]))   # logs its own event
 	events.append_array(PerformanceTurnScript.step(state, waiting[0]))   # the performance: start, vote, result; logs its own events
+	if events.is_empty():
+		events.append_array(_end_idle_turn(state, waiting[0]))
 	return events
+
+
+# A performance is over and the performer has to press "end turn". If they never do (they left, or fell asleep) the
+# table would wait for ever, so after turnEndSeconds the server ends it for them. The count only runs while nothing else
+# is holding the turn up (a choice, a question, a Command Performance have clocks of their own); it starts afresh after.
+static func _end_idle_turn(state: GameStateScript, player_id: int) -> Array:
+	var act: Dictionary = state.term.get("act", {})
+	if act.get("phase", -1) != GameStateScript.ActPhase.DONE:
+		return []
+	if ChoicesScript.blocks(state, player_id) or not state.command.is_empty() or PollsScript.open_for(state, player_id):
+		act.erase("end_by")
+		return []
+	if not act.has("end_by"):
+		act["end_by"] = state.clock_ms + GameDataScript.get_int("turnEndSeconds") * 1000
+		return []
+	if state.clock_ms < int(act["end_by"]):
+		return []
+	return _end_turn(state, player_id, true)
 
 
 # The term is over: the Leader is credited and the next election begins.

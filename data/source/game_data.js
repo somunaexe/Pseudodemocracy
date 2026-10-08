@@ -34,6 +34,7 @@ const V = {
   discussionMinutes: 1, malpracticeFine: 25,
   performanceSeconds: 60,         // (digital version) a player performs their card for this long
   choiceSeconds: 10,              // (digital version) a player who is asked to choose has this long; then the server chooses at random for them
+  turnEndSeconds: 15,             // (digital version) after a performance is over the performer has this long to end their turn; then the server ends it for them
   performanceVoteSeconds: 15,     // then everyone else has this long to vote Good or Bad; no vote, no count                // fine is an article
   amendPenalty: 100,                                        // failed amendment check
   swing: [['3', 10], ['4', 7], ['5', 6], ['6', 5], ['7', 4], ['8–10', 3], ['11+', 1]],

@@ -19,6 +19,7 @@ func _init() -> void:
 	windows()
 	amendment_votes()
 	no_grammar_referee()
+	absent_after_a_performance()
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -140,6 +141,38 @@ func no_grammar_referee() -> void:
 # --- helpers -----------------------------------------------------------------------------
 
 # The term has been played to its end and the exam is being written by the Leader (player 2).
+func absent_after_a_performance() -> void:
+	var s := new_turn_at_inauguration()
+	s.decks["performance"] = [20, 20, 20, 20, 20, 20]   # plain cards: nothing asks a question
+	send(s, LEADER, {"type": "pass_window"})
+	var first: int = s.term["waiting"][0]
+	var at: int = PlayScript.next_deadline(s, first)
+	while at != -1:
+		GameScript.tick(s, at)   # the performance and its vote run out; the performer never presses end turn
+		at = PlayScript.next_deadline(s, first)
+	expect("the performance is over and it is still their turn", [s.term["act"]["phase"], s.term["waiting"][0]], [GameStateScript.ActPhase.DONE, first])
+	GameScript.tick(s, s.clock_ms)
+	var started_at: int = s.clock_ms
+	expect("the clock starts when nothing else holds the turn up", s.term["act"]["end_by"], started_at + 15000)
+	GameScript.tick(s, started_at + 14000)
+	expect("14 seconds in, they still have their turn", s.term["waiting"][0], first)
+	var ev := GameScript.tick(s, started_at + 15000)
+	expect("at 15 seconds the server ends it for them", [types(ev).has("turn_ended"), last_of(s, "turn_ended")["auto"], last_of(s, "turn_ended")["player"]], [true, true, first])
+	expect("... and the next player's turn has begun", s.term["waiting"][0] != first or s.term["waiting"].is_empty(), true)
+	# A question waiting on them holds the count off.
+	s = new_turn_at_inauguration()
+	s.decks["performance"] = [20, 20, 20, 20, 20, 20]
+	send(s, LEADER, {"type": "pass_window"})
+	first = s.term["waiting"][0]
+	at = PlayScript.next_deadline(s, first)
+	while at != -1:
+		GameScript.tick(s, at)
+		at = PlayScript.next_deadline(s, first)
+	s.choice = {"player": first, "kind": "option", "labels": ["a", "b"], "deadline": s.clock_ms + 1000000, "subject": first}
+	GameScript.tick(s, s.clock_ms + 100000)
+	expect("a pending choice stops the count", [s.term["waiting"][0], s.term["act"].has("end_by")], [first, false])
+
+
 func at_exam() -> GameStateScript:
 	var s := new_turn_at_inauguration()
 	GameScript.handle(s, LEADER, {"type": "pass_window"})

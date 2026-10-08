@@ -706,3 +706,12 @@ What it says, and what it cannot say:
 | Hosting | Dockerfile, compose with Caddy for TLS, systemd unit: written, **untested**. | Written |
 
 Checks: `tests/test_server_core.gd` (pretend connections) and `tools/smoke_server.sh` (the real WebSocket server, one client).
+
+## A player who walks away mid-turn
+
+| Moment | What happens | Status |
+|---|---|---|
+| Performing, and the table's vote | The clocks already close them (60 s, then 15 s of voting). Nobody's input is needed. | Built earlier |
+| A question to them (card choice, poll, offer, invitation, exam) | Each has its own clock and a default answer. | Built earlier |
+| After the performance, before "end turn" | **New:** after `turnEndSeconds` (15) the server ends the turn for them (`turn_ended` with `auto: true`), through the normal end-of-turn steps (debt term, Nepo). The count only runs while nothing else holds the turn up and restarts afterwards. Before this, the table would wait for ever. | **Built** |
+| Absent for several turns | Nothing extra: they keep their seat and can return with their token. No elimination for absence. | Assumed |
