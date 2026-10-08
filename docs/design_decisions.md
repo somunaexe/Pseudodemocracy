@@ -347,6 +347,25 @@ From the handbook (Doctor & Health, Articles 18 to 24). A Doctor gets 2 charges 
 | Do the Doctor's charges come back? | Yes, at the end of every round. | Confirmed |
 | Sick or CANCELLED Doctors. | Can't use the power (Article 21 and the CANCELLED rule). | Confirmed |
 
+## The Lawyer and wills (built: scripts/wills.gd)
+
+From the handbook (Part 6, Wills & Inheritance, Articles 26 to 31).
+
+| Question | Decision | Status |
+|---|---|---|
+| How is a will made? | The player proposes it to a Lawyer: an heir for the PSD, optionally a separate heir for the roles (0 means nobody, so the roles are rescinded), a fee and an upkeep. The Lawyer accepts or refuses. No answer in 30 seconds is a refusal. | Confirmed (handbook); the 30 seconds is mine |
+| What are the fee and the upkeep? | "An agreed fee" and upkeep each round, so both are numbers the two of them agree, 0 to 5,000. The fee is paid once when the Lawyer signs; the upkeep is charged at the end of every round. | Confirmed (handbook); the limit is mine |
+| What if the fee can't be paid? | It becomes debt to the Lawyer, like any agreed payment (your earlier ruling). | Confirmed |
+| What is a missed payment? | At the end of a round, having less cash than the upkeep (so also being in debt). The payment is then not made: the will goes on hold and the unpaid upkeep builds up as arrears. | Assumed, please confirm |
+| How is a will reactivated? | `will_catch_up` pays all the arrears at once, which needs the whole sum in hand. Upkeep is paid again from the next round (Article 27: "reactivate it anytime by catching up"). | Confirmed; "all at once" is assumed |
+| A will on hold at death. | It doesn't count (Article 27): the PSD goes to the treasury and the roles are rescinded. | Confirmed |
+| Who knows what is in a will? | Only the testator and the Lawyer. That a will exists is public; its terms (heirs, fee, upkeep) go in events only they receive. The server keeps the wills (and any waiting for a signature) and never puts them in a general view. Each player's view includes their own will, and a Lawyer's the wills they keep. The Secret Agent will be able to check one. | **Built** |
+| Can heirs refuse? | No (your ruling). The handbook file still says "each heir accepts or rejects", so it is out of date there. Every heir is a Nepo Baby. | Confirmed (your ruling) |
+| What if the Lawyer is gone? | The Lawyer reads the will out, so a will whose Lawyer has been eliminated or has lost the Lawyer role at its owner's death can't be carried out and does not count. Its upkeep stops. | Assumed, please confirm |
+| Can a will be changed or torn up? | A new proposal replaces the old will once the Lawyer signs it (and the fee is paid again). `will_revoke` tears it up with no refund. | Assumed |
+| Can the Lawyer write their own will? | Through another Lawyer, yes. Not through themselves. | Assumed |
+| Do other cards matter? | "Raise your Doctor/Lawyer fee by 20 for the next term" and "convince the Lawyer to draft your will for free" are left to the table. | Next step |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.
@@ -354,7 +373,7 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | Role | Income | In the handbook files | Built | Still needed from you |
 |---|---|---|---|---|
 | Doctor | 70 | Doses (Agbo, Concoction, Surgery), no fixed prices. Hidden bead: blue Cure, red Poison. A patient can reject a cure. Sabotage is guessed before the bead is taken. A right guess means the Doctor pays the guesser, gives a real Cure and loses their licence; a wrong guess means the guesser pays the Doctor what the patient paid. | Everything above (see The Doctor and Sickness) | Confirm my assumptions in The Doctor |
-| Lawyer | 50 | Signs wills for an agreed fee and collects upkeep every round (Article 54). | Holding and income only | Who must have their will signed, the fee, the upkeep amount, and a command to write a will (there isn't one yet) |
+| Lawyer | 50 | Signs wills for an agreed fee and collects upkeep every round (Article 26). | Everything in The Lawyer and wills | Confirm my assumptions |
 | Secret Agent | 80 | Stays (CHANGES.md); no power described. Cards mention checking coup status and role draws. | Holding and income only | What the Secret Agent does |
 | Activist | none | Founds an Activist union (a Settlement card, played any time). Unions exist: recruit, kick, confront the Leader. | The union rules built earlier | How a player becomes an Activist, and how a Settlement card founds a union |
 | Agbero | none | Founds an Agbero mob; its leader is the Capon. Can re-form straight away if they hold an Agbero card. | The union rules built earlier | The same |

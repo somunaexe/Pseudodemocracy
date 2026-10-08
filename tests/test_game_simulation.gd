@@ -75,6 +75,20 @@ func _init() -> void:
 	var doc_restarted := play(5, 303, 6, 0, 5, 3)
 	expect("a server restarting from its save every 5 moves, mid-dose or not, gives the same Doctor game", [doc_restarted["problems"], doc_restarted["final"] == doc_straight["final"]], [[], true])
 
+	# A Lawyer at the table: wills proposed, signed, charged upkeep, put on hold and reactivated.
+	var will_types: Array = []
+	for seed_value in range(1, 9):
+		var run := play(5, 400 + seed_value, 7, 3, 0, 0, 2)
+		will_types.append_array(run["types"])
+		expect("Lawyer game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+		expect("Lawyer game %d: no rule was ever broken" % seed_value, run["problems"], [])
+	for kind in ["will_proposed", "will_signed", "will_terms", "will_refused", "will_expired", "will_upkeep_paid", "will_on_hold"]:
+		expect("the Lawyer games produced a '%s' event (%d times)" % [kind, will_types.count(kind)], will_types.has(kind), true)
+	expect("... and wills reached their end: read out or void (%d read, %d void)" % [will_types.count("will_read"), will_types.count("will_void")], will_types.has("will_read") or will_types.has("will_void"), true)
+	var will_straight := play(5, 403, 7, 3, 0, 0, 2)
+	var will_restarted := play(5, 403, 7, 3, 6, 0, 2)
+	expect("a server restarting from its save every 6 moves, with wills waiting or not, gives the same game", [will_restarted["problems"], will_restarted["final"] == will_straight["final"]], [[], true])
+
 	# Everything that can happen did happen somewhere.
 	var seen := play(5, 7, 6)
 	for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
@@ -116,7 +130,7 @@ func _init() -> void:
 
 # Plays until `terms` terms have been completed. If `poor` is a player id, that player starts
 # with only 30 PSD (and names player 4 as their heir) and so drifts into debt.
-func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0) -> Dictionary:
+func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0) -> Dictionary:
 	var ids: Array = range(1, player_count + 1)
 	var s := GameScript.new_game(ids, seed_value)
 	if poor != 0:
@@ -125,6 +139,10 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		s.wills[poor] = {"psd_heir": 4, "on_hold": false}
 	if doctor != 0:
 		RolesScript.grant(s, doctor, "Doctor")   # a Doctor from the start, so doses are given all game
+	if lawyer != 0:
+		RolesScript.grant(s, lawyer, "Lawyer")   # and a Lawyer, so wills are written all game
+		if seed_value % 2 == 0:
+			s.wills.erase(poor)                  # the poor player writes theirs through the Lawyer, and misses the upkeep
 	problems = []
 	var steps: int = 0
 	var types_seen: Array = []
@@ -151,6 +169,8 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 				leaders.append(event["leader"])
 			if event["type"] in ["card_applied", "choice_made"] and event["player"] == poor and event.get("psd", 0) > 0:
 				windfalls += 1   # a Settlement card paid the poor player
+			if event["type"] == "income_paid" and event["player"] == poor and event["net"] > 0:
+				windfalls += 1   # or a role (a Lawyer's 50, say) did
 		check_rules(s, steps)
 		if s.event_log.size() < log_size:
 			problems.append("step %d: the event log shrank" % steps)
@@ -184,6 +204,9 @@ func next_move(s: GameStateScript) -> Dictionary:
 	var dose := doctor_move(s)
 	if not dose.is_empty():
 		return dose
+	var will := lawyer_move(s)
+	if not will.is_empty():
+		return will
 	if not s.amend.is_empty():
 		return amendment_move(s)
 	match s.term.get("phase", NONE):
@@ -229,6 +252,62 @@ func doctor_move(s: GameStateScript) -> Dictionary:
 			if SicknessScript.problem_sickening(s, id) == "":
 				return {"player": doctor_id, "command": {"type": "dose_offer", "patient": id, "kind": "sicken", "dose": "Concoction", "price": 10}}   # 2 rounds, so a later Agbo only shortens it
 	return {}
+
+
+# The Lawyer (if there is one) keeps wills: players propose, the Lawyer signs or lets the offer lapse, players
+# who missed their upkeep catch up when they can. Proposals are limited per term because a refused or lapsed
+# one costs nothing, and the script must not ask forever.
+func lawyer_move(s: GameStateScript) -> Dictionary:
+	if s.game_over:
+		return {}
+	var lawyers: Array = RolesScript.holders(s, "Lawyer")
+	if lawyers.is_empty():
+		return {}
+	var keeper: int = lawyers[0]
+	var testators: Array = s.will_offers.keys()
+	testators.sort()
+	for testator in testators:
+		if s.will_offers[testator]["lawyer"] == keeper:
+			if (testator + s.turns_played) % 5 == 0:
+				return {"tick": int(s.will_offers[testator]["deadline"])}   # the Lawyer never answers
+			return {"player": keeper, "command": {"type": "will_respond", "testator": testator, "accept": (testator + s.current_round) % 3 != 0}}
+	for id in s.player_ids:
+		if id == keeper or s.eliminated.get(id, false):
+			continue
+		var will: Dictionary = s.wills.get(id, {})
+		if not will.is_empty() and will["on_hold"] and int(s.psd.get(id, 0)) >= int(will["arrears"]):
+			return {"player": id, "command": {"type": "will_catch_up"}}
+	if proposals_this_term(s) >= 3 or s.term.is_empty():
+		return {}
+	var by_cash: Array = s.player_ids.duplicate()
+	by_cash.sort_custom(func(a, b): return int(s.psd.get(a, 0)) < int(s.psd.get(b, 0)))   # the poorest ask first
+	for id in by_cash:
+		if id == keeper or s.eliminated.get(id, false) or s.wills.has(id) or s.will_offers.has(id):
+			continue
+		var heir: int = 0
+		for step_on in range(1, s.player_ids.size()):
+			var candidate: int = s.player_ids[(s.player_ids.find(id) + step_on) % s.player_ids.size()]
+			if not s.eliminated.get(candidate, false):
+				heir = candidate
+				break
+		if heir == 0:
+			continue
+		var command := {"type": "will_propose", "lawyer": keeper, "psd_heir": heir, "fee": 10, "upkeep": 15 + 10 * (id % 3)}
+		if (id + s.current_round) % 3 == 0:
+			command["role_heir"] = 0
+		return {"player": id, "command": command}
+	return {}
+
+
+func proposals_this_term(s: GameStateScript) -> int:
+	var n: int = 0
+	for i in range(s.event_log.size() - 1, -1, -1):
+		var kind: String = s.event_log[i]["type"]
+		if kind == "term_started":
+			break
+		if kind == "will_proposed":
+			n += 1
+	return n
 
 
 # How many doses have been offered since the current term began.
@@ -340,6 +419,14 @@ func vote_everyone(s: GameStateScript) -> void:
 
 func check_rules(s: GameStateScript, step: int) -> void:
 	var where: String = "step %d: " % step
+	for id in s.wills:
+		var will: Dictionary = s.wills[id]
+		if s.eliminated.get(id, false):
+			problems.append(where + "eliminated player %d still has a will" % id)
+		if typeof(will["on_hold"]) != TYPE_BOOL or int(will.get("arrears", 0)) < 0 or int(will.get("upkeep", 0)) < 0:
+			problems.append(where + "player %d has a malformed will" % id)
+		if will.get("on_hold", false) != (int(will.get("arrears", 0)) > 0) and will.has("lawyer"):
+			problems.append(where + "player %d's will: on hold and arrears disagree" % id)
 	for role in RolesScript.names():
 		if RolesScript.holders(s, role).size() > RolesScript.copies():
 			problems.append(where + "more than %d %s cards are held" % [RolesScript.copies(), role])

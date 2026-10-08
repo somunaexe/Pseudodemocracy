@@ -18,6 +18,7 @@ class_name Game
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const DoctorScript = preload("res://scripts/doctor.gd")
+const WillsScript = preload("res://scripts/wills.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")
 const AmendmentFlowScript = preload("res://scripts/amendment_flow.gd")
@@ -32,6 +33,7 @@ const SERVER_ID := 0
 
 const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
 const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
+const WILL_COMMANDS := ["will_propose", "will_respond", "will_catch_up", "will_revoke"]
 const DOSE_COMMANDS := ["dose_offer", "dose_respond", "dose_guess"]
 const TERM_COMMANDS := ["pass_window", "end_turn", "finish_performance", "performance_vote", "choose"]
 
@@ -73,6 +75,8 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 		events = ElectionScript.handle(state, player_id, command)
 	elif type in TERM_COMMANDS:
 		events = TermLoopScript.handle(state, player_id, command)
+	elif type in WILL_COMMANDS:
+		events = WillsScript.handle(state, player_id, command)
 	elif type in DOSE_COMMANDS:
 		events = DoctorScript.handle(state, player_id, command)
 	elif type == "finish_game":

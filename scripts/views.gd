@@ -10,6 +10,8 @@ class_name Views
 const GameStateScript = preload("res://scripts/game_state.gd")
 const SerializerScript = preload("res://scripts/serializer.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
+const RolesScript = preload("res://scripts/roles.gd")
+const WillsScript = preload("res://scripts/wills.gd")
 
 # Everyone at the table may see these.
 const PUBLIC_FIELDS = [
@@ -22,11 +24,11 @@ const PUBLIC_FIELDS = [
 const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term"]
 
 # Extra keys a view carries that are not GameState fields.
-const DERIVED_KEYS = ["popularity_base"]
+const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills"]
 
 # Never leave the server. A will is secret until its owner is eliminated; then it is read out
 # in an event. rng_state is secret because whoever knew it could predict every random draw. (Exam keys will go here when they exist.) dose_secret is the bead in the Doctor's hand.
-const SERVER_ONLY_FIELDS = ["wills", "rng_state", "decks", "dose_secret"]
+const SERVER_ONLY_FIELDS = ["wills", "will_offers", "rng_state", "decks", "dose_secret"]
 
 
 # Fields of GameState that are in none of the three lists.
@@ -74,6 +76,11 @@ static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
 	view["election"] = _election_view(state.election, player_id)
 	view["term"] = _term_view(state.term, player_id)
 	view["event_log"] = visible_events(state.event_log, player_id)
+	# Your own will, and if you are a Lawyer the wills you keep: the only wills anyone is shown.
+	view["my_will"] = _copy(state.wills.get(player_id, {}))
+	view["kept_wills"] = {}
+	if RolesScript.has(state, player_id, "Lawyer"):
+		view["kept_wills"] = WillsScript.kept_by(state, player_id)
 	return view
 
 

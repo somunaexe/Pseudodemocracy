@@ -114,6 +114,8 @@
  "concoctionRounds": 2,
  "doseOfferSeconds": 30,
  "doseGuessSeconds": 10,
+ "willOfferSeconds": 30,
+ "willPriceMax": 5000,
  "dosePriceMax": 5000,
  "unionStart": 1,
  "unionMin": 2,

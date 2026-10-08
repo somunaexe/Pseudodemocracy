@@ -36,6 +36,7 @@ const ElectionScript = preload("res://scripts/election.gd")
 const LevyBandScript = preload("res://scripts/levy_band.gd")
 const IncomeScript = preload("res://scripts/income.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
+const WillsScript = preload("res://scripts/wills.gd")
 const DoctorScript = preload("res://scripts/doctor.gd")
 const PerformanceTurnScript = preload("res://scripts/performance.gd")
 const TurnEndScript = preload("res://scripts/turn_end.gd")
@@ -120,6 +121,9 @@ static func _step(state: GameStateScript) -> Array:
 	var dose: Array = DoctorScript.step(state)   # a dose in progress moves on with the clock, whatever the term is doing
 	if not dose.is_empty():
 		return dose
+	var wills: Array = WillsScript.step(state)   # so does a will nobody signed in time
+	if not wills.is_empty():
+		return wills
 	match state.term.get("phase", GameStateScript.TermPhase.NONE):
 		GameStateScript.TermPhase.NONE:
 			# A Leader has been installed and no election is running: a new term begins.

@@ -54,6 +54,8 @@ const V = {
   doctorCharges: 2, agboRounds: 1, concoctionRounds: 2,
   doseOfferSeconds: 30,           // (digital version) a patient has this long to accept or reject a dose; silence is a rejection
   doseGuessSeconds: 10,           // (digital version) after a cure is accepted, anyone may guess Sabotage for this long
+  willOfferSeconds: 30,           // (digital version) a Lawyer has this long to accept a will; silence is a refusal
+  willPriceMax: 5000,             // (digital version) the most a Lawyer may ask as a fee, or as upkeep a round
   dosePriceMax: 5000,             // (digital version) the most a Doctor may ask for a dose
 
   // Unions

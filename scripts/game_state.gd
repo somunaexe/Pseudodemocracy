@@ -95,3 +95,6 @@ enum DosePhase { OFFERED, GUESSING }
 var dose: Dictionary = {}           # { "phase", "doctor", "patient", "kind": "heal"|"sicken", "dose", "price", "deadline", "guesser" (0 = none) }
 var dose_secret: Dictionary = {}    # { "poison": bool }: the bead hidden in the Doctor's hand. SECRET: server only
 var doctor_used: Dictionary = {}    # Doctor's player id -> charges spent this round (they get doctorCharges a round)
+
+# Wills waiting for their Lawyer to sign (see Wills), by testator. SECRET: they hold the heirs. Server only.
+var will_offers: Dictionary = {}    # testator id -> { "lawyer", "psd_heir", "role_heir", "fee", "upkeep", "deadline" }

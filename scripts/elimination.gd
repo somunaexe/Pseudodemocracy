@@ -25,6 +25,7 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const LawScript = preload("res://scripts/law.gd")
 const RolesScript = preload("res://scripts/roles.gd")
+const WillsScript = preload("res://scripts/wills.gd")
 const NepoScript = preload("res://scripts/nepo.gd")
 const EventsScript = preload("res://scripts/events.gd")
 const FlowScript = preload("res://scripts/amendment_flow.gd")
@@ -51,6 +52,8 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 		heir = int(will["psd_heir"])
 		if will["on_hold"]:
 			void_reason = "the will was on hold"
+		elif not WillsScript.is_kept(state, will):
+			void_reason = "the Lawyer who kept the will can no longer carry it out"
 		elif heir == player_id or not heir in state.player_ids or state.eliminated.get(heir, false):
 			void_reason = "the named heir is not available"
 		if void_reason != "":
@@ -58,7 +61,7 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 	# Roles go to the role heir, who may differ from the heir of the money (Article 56). Without a
 	# usable will, or if the named role heir isn't available, the roles are rescinded.
 	var role_heir: int = 0
-	if not will.is_empty() and not will["on_hold"]:
+	if not will.is_empty() and not will["on_hold"] and WillsScript.is_kept(state, will):
 		var wanted: int = int(will.get("role_heir", will["psd_heir"]))
 		if wanted != player_id and wanted in state.player_ids and not state.eliminated.get(wanted, false):
 			role_heir = wanted
