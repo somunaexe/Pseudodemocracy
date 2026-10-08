@@ -323,13 +323,37 @@ From the handbook (Doctor & Health, Articles 21 to 24). A round is a term.
 | CANCELLED players. | At -50 or lower a player has no roles until they climb back: no role powers and no role income. They keep the cards. A CANCELLED Leader still collects the Leader's 100 (handbook). | Confirmed (handbook) |
 | Cards. | "Sick for 1 round" (Scandal) and "immune for the next 2 terms" (Settlement) are applied by the game. The COVID card (it spreads to nearby players and to whoever makes eye contact) stays with the table. | **Built** (2 cards) |
 
+## The Doctor (built: scripts/doctor.gd)
+
+From the handbook (Doctor & Health, Articles 18 to 24). A Doctor gets 2 charges a round, spent openly on doses.
+
+| Question | Decision | Status |
+|---|---|---|
+| What is a dose? | Agbo (1 round), Concoction (2 rounds) or Surgery (instant). The Doctor names the price: doses have no fixed prices. Limit 0 to 5,000 PSD. | Confirmed (handbook, CHANGES.md); the limit is mine |
+| How does healing go? | The Doctor offers a dose and a price to a sick patient, and secretly chooses the bead in their hand (blue Cure, red Poison). The patient accepts or rejects. If they accept they pay the Doctor at once and a charge is spent. Anyone but the Doctor may guess Sabotage for 10 seconds. Then the bead is revealed and the dose is given. | **Built** |
+| Who sees the bead? | Nobody until the dose is given. It lives in server-only state and never appears in an event or a view. | **Built** |
+| Bead blue, no guess. | The dose cures: Agbo -1 round, Concoction -2, Surgery recovers at once. | Confirmed |
+| Bead red, no guess (Sabotage works). | Agbo +1 round, Concoction +2, Surgery eliminates the patient (their will is carried out). | Confirmed |
+| Bead red, right guess. | The Doctor pays the guesser, the patient gets a genuine Cure, and the Doctor loses their licence (the Doctor role card) (Article 19). | Confirmed; the amount is assumed to be the price |
+| Bead blue, wrong guess. | The guesser pays the Doctor the price, and the patient is cured (Article 20). | Confirmed |
+| "Payment lost". | The patient's payment is never refunded, whatever the bead was. A patient who cannot afford it goes into debt to the Doctor, as agreed payments always do. | Confirmed (your earlier ruling) |
+| How many guesses? | One guess per dose: the first to guess is "the guesser". The patient may guess too. | Assumed, please confirm |
+| How long to answer, and to guess? | 30 seconds for the patient to answer (silence is a rejection and costs no charge), then 10 seconds to guess. | Assumed, please confirm |
+| Does a rejected offer use a charge? | No. A charge is spent when the patient accepts. | Assumed |
+| What is "Sicken"? | The handbook doesn't say who may be sickened. I made it a service: the Doctor offers Agbo or Concoction at a price, and a patient who accepts and pays is sick for that many rounds. There is no bead and no guessing. Surgery can't be used to sicken. | Assumed, please confirm |
+| Who can be a patient? | Anyone in the game except the Doctor. Healing needs a sick patient. Sickening needs someone who can be sickened (not sick, not immune). | Assumed (the Doctor can't treat themselves) |
+| When can doses be given? | During a term, not during an election. Only one dose at a time. | Assumed |
+| When is a dose void? | If the Doctor or the patient leaves the game, or the Doctor stops being a Doctor, before it is given. The payment is not refunded. A guesser who has left the game made no guess. | Assumed |
+| Do the Doctor's charges come back? | Yes, at the end of every round. | Confirmed |
+| Sick or CANCELLED Doctors. | Can't use the power (Article 21 and the CANCELLED rule). | Confirmed |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.
 
 | Role | Income | In the handbook files | Built | Still needed from you |
 |---|---|---|---|---|
-| Doctor | 70 | Doses (Agbo, Concoction, Surgery), no fixed prices. Hidden bead: blue Cure, red Poison. A patient can reject a cure. Sabotage is guessed before the bead is taken. A right guess means the Doctor pays the guesser, gives a real Cure and loses their licence; a wrong guess means the guesser pays the Doctor what the patient paid. | Holding and income only | Sickness itself (how long, immunity, how it ends), the dose and bead commands, the licence |
+| Doctor | 70 | Doses (Agbo, Concoction, Surgery), no fixed prices. Hidden bead: blue Cure, red Poison. A patient can reject a cure. Sabotage is guessed before the bead is taken. A right guess means the Doctor pays the guesser, gives a real Cure and loses their licence; a wrong guess means the guesser pays the Doctor what the patient paid. | Everything above (see The Doctor and Sickness) | Confirm my assumptions in The Doctor |
 | Lawyer | 50 | Signs wills for an agreed fee and collects upkeep every round (Article 54). | Holding and income only | Who must have their will signed, the fee, the upkeep amount, and a command to write a will (there isn't one yet) |
 | Secret Agent | 80 | Stays (CHANGES.md); no power described. Cards mention checking coup status and role draws. | Holding and income only | What the Secret Agent does |
 | Activist | none | Founds an Activist union (a Settlement card, played any time). Unions exist: recruit, kick, confront the Leader. | The union rules built earlier | How a player becomes an Activist, and how a Settlement card founds a union |

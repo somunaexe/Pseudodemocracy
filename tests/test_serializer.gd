@@ -199,6 +199,9 @@ func rich_state() -> GameStateScript:
 	s.last_turn_player = 4
 	s.levy_band = {"low": 35, "high": 60}
 	s.clock_ms = 123456
+	s.dose = {"phase": GameStateScript.DosePhase.GUESSING, "doctor": 2, "patient": 3, "kind": "heal", "dose": "Agbo", "price": 40, "deadline": 99000, "guesser": 4}
+	s.dose_secret = {"poison": true}
+	s.doctor_used = {2: 1}
 	s.sick_left = {3: 2}
 	s.sick_original = {3: 1}
 	s.immune_left = {4: 3}

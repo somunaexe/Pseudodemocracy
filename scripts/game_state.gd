@@ -88,3 +88,10 @@ var roles: Dictionary = {}          # player id -> list of role names; absent = 
 var sick_left: Dictionary = {}      # player id -> rounds of sickness still to go
 var sick_original: Dictionary = {}  # player id -> how long the sickness first was; sabotage doesn't change it
 var immune_left: Dictionary = {}    # player id -> rounds during which they can't be sickened
+
+# The Doctor's dose in progress (see Doctor): at most one at a time. {} when there is none.
+# Public: everyone sees who, which dose and the price. What is in the Doctor's hand is not (dose_secret).
+enum DosePhase { OFFERED, GUESSING }
+var dose: Dictionary = {}           # { "phase", "doctor", "patient", "kind": "heal"|"sicken", "dose", "price", "deadline", "guesser" (0 = none) }
+var dose_secret: Dictionary = {}    # { "poison": bool }: the bead hidden in the Doctor's hand. SECRET: server only
+var doctor_used: Dictionary = {}    # Doctor's player id -> charges spent this round (they get doctorCharges a round)

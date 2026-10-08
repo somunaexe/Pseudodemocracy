@@ -15,7 +15,7 @@ const PopularityScript = preload("res://scripts/popularity.gd")
 const PUBLIC_FIELDS = [
 	"player_count", "turns_played", "leader_id", "leader_type", "sick",
 	"windows_used", "treasury", "psd", "debts", "debt_terms", "eliminated", "player_ids",
-	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "last_turn_player", "leader_goes_first", "levy_band",
+	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "last_turn_player", "leader_goes_first", "levy_band",
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).
@@ -25,8 +25,8 @@ const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term"]
 const DERIVED_KEYS = ["popularity_base"]
 
 # Never leave the server. A will is secret until its owner is eliminated; then it is read out
-# in an event. rng_state is secret because whoever knew it could predict every random draw. (Exam keys and the Doctor's beads will go here when they exist.)
-const SERVER_ONLY_FIELDS = ["wills", "rng_state", "decks"]
+# in an event. rng_state is secret because whoever knew it could predict every random draw. (Exam keys will go here when they exist.) dose_secret is the bead in the Doctor's hand.
+const SERVER_ONLY_FIELDS = ["wills", "rng_state", "decks", "dose_secret"]
 
 
 # Fields of GameState that are in none of the three lists.

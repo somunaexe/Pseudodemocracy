@@ -52,6 +52,9 @@ const V = {
   // Health
   beads: { cure: 'blue', poison: 'red' },                   // Doctor's Cure/Poison beads (replace prescription cards)
   doctorCharges: 2, agboRounds: 1, concoctionRounds: 2,
+  doseOfferSeconds: 30,           // (digital version) a patient has this long to accept or reject a dose; silence is a rejection
+  doseGuessSeconds: 10,           // (digital version) after a cure is accepted, anyone may guess Sabotage for this long
+  dosePriceMax: 5000,             // (digital version) the most a Doctor may ask for a dose
 
   // Unions
   unionStart: 1, unionMin: 2, agberoSteal: 50, activistVote: 'double',

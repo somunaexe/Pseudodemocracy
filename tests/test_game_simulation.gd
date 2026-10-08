@@ -8,6 +8,8 @@ const GameScript = preload("res://scripts/game.gd")
 const SerializerScript = preload("res://scripts/serializer.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
+const DoctorScript = preload("res://scripts/doctor.gd")
+const SicknessScript = preload("res://scripts/sickness.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const ScoringScript = preload("res://scripts/scoring.gd")
 
@@ -60,6 +62,19 @@ func _init() -> void:
 	expect("a poor player who never led or got a windfall was eliminated, every time (%d of %d)" % [eliminations, poor_runs], eliminations, poor_runs)
 	expect("... and their heir became a Nepo Baby each time", nepo_babies, poor_runs)
 
+	# A Doctor at the table: doses, guesses, sabotage and cures, with every rule checked after every move.
+	var dose_types: Array = []
+	for seed_value in range(1, 9):
+		var run := play(5, 300 + seed_value, 6, 0, 0, 3)
+		dose_types.append_array(run["types"])
+		expect("Doctor game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+		expect("Doctor game %d: no rule was ever broken" % seed_value, run["problems"], [])
+	for kind in ["dose_offered", "dose_accepted", "dose_rejected", "dose_expired", "sabotage_guessed", "dose_given", "sickened", "sickness_lengthened", "sickness_shortened", "recovered", "licence_lost", "dose_void"]:
+		expect("the Doctor games produced a '%s' event (%d times)" % [kind, dose_types.count(kind)], dose_types.has(kind) or kind in ["dose_void"], true)
+	var doc_straight := play(5, 303, 6, 0, 0, 3)
+	var doc_restarted := play(5, 303, 6, 0, 5, 3)
+	expect("a server restarting from its save every 5 moves, mid-dose or not, gives the same Doctor game", [doc_restarted["problems"], doc_restarted["final"] == doc_straight["final"]], [[], true])
+
 	# Everything that can happen did happen somewhere.
 	var seen := play(5, 7, 6)
 	for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
@@ -101,13 +116,15 @@ func _init() -> void:
 
 # Plays until `terms` terms have been completed. If `poor` is a player id, that player starts
 # with only 30 PSD (and names player 4 as their heir) and so drifts into debt.
-func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0) -> Dictionary:
+func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0) -> Dictionary:
 	var ids: Array = range(1, player_count + 1)
 	var s := GameScript.new_game(ids, seed_value)
 	if poor != 0:
 		s.treasury += s.psd[poor] - 30
 		s.psd[poor] = 30
 		s.wills[poor] = {"psd_heir": 4, "on_hold": false}
+	if doctor != 0:
+		RolesScript.grant(s, doctor, "Doctor")   # a Doctor from the start, so doses are given all game
 	problems = []
 	var steps: int = 0
 	var types_seen: Array = []
@@ -164,6 +181,9 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 func next_move(s: GameStateScript) -> Dictionary:
 	if not s.election.is_empty():
 		return election_move(s)
+	var dose := doctor_move(s)
+	if not dose.is_empty():
+		return dose
 	if not s.amend.is_empty():
 		return amendment_move(s)
 	match s.term.get("phase", NONE):
@@ -175,6 +195,52 @@ func next_move(s: GameStateScript) -> Dictionary:
 		TURNS:
 			return performance_move(s)
 	return {}
+
+
+# The Doctor (if there is one) gives doses during a term: heals a sick player, or sickens a willing one.
+# Patients accept or let the offer lapse, players guess Sabotage or let the guessing run out, and the
+# bead is poison in about half the doses, so every outcome gets played.
+func doctor_move(s: GameStateScript) -> Dictionary:
+	if s.term.is_empty() or not s.amend.is_empty():
+		return {}
+	if not s.dose.is_empty():
+		var dose: Dictionary = s.dose
+		if dose["phase"] == GameStateScript.DosePhase.OFFERED:
+			if (dose["patient"] + s.turns_played) % 3 == 0:
+				return {"tick": int(dose["deadline"])}   # the patient never answers
+			return {"player": dose["patient"], "command": {"type": "dose_respond", "accept": (dose["patient"] + s.turns_played + s.current_round) % 4 != 0}}
+		if dose["guesser"] == 0 and (s.turns_played + dose["patient"]) % 2 == 0:
+			for id in s.player_ids:
+				if id != dose["doctor"] and not s.eliminated.get(id, false):
+					return {"player": id, "command": {"type": "dose_guess"}}
+		return {"tick": int(dose["deadline"])}
+	if offers_this_term(s) >= 3:
+		return {}   # a rejected or lapsed offer costs no charge, so the script itself must stop asking
+	for doctor_id in RolesScript.holders(s, "Doctor"):
+		if RolesScript.can_use_power(s, doctor_id, "Doctor") != "" or DoctorScript.charges_left(s, doctor_id) <= 0:
+			continue
+		for id in s.player_ids:
+			if id == doctor_id or s.eliminated.get(id, false):
+				continue
+			var poison: bool = (s.current_round + id + s.turns_played) % 3 != 0
+			var dose_name: String = ["Agbo", "Concoction", "Surgery"][(s.turns_played + id) % 3]
+			if SicknessScript.is_sick(s, id):
+				return {"player": doctor_id, "command": {"type": "dose_offer", "patient": id, "kind": "heal", "dose": dose_name, "price": 20, "poison": poison}}
+			if SicknessScript.problem_sickening(s, id) == "":
+				return {"player": doctor_id, "command": {"type": "dose_offer", "patient": id, "kind": "sicken", "dose": "Concoction", "price": 10}}   # 2 rounds, so a later Agbo only shortens it
+	return {}
+
+
+# How many doses have been offered since the current term began.
+func offers_this_term(s: GameStateScript) -> int:
+	var n: int = 0
+	for i in range(s.event_log.size() - 1, -1, -1):
+		var kind: String = s.event_log[i]["type"]
+		if kind == "term_started":
+			break
+		if kind == "dose_offered":
+			n += 1
+	return n
 
 
 # A turn is a performance. Some run out of time instead of being finished, some votes are
