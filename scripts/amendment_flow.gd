@@ -179,18 +179,18 @@ static func _fail(state: GameStateScript, article_id: int, reason: String) -> Ar
 static func _confront(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
 	var union_id = command.get("union_id", -1)
 	if typeof(union_id) != TYPE_INT or not state.unions.has(union_id):
-		return [_reject(player_id, "There is no such union.")]
+		return [_reject(player_id, "There is no such union or mob.")]
 	var union: Dictionary = state.unions[union_id]
 	if union["owner"] != player_id:
-		return [_reject(player_id, "Only the unionizer decides for a union.")]
+		return [_reject(player_id, "Only the %s decides for a %s." % [UnionsScript.head(union), UnionsScript.word(union)])]
 	if state.eliminated.get(player_id, false) or state.sick.get(player_id, false):
-		return [_reject(player_id, "A sick or eliminated unionizer can't use role powers.")]
+		return [_reject(player_id, "A sick or eliminated %s can't use pledges." % UnionsScript.head(union))]
 	if union["members"].size() < LawScript.get_int(state, "unionMin"):
-		return [_reject(player_id, "The union is too small to act.")]
+		return [_reject(player_id, "The %s is too small to act." % UnionsScript.word(union))]
 	if union["confront_used"]:
-		return [_reject(player_id, "This union has already confronted the Leader.")]
+		return [_reject(player_id, "This %s has already confronted the Leader." % UnionsScript.word(union))]
 	if state.leader_id in union["members"]:
-		return [_reject(player_id, "A union that includes the Leader can't confront (Article 17 is not built yet).")]
+		return [_reject(player_id, "A %s that includes the Leader can't confront (Article 17 is not built yet)." % UnionsScript.word(union))]
 
 	union["confront_used"] = true
 	var events: Array = [EventsScript.make("union_confronted", {

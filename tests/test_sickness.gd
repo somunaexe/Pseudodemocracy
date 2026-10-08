@@ -153,13 +153,13 @@ func ElimScript_eliminate(s: GameStateScript, id: int) -> void:
 func cancelled_players_have_no_roles() -> void:
 	var s := table()
 	RolesScript.grant(s, 3, "Doctor")
-	expect("a healthy, popular Doctor can use the power", RolesScript.can_use_power(s, 3, "Doctor"), "")
+	expect("a healthy, popular Doctor can use the power", RolesScript.can_use_pledge(s, 3, "Doctor"), "")
 	s.popularity[3] = -50
-	expect("a CANCELLED player has no roles: no power", RolesScript.can_use_power(s, 3, "Doctor"), "CANCELLED players have no roles until they climb back.")
+	expect("a CANCELLED player has no roles: no power", RolesScript.can_use_pledge(s, 3, "Doctor"), "CANCELLED players have no roles until they climb back.")
 	expect("... and no role income", IncomeScript.gross(s, 3), 0)
 	expect("... but keeps the card", RolesScript.has(s, 3, "Doctor"), true)
 	s.popularity[3] = -49
-	expect("climbing back above the line restores both", [RolesScript.can_use_power(s, 3, "Doctor"), IncomeScript.gross(s, 3)], ["", 70])
+	expect("climbing back above the line restores both", [RolesScript.can_use_pledge(s, 3, "Doctor"), IncomeScript.gross(s, 3)], ["", 70])
 	# The Leader's pay stays when CANCELLED (handbook: still collects income).
 	s.leader_id = 3
 	s.popularity[3] = -50

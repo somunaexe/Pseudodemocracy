@@ -27,6 +27,7 @@ func _init() -> void:
 	a_mob_disperses_when_it_acts()
 	people_leaving_the_game()
 	views_and_saves()
+	the_right_words()
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -40,23 +41,23 @@ func recruiting() -> void:
 	var ev: Dictionary = last_of(s, "union_invited")
 	expect("... in the open, with 30 seconds to answer", [ev["union_id"], ev["unionizer"], ev["target"], ev["seconds"], ev["audience"]], [1, 3, 4, 30, []])
 	expect("... and the invitation is recorded", s.union_invites[4]["union_id"], 1)
-	expect("a player can only be asked once at a time", recruit(s, 3, 4)[0]["reason"], "That player has already been asked to join a union.")
+	expect("a player can only be asked once at a time", recruit(s, 3, 4)[0]["reason"], "That player has already been asked to join a union or mob.")
 
 	s = with_union(3, ACTIVIST)
 	PlayScript.take_turn(s, 2)
 	expect("only the Unionizer recruits", send(s, 4, recruit_command(1, 5))[0]["reason"], "Only the Unionizer decides for a union.")
 	for bad in [null, "1", true, 1.0, 99]:
-		expect("union %s is refused" % str(bad), send(s, 3, {"type": "union_recruit", "union_id": bad, "target": 4})[0]["reason"], "There is no such union.")
+		expect("union %s is refused" % str(bad), send(s, 3, {"type": "union_recruit", "union_id": bad, "target": 4})[0]["reason"], "There is no such union or mob.")
 	for bad in [null, "4", true, 4.0, 0, 9]:
 		expect("target %s is refused" % str(bad), recruit(s, 3, bad)[0]["reason"], "Choose a player who is in the game.")
 	expect("you can't recruit yourself", recruit(s, 3, 3)[0]["reason"], "You are already in the union.")
 	expect("a union can't recruit the Leader (Article 8)", recruit(s, 3, 2)[0]["reason"], "A union can't recruit the Leader.")
 	s.unions[2] = {"type": AGBERO, "owner": 5, "members": [5, 4], "confront_used": false}
-	expect("... nor a member of another union", recruit(s, 3, 4)[0]["reason"], "A union can't recruit a member of another union.")
+	expect("... nor a member of another union", recruit(s, 3, 4)[0]["reason"], "A union can't recruit a member of another union or mob.")
 	s.eliminated[1] = true
 	expect("... nor an eliminated player", recruit(s, 3, 1)[0]["reason"], "Choose a player who is in the game.")
 	s.sick[3] = true
-	expect("a sick Unionizer can't act", recruit(s, 3, 5)[0]["reason"], "Sick players can't use role powers.")
+	expect("a sick Unionizer can't act", recruit(s, 3, 5)[0]["reason"], "Sick players can't use pledges.")
 
 	# On the Leader's turn if the Leader is a member.
 	s = with_union(3, ACTIVIST)
@@ -68,7 +69,7 @@ func recruiting() -> void:
 
 func answering_an_invitation() -> void:
 	var s := invited(3, 4)
-	expect("nobody else answers it", send(s, 5, {"type": "union_respond", "accept": true})[0]["reason"], "Nobody has asked you to join a union.")
+	expect("nobody else answers it", send(s, 5, {"type": "union_respond", "accept": true})[0]["reason"], "Nobody has asked you to join a union or mob.")
 	for bad in [null, "yes", 1]:
 		expect("answer %s is refused" % str(bad), send(s, 4, {"type": "union_respond", "accept": bad})[0]["reason"], "Accept or refuse.")
 	var ev := send(s, 4, {"type": "union_respond", "accept": true})
@@ -97,7 +98,7 @@ func answering_an_invitation() -> void:
 
 func leaving() -> void:
 	var s := with_members(3, ACTIVIST, [3, 4, 5])
-	expect("a player outside a union can't leave", send(s, 1, {"type": "union_leave"})[0]["reason"], "You are not in a union.")
+	expect("a player outside a union can't leave", send(s, 1, {"type": "union_leave"})[0]["reason"], "You are not in a union or mob.")
 	expect("the Unionizer disperses rather than leaving", send(s, 3, {"type": "union_leave"})[0]["reason"], "The Unionizer disperses the union instead of leaving it.")
 	expect("a member leaves only on their own turn", send(s, 4, {"type": "union_leave"})[0]["reason"], "A member may leave on their own turn.")
 	PlayScript.take_turn(s, 2)
@@ -166,7 +167,7 @@ func re_forming() -> void:
 	RolesScript.grant(s, 4, "Agbero")
 	send(s, 3, {"type": "union_disperse", "union_id": 1})
 	s.unions[7] = {"type": ACTIVIST, "owner": 1, "members": [1, 4], "confront_used": false}
-	expect("a player already in a union can't re-form", send(s, 4, {"type": "union_reform"})[0]["reason"], "You are already in a union.")
+	expect("a player already in a union can't re-form", send(s, 4, {"type": "union_reform"})[0]["reason"], "You are already in a union or mob.")
 
 	s = with_members(3, AGBERO, [3, 4])
 	RolesScript.grant(s, 3, "Agbero")
@@ -214,6 +215,39 @@ func views_and_saves() -> void:
 	for g in [s, restored]:
 		send(g, 4, {"type": "union_respond", "accept": true})
 	expect("a saved game with an invitation waiting carries on the same way", [errors, SerializerScript.state_to_json(s) == SerializerScript.state_to_json(restored)], [[], true])
+
+
+func the_right_words() -> void:
+	# Activists form a union led by a Unionizer. Agberos form a mob led by a Capon. Messages must say so.
+	var u := with_union(3, ACTIVIST)
+	var m := with_union(3, AGBERO)
+	expect("the word for each group", [UnionsScript.word(u.unions[1]), UnionsScript.word(m.unions[1])], ["union", "mob"])
+	expect("... and for its leader", [UnionsScript.head(u.unions[1]), UnionsScript.head(m.unions[1])], ["Unionizer", "Capon"])
+	expect("a stranger commanding a union is told about the Unionizer", send(u, 4, recruit_command(1, 5))[0]["reason"], "Only the Unionizer decides for a union.")
+	expect("... and about the Capon for a mob", send(m, 4, recruit_command(1, 5))[0]["reason"], "Only the Capon decides for a mob.")
+	expect("off their turn, a union is told it acts on the Unionizer's turn", recruit(u, 3, 4)[0]["reason"], "A union can only act on the Unionizer's turn, or the Leader's if the Leader is a member.")
+	expect("... a mob on the Capon's", recruit(m, 3, 4)[0]["reason"], "A mob can only act on the Capon's turn, or the Leader's if the Leader is a member.")
+	PlayScript.take_turn(m, 2)
+	expect("a mob can't recruit the Leader", recruit(m, 3, 2)[0]["reason"], "A mob can't recruit the Leader.")
+	expect("... nor itself again", recruit(m, 3, 3)[0]["reason"], "You are already in the mob.")
+	m.unions[2] = {"type": ACTIVIST, "owner": 5, "members": [5, 4], "confront_used": false}
+	expect("a member of any other group can't be recruited: union or mob", recruit(m, 3, 4)[0]["reason"], "A mob can't recruit a member of another union or mob.")
+	var mob := with_members(3, AGBERO, [3, 4, 5])
+	expect("the Capon disperses the mob rather than leaving it", send(mob, 3, {"type": "union_leave"})[0]["reason"], "The Capon disperses the mob instead of leaving it.")
+	PlayScript.take_turn(mob, 2)
+	expect("a Capon can't be kicked out of their own mob", send(mob, 3, {"type": "union_kick", "union_id": 1, "target": 3})[0]["reason"], "The Capon can't be kicked out of their own mob.")
+	expect("... and a stranger isn't in the mob", send(mob, 3, {"type": "union_kick", "union_id": 1, "target": 2})[0]["reason"], "That player is not in your mob.")
+	expect("the Capon dispersing says it was the Capon", send(mob, 3, {"type": "union_disperse", "union_id": 1})[0]["why"], "the Capon dispersed it")
+	expect("a player with no group is told of both", send(mob, 1, {"type": "union_leave"})[0]["reason"], "You are not in a union or mob.")
+	expect("a missing group is told of both", send(mob, 3, {"type": "union_disperse", "union_id": 9})[0]["reason"], "There is no such union or mob.")
+	expect("a sick Capon can't use pledges", send(with_members_sick(), 3, recruit_command(1, 4))[0]["reason"], "Sick players can't use pledges.")
+
+
+func with_members_sick() -> GameStateScript:
+	var s := with_union(3, AGBERO)
+	PlayScript.take_turn(s, 2)
+	s.sick[3] = true
+	return s
 
 
 # --- helpers -----------------------------------------------------------------------------

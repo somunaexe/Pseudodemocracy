@@ -98,6 +98,7 @@
   "coupStickers": 10
  },
  "leaderIncome": 100,
+ "viceIncome": 90,
  "roleIncome": {
   "Doctor": 70,
   "Lawyer": 50,

@@ -84,14 +84,14 @@ func swapping_and_clearing() -> void:
 func using_a_power() -> void:
 	var s := table(5)
 	RolesScript.grant(s, 2, "Doctor")
-	expect("a holder in good health can use the power", RolesScript.can_use_power(s, 2, "Doctor"), "")
-	expect("a player who doesn't hold the role can't", RolesScript.can_use_power(s, 2, "Lawyer"), "You don't hold the Lawyer role.")
-	expect("... and a Civilian can't use any", RolesScript.can_use_power(s, 1, "Doctor"), "You don't hold the Doctor role.")
+	expect("a holder in good health can use the power", RolesScript.can_use_pledge(s, 2, "Doctor"), "")
+	expect("a player who doesn't hold the role can't", RolesScript.can_use_pledge(s, 2, "Lawyer"), "You don't hold the Lawyer role.")
+	expect("... and a Civilian can't use any", RolesScript.can_use_pledge(s, 1, "Doctor"), "You don't hold the Doctor role.")
 	s.sick[2] = true
-	expect("sick players can't use role powers", RolesScript.can_use_power(s, 2, "Doctor"), "Sick players can't use role powers.")
+	expect("sick players can't use pledges", RolesScript.can_use_pledge(s, 2, "Doctor"), "Sick players can't use pledges.")
 	s.sick[2] = false
 	s.eliminated[2] = true
-	expect("eliminated players can't", RolesScript.can_use_power(s, 2, "Doctor"), "You are out of the game.")
+	expect("eliminated players can't", RolesScript.can_use_pledge(s, 2, "Doctor"), "You are out of the game.")
 
 
 func income_follows_roles() -> void:

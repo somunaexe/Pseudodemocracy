@@ -96,7 +96,7 @@ static func _respond(state: GameStateScript, lawyer: int, command: Dictionary) -
 	if gone != "":
 		state.will_offers.erase(testator)
 		return [_log(state, "will_void", {"testator": testator, "lawyer": lawyer, "reason": gone}, [testator, lawyer])]
-	var power: String = RolesScript.can_use_power(state, lawyer, "Lawyer")
+	var power: String = RolesScript.can_use_pledge(state, lawyer, "Lawyer")
 	if power != "":
 		return [_reject(lawyer, power)]
 	# Signed: the fee is paid now; a new will replaces the old one.

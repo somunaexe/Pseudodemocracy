@@ -328,13 +328,13 @@ From the handbook (Doctor & Health, Articles 21 to 24). A round is a term.
 
 | Question | Decision | Status |
 |---|---|---|
-| What can a sick player not do? | Use role powers, write exams, vote or be voted for (Article 21). Already enforced everywhere via `state.sick`. | **Built** |
+| What can a sick player not do? | Use pledges, write exams, vote or be voted for (Article 21). Already enforced everywhere via `state.sick`. | **Built** |
 | How long is sickness? | A number of rounds, counted down at the end of each round: when the term ends, or when a mid-term vacancy ends it early. The very first election ends no round. A sickness of 1 round started mid-term therefore ends at the end of that same term, before the exam. | Assumed, please confirm |
 | Can you be sickened twice? | No stacking: a sick player can't be sickened again, however they became sick (a dose or a card). | Confirmed (handbook) |
 | What happens on recovery? | The player is immune for as many rounds as their ORIGINAL sickness lasted. Sabotage lengthens the sickness but not the immunity (handbook example: Concoction 2 rounds, sabotage +2, sick for 4, immune for 2). | Confirmed (handbook) |
 | Immunity from a card. | The card gives that many rounds, counted the same way, and never shortens an immunity the player already has. | Assumed |
 | Is it public? | Yes: who is sick, for how long, and who is immune. ("Keep track of who is sick and who is immune yourselves.") | Confirmed |
-| CANCELLED players. | At -50 or lower a player has no roles until they climb back: no role powers and no role income. They keep the cards. A CANCELLED Leader still collects the Leader's 100 (handbook). | Confirmed (handbook) |
+| CANCELLED players. | At -50 or lower a player has no roles until they climb back: no pledges and no role income. They keep the cards. A CANCELLED Leader still collects the Leader's 100 (handbook). | Confirmed (handbook) |
 | Cards. | "Sick for 1 round" (Scandal) and "immune for the next 2 terms" (Settlement) are applied by the game. The COVID card (it spreads to nearby players and to whoever makes eye contact) stays with the table. | **Built** (2 cards) |
 
 ## The Doctor (built: scripts/doctor.gd)
@@ -398,13 +398,15 @@ From the handbook (Part 6): "Can check one role card for coup-sticker status and
 | Can sick, CANCELLED or eliminated Agents check? | No (the shared role rule). | Confirmed |
 | The cards "a rival may check your coup-card status for free, once" and "peek at your role card once". | Left to the table until coups exist. | Next step |
 
-## Unions: Activists and Agberos (built: scripts/unions.gd)
+## Activist unions and Agbero mobs (built: scripts/unions.gd)
 
-From the handbook (Part 6, Activists & Agberos, Articles 7 to 17). Founding a union by playing a card is described under Kept cards and the hand.
+**Words:** Activists form a *union*, led by a *Unionizer*. Agberos form a *mob*, led by a *Capon*. The code has one `Unions` module and one `state.unions` table for both, and every message the server sends uses the right word for the group involved (events carry the group's type so the screen can too). A role's powers are called *pledges*.
+
+From the handbook (Part 6, Activists & Agberos, Articles 7 to 17). Founding a group by playing a card is described under Kept cards and the hand.
 
 | Question | Decision | Status |
 |---|---|---|
-| Who owns a union? | The Unionizer (a Capon for a mob), who founded it. Their decisions are the union's. | Confirmed (handbook) |
+| Who owns one? | The Unionizer of a union, the Capon of a mob: whoever founded it. Their decisions are the group's. | Confirmed (handbook) |
 | How does a union grow? | The Unionizer asks a player to join ("a free social ask"). The player agrees, or refuses, or lets the 30 seconds run out (a refusal). | Confirmed; the consent and the 30 seconds are mine |
 | Who can't be recruited? | The Leader, and members of another union (Article 8). A player can only have one invitation at a time. | Confirmed |
 | When can a union act? | Recruiting and kicking only on the Unionizer's own turn, or on the Leader's turn if the Leader is a member (Article 9). Sick Unionizers can't. | Confirmed |

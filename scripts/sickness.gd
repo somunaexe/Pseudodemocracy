@@ -1,6 +1,6 @@
 class_name Sickness
 
-# Sickness (handbook Part 6, Doctor & Health, and Article 21). A sick player can't use role powers,
+# Sickness (handbook Part 6, Doctor & Health, and Article 21). A sick player can't use pledges,
 # write exams, vote or be voted for (the rest of the code checks state.sick for that).
 #
 #   - Sickness lasts a number of ROUNDS (a round is a term). It counts down at the end of each round.

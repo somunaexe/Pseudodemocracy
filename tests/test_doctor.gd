@@ -46,7 +46,7 @@ func offering() -> void:
 	s = new_game()
 	expect("a player who isn't a Doctor can't offer", send(s, 1, offer_command(1))[0]["reason"], "You don't hold the Doctor role.")
 	s.sick[3] = true
-	expect("a sick Doctor can't", send(s, 3, offer_command())[0]["reason"], "Sick players can't use role powers.")
+	expect("a sick Doctor can't", send(s, 3, offer_command())[0]["reason"], "Sick players can't use pledges.")
 	s.sick[3] = false
 	s.popularity[3] = -50
 	expect("a CANCELLED Doctor can't", send(s, 3, offer_command())[0]["reason"], "CANCELLED players have no roles until they climb back.")

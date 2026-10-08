@@ -21,7 +21,7 @@ class_name Doctor
 #     who consents and pays fits the "convenient condition" Performance card.)
 #
 # Only one dose at a time. The Doctor can't treat themselves. A Doctor who is sick, CANCELLED or has lost
-# the role can't offer (Roles.can_use_power). If the Doctor or patient leaves the game, or the Doctor loses
+# the role can't offer (Roles.can_use_pledge). If the Doctor or patient leaves the game, or the Doctor loses
 # the role, before the dose is given, it is void (the payment is not refunded).
 #
 # Commands (the Doctor offers; the patient answers; anyone else may guess):
@@ -68,7 +68,7 @@ static func _offer(state: GameStateScript, doctor_id: int, command: Dictionary) 
 		return [_reject(doctor_id, "Doses can only be given during a term.")]
 	if not state.dose.is_empty():
 		return [_reject(doctor_id, "Another dose is already being given.")]
-	var power: String = RolesScript.can_use_power(state, doctor_id, "Doctor")
+	var power: String = RolesScript.can_use_pledge(state, doctor_id, "Doctor")
 	if power != "":
 		return [_reject(doctor_id, power)]
 	if charges_left(state, doctor_id) <= 0:

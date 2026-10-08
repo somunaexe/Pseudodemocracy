@@ -1,16 +1,19 @@
 class_name Unions
 
-# Unions of Activists (peaceful) and Agberos (violent) (handbook Part 6, Activists & Agberos, Articles 7 to 17).
+# Activists (peaceful) form UNIONS, led by a Unionizer. Agberos (violent) form MOBS, led by a Capon (handbook
+# Part 6, Activists & Agberos, Articles 7 to 17). One module and one table (state.unions) serve both, so the
+# code says "union" for either; the words players read use the right name (word() and head() below), and
+# events carry the group's type so the screen can do the same.
 #
-# A union is formed by playing a union card (a Settlement card kept in the hand). The player who plays it is the
-# Unionizer (a Capon, for an Agbero mob) and its first member: it starts at 1, "recruiting".
+# A group is formed by playing a union or mob card (a Settlement card kept in the hand). The player who plays
+# it is its leader and first member: it starts at 1, "recruiting".
 #
 # state.unions: union id -> { "type": UnionType, "owner": the Unionizer, "members": [ids, owner first],
 #                              "confront_used": bool }
 #
 # A player is in at most one union ("can't recruit ... a member of another union", Article 8).
 #
-# What the Unionizer can do, only on a UNION TURN (their own turn, or the Leader's turn if the Leader is a
+# What the leader (Unionizer or Capon) can do, only on a UNION TURN (their own turn, or the Leader's turn if the Leader is a
 # member) and only if not sick (Article 9):
 #   { "type": "union_recruit", "union_id": id, "target": id }   ask a player to join. "A free social ask": the
 #        target must agree (union_respond), within unionInviteSeconds. The Leader and members of other unions
@@ -41,6 +44,16 @@ const EventsScript = preload("res://scripts/events.gd")
 const TYPES := {"activist": GameStateScript.UnionType.ACTIVIST, "agbero": GameStateScript.UnionType.AGBERO}
 
 
+# The word for this group: Activists form a union, Agberos a mob.
+static func word(union: Dictionary) -> String:
+	return "mob" if union["type"] == GameStateScript.UnionType.AGBERO else "union"
+
+
+# What its leader is called: a Unionizer leads a union, a Capon a mob.
+static func head(union: Dictionary) -> String:
+	return "Capon" if union["type"] == GameStateScript.UnionType.AGBERO else "Unionizer"
+
+
 # --- who is in what ----------------------------------------------------------------------
 
 # The union this player belongs to (as Unionizer or member), or -1.
@@ -67,7 +80,7 @@ static func problem_founding(state: GameStateScript, player_id: int) -> String:
 	if not player_id in state.player_ids or state.eliminated.get(player_id, false):
 		return "You are not in the game."
 	if union_of(state, player_id) != -1:
-		return "You are already in a union."
+		return "You are already in a union or mob."
 	return ""
 
 
@@ -142,11 +155,11 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 static func _own_union(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
 	var union_id = command.get("union_id", null)
 	if typeof(union_id) != TYPE_INT or not state.unions.has(union_id):
-		return [-1, "There is no such union."]
+		return [-1, "There is no such union or mob."]
 	if state.unions[union_id]["owner"] != player_id:
-		return [-1, "Only the Unionizer decides for a union."]
+		return [-1, "Only the %s decides for a %s." % [head(state.unions[union_id]), word(state.unions[union_id])]]
 	if state.sick.get(player_id, false):
-		return [-1, "Sick players can't use role powers."]
+		return [-1, "Sick players can't use pledges."]
 	return [union_id, ""]
 
 
@@ -156,13 +169,13 @@ static func _recruit(state: GameStateScript, owner: int, command: Dictionary) ->
 		return [_reject(owner, own[1])]
 	var union_id: int = own[0]
 	if not on_union_turn(state, state.unions[union_id]):
-		return [_reject(owner, "A union can only act on the Unionizer's turn, or the Leader's if the Leader is a member.")]
+		return [_reject(owner, "A %s can only act on the %s's turn, or the Leader's if the Leader is a member." % [word(state.unions[union_id]), head(state.unions[union_id])])]
 	var target = command.get("target", null)
 	if typeof(target) != TYPE_INT or not target in state.player_ids or state.eliminated.get(target, false):
 		return [_reject(owner, "Choose a player who is in the game.")]
 	if target == owner:
-		return [_reject(owner, "You are already in the union.")]
-	var problem: String = _problem_recruiting(state, target)
+		return [_reject(owner, "You are already in the %s." % word(state.unions[union_id]))]
+	var problem: String = _problem_recruiting(state, target, state.unions[union_id])
 	if problem != "":
 		return [_reject(owner, problem)]
 	var seconds: int = GameDataScript.get_int("unionInviteSeconds")
@@ -172,19 +185,19 @@ static func _recruit(state: GameStateScript, owner: int, command: Dictionary) ->
 
 
 # Why this player can't be recruited, or "" (Article 8).
-static func _problem_recruiting(state: GameStateScript, target: int) -> String:
+static func _problem_recruiting(state: GameStateScript, target: int, union: Dictionary) -> String:
 	if target == state.leader_id:
-		return "A union can't recruit the Leader."
+		return "A %s can't recruit the Leader." % word(union)
 	if union_of(state, target) != -1:
-		return "A union can't recruit a member of another union."
+		return "A %s can't recruit a member of another union or mob." % word(union)
 	if state.union_invites.has(target):
-		return "That player has already been asked to join a union."
+		return "That player has already been asked to join a union or mob."
 	return ""
 
 
 static func _respond(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
 	if not state.union_invites.has(player_id):
-		return [_reject(player_id, "Nobody has asked you to join a union.")]
+		return [_reject(player_id, "Nobody has asked you to join a union or mob.")]
 	var accept = command.get("accept", null)
 	if typeof(accept) != TYPE_BOOL:
 		return [_reject(player_id, "Accept or refuse.")]
@@ -194,7 +207,7 @@ static func _respond(state: GameStateScript, player_id: int, command: Dictionary
 	if not accept:
 		return [_log(state, "union_invitation_refused", {"union_id": union_id, "player": player_id})]
 	if not state.unions.has(union_id):
-		return [_log(state, "union_invitation_void", {"union_id": union_id, "player": player_id, "reason": "the union no longer exists"})]
+		return [_log(state, "union_invitation_void", {"union_id": union_id, "player": player_id, "reason": "the union or mob no longer exists"})]
 	if player_id == state.leader_id or union_of(state, player_id) != -1:
 		return [_log(state, "union_invitation_void", {"union_id": union_id, "player": player_id, "reason": "they can no longer join"})]
 	state.unions[union_id]["members"].append(player_id)
@@ -204,9 +217,9 @@ static func _respond(state: GameStateScript, player_id: int, command: Dictionary
 static func _leave(state: GameStateScript, player_id: int) -> Array:
 	var union_id: int = union_of(state, player_id)
 	if union_id == -1:
-		return [_reject(player_id, "You are not in a union.")]
+		return [_reject(player_id, "You are not in a union or mob.")]
 	if state.unions[union_id]["owner"] == player_id:
-		return [_reject(player_id, "The Unionizer disperses the union instead of leaving it.")]
+		return [_reject(player_id, "The %s disperses the %s instead of leaving it." % [head(state.unions[union_id]), word(state.unions[union_id])])]
 	var waiting: Array = state.term.get("waiting", [])
 	if state.term.get("phase", GameStateScript.TermPhase.NONE) != GameStateScript.TermPhase.TURNS or waiting.is_empty() or waiting[0] != player_id:
 		return [_reject(player_id, "A member may leave on their own turn.")]
@@ -219,12 +232,12 @@ static func _kick(state: GameStateScript, owner: int, command: Dictionary) -> Ar
 		return [_reject(owner, own[1])]
 	var union_id: int = own[0]
 	if not on_union_turn(state, state.unions[union_id]):
-		return [_reject(owner, "A union can only act on the Unionizer's turn, or the Leader's if the Leader is a member.")]
+		return [_reject(owner, "A %s can only act on the %s's turn, or the Leader's if the Leader is a member." % [word(state.unions[union_id]), head(state.unions[union_id])])]
 	var target = command.get("target", null)
 	if typeof(target) != TYPE_INT or not target in state.unions[union_id]["members"]:
-		return [_reject(owner, "That player is not in your union.")]
+		return [_reject(owner, "That player is not in your %s." % word(state.unions[union_id]))]
 	if target == owner:
-		return [_reject(owner, "The Unionizer can't be kicked out of their own union.")]
+		return [_reject(owner, "The %s can't be kicked out of their own %s." % [head(state.unions[union_id]), word(state.unions[union_id])])]
 	return _log_all(state, remove_member(state, union_id, target, "kicked"))
 
 
@@ -232,7 +245,7 @@ static func _disperse(state: GameStateScript, owner: int, command: Dictionary) -
 	var own: Array = _own_union(state, owner, command)
 	if own[1] != "":
 		return [_reject(owner, own[1])]
-	return _log_all(state, disperse(state, own[0], "the Unionizer dispersed it"))
+	return _log_all(state, disperse(state, own[0], "the %s dispersed it" % head(state.unions[own[0]])))
 
 
 # An Agbero whose mob dispersed forms a new one straight away if they still hold an Agbero role card.

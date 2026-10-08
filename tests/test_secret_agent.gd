@@ -31,7 +31,7 @@ func who_may_check() -> void:
 	var s := game()
 	expect("a player who isn't a Secret Agent can't check", send(s, 4, check("coup", {"target": 5, "role": "Doctor"}))[0]["reason"], "You don't hold the Secret Agent role.")
 	s.sick[AGENT] = true
-	expect("a sick Agent can't", send(s, AGENT, check("will", {"target": 5}))[0]["reason"], "Sick players can't use role powers.")
+	expect("a sick Agent can't", send(s, AGENT, check("will", {"target": 5}))[0]["reason"], "Sick players can't use pledges.")
 	s.sick[AGENT] = false
 	s.popularity[AGENT] = -50
 	expect("a CANCELLED Agent can't", send(s, AGENT, check("will", {"target": 5}))[0]["reason"], "CANCELLED players have no roles until they climb back.")

@@ -102,17 +102,17 @@ func playing_the_either_card() -> void:
 	send(s, 3, play(0))
 	s.unions[5] = {"type": ACTIVIST, "owner": 1, "members": [1, 3], "confront_used": false}
 	var late := send(s, 3, {"type": "choose", "choice": 0})
-	expect("if they have joined a union by then, nothing is founded and the skip is said", [types(late), late[0]["skipped"], s.unions.size()], [["choice_made"], ["found a union: You are already in a union."], 1])
+	expect("if they have joined a union by then, nothing is founded and the skip is said", [types(late), late[0]["skipped"], s.unions.size()], [["choice_made"], ["found a union or mob: You are already in a union or mob."], 1])
 
 
 func the_card_stays_when_it_cannot_be_played() -> void:
 	var s := hand_of(3, [ACTIVIST_CARD])
 	s.unions[5] = {"type": ACTIVIST, "owner": 1, "members": [1, 3], "confront_used": false}
-	expect("a player already in a union can't found another", send(s, 3, play(0))[0]["reason"], "You are already in a union.")
+	expect("a player already in a union can't found another", send(s, 3, play(0))[0]["reason"], "You are already in a union or mob.")
 	expect("... and keeps the card", s.hands[3].size(), 1)
 	s = hand_of(3, [EITHER_CARD])
 	s.unions[5] = {"type": AGBERO, "owner": 3, "members": [3], "confront_used": false}
-	expect("... even the either card, before it asks anything", [send(s, 3, play(0))[0]["reason"], s.choice], ["You are already in a union.", {}])
+	expect("... even the either card, before it asks anything", [send(s, 3, play(0))[0]["reason"], s.choice], ["You are already in a union or mob.", {}])
 
 
 func the_choice_is_global() -> void:

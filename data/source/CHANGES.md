@@ -59,3 +59,8 @@ Import these files and never retype their values. The printed rulebook is genera
 
 ## Roles
 - **Removed:** Legislative, Banker, Teacher and PM. The Secret Agent stays.
+
+## Vocabulary (digital version)
+- A role's powers are called **pledges**. (The Constitution's Sickness article and the roles table still say "role powers"; change them when you edit the handbook.)
+- **Activists form a union** (led by a Unionizer). **Agberos form a mob** (led by a Capon).
+- A **Vice** earns 90 PSD a round, like a role (not built yet).

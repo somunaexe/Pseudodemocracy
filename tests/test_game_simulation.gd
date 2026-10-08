@@ -278,7 +278,7 @@ func doctor_move(s: GameStateScript) -> Dictionary:
 	if offers_this_term(s) >= 3:
 		return {}   # a rejected or lapsed offer costs no charge, so the script itself must stop asking
 	for doctor_id in RolesScript.holders(s, "Doctor"):
-		if RolesScript.can_use_power(s, doctor_id, "Doctor") != "" or DoctorScript.charges_left(s, doctor_id) <= 0:
+		if RolesScript.can_use_pledge(s, doctor_id, "Doctor") != "" or DoctorScript.charges_left(s, doctor_id) <= 0:
 			continue
 		for id in s.player_ids:
 			if id == doctor_id or s.eliminated.get(id, false):
@@ -376,7 +376,7 @@ func agent_move(s: GameStateScript) -> Dictionary:
 	if s.term.is_empty() or s.game_over:
 		return {}
 	for agent in RolesScript.holders(s, "Secret Agent"):
-		if s.agent_used.get(agent, false) or RolesScript.can_use_power(s, agent, "Secret Agent") != "":
+		if s.agent_used.get(agent, false) or RolesScript.can_use_pledge(s, agent, "Secret Agent") != "":
 			continue
 		if not s.dose.is_empty() and s.dose["kind"] == "heal" and agent != s.dose["doctor"]:
 			return {"player": agent, "command": {"type": "agent_check", "kind": "bead"}}

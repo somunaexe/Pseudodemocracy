@@ -47,6 +47,7 @@ const V = {
 
   // Income, paid from the treasury on the player's own turn (tax is taken from it, rounded down). Roles stack.
   leaderIncome: 100,
+  viceIncome: 90,                 // a Vice (a second Leader, made by a card) earns this; not built yet
   roleIncome: { 'Doctor': 70, 'Lawyer': 50, 'Secret Agent': 80, 'Activist': 0, 'Agbero': 0 },   // Activists and Agberos earn nothing
 
   // Health

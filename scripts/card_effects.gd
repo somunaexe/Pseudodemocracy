@@ -233,7 +233,7 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 			if option.has("found_union"):
 				var union_problem: String = UnionsScript.problem_founding(state, player_id)
 				if union_problem != "":
-					skipped.append("found a union: " + union_problem)
+					skipped.append("found a union or mob: " + union_problem)
 				else:
 					events.append_array(UnionsScript.found(state, player_id, option["found_union"]))
 		"role":

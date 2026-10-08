@@ -11,7 +11,7 @@ class_name Roles
 # when it is granted, taken, swapped or inherited; the sticker stays on the card.
 #
 # This file only holds and moves the cards. What each role can DO is not built yet (see
-# docs/design_decisions.md): the one rule shared by all of them is can_use_power().
+# docs/design_decisions.md): the one rule shared by all of them is can_use_pledge().
 #
 # Like Nepo, nothing here writes to the event log: every function returns its events and the caller
 # logs them, so each event is logged exactly once, by whoever is running the larger step.
@@ -218,15 +218,15 @@ static func settle_estate(state: GameStateScript, dead_id: int, heir: int) -> Ar
 # --- powers ------------------------------------------------------------------------------
 
 # Why this player can't use this role's power now, or "" if they can. Every role shares these rules:
-# you must hold it, be in the game, and not be sick (Article 17: sick players can't use role powers).
+# you must hold it, be in the game, and not be sick (Article 17: sick players can't use pledges).
 # and not be CANCELLED. Later: a role card frozen by a card or by corruption.
-static func can_use_power(state: GameStateScript, player_id: int, role: String) -> String:
+static func can_use_pledge(state: GameStateScript, player_id: int, role: String) -> String:
 	if not has(state, player_id, role):
 		return "You don't hold the %s role." % role
 	if state.eliminated.get(player_id, false):
 		return "You are out of the game."
 	if state.sick.get(player_id, false):
-		return "Sick players can't use role powers."
+		return "Sick players can't use pledges."
 	if is_cancelled(state, player_id):
 		return "CANCELLED players have no roles until they climb back."
 	return ""

@@ -12,7 +12,7 @@ class_name SecretAgent
 # What the Agent finds out goes to the Agent alone, in an event nobody else is sent. One check a round, of
 # any kind (the power is used once per round). A coup or will check is made on the Agent's own turn; the bead
 # can be checked while a heal is being offered or while the guessing is open, by anyone but the Doctor.
-# Sick, CANCELLED or eliminated Agents can't use the power (Roles.can_use_power).
+# Sick, CANCELLED or eliminated Agents can't use the power (Roles.can_use_pledge).
 #
 # "Not being caught sharing" is for the table to judge: the game cannot hear what players say.
 # (Assumed: an Agent may check their own cards and their own will.)
@@ -27,7 +27,7 @@ const KINDS := ["coup", "will", "bead"]
 
 
 static func handle(state: GameStateScript, agent: int, command: Dictionary) -> Array:
-	var power: String = RolesScript.can_use_power(state, agent, "Secret Agent")
+	var power: String = RolesScript.can_use_pledge(state, agent, "Secret Agent")
 	if power != "":
 		return [_reject(agent, power)]
 	if state.agent_used.get(agent, false):

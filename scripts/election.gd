@@ -53,7 +53,7 @@ static func begin(state: GameStateScript, reason: String) -> Array:
 		state.half_rounds[leader] = int(state.half_rounds.get(leader, 0)) + 2
 
 	state.election = {"phase": GameStateScript.ElectionPhase.NONE, "reason": reason, "runoff": 0}
-	var exam: bool = reason == "term_ended" and leader != -1 and _can_use_powers(state, leader)
+	var exam: bool = reason == "term_ended" and leader != -1 and _can_use_pledges(state, leader)
 	events.append(EventsScript.make("election_started", {"reason": reason, "exam": exam}))
 	if exam:
 		state.election["phase"] = GameStateScript.ElectionPhase.EXAM_WRITING
@@ -69,7 +69,7 @@ static func recheck(state: GameStateScript) -> Array:
 	var events: Array = []
 	match state.election.get("phase", GameStateScript.ElectionPhase.NONE):
 		GameStateScript.ElectionPhase.EXAM_WRITING:
-			if not _can_use_powers(state, state.leader_id):
+			if not _can_use_pledges(state, state.leader_id):
 				events.append(EventsScript.make("exam_skipped", {"reason": "the Leader can no longer write one"}))
 				events.append_array(_start_voting(state, _eligible_voters(state), _eligible_candidates(state, _eligible_voters(state))))
 		GameStateScript.ElectionPhase.EXAM_ANSWERING:
@@ -130,7 +130,7 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 static func _write_exam(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
 	if player_id != state.leader_id:
 		return [_reject(player_id, "Only the Leader writes the exam.")]
-	if not _can_use_powers(state, player_id):
+	if not _can_use_pledges(state, player_id):
 		return [_reject(player_id, "A sick or CANCELLED Leader can't write an exam.")]
 	var parsed: Dictionary = _parse_exam(command.get("questions", null))
 	if parsed["problem"] != "":
@@ -377,7 +377,7 @@ static func _can_stand(state: GameStateScript, id: int) -> bool:
 	return _can_vote(state, id) and PopularityScript.effective(state, id) > GameDataScript.get_int("cancelledAt")
 
 
-static func _can_use_powers(state: GameStateScript, id: int) -> bool:
+static func _can_use_pledges(state: GameStateScript, id: int) -> bool:
 	return _can_stand(state, id)
 
 

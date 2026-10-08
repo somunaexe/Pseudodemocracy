@@ -98,7 +98,7 @@ func the_lawyer_answers() -> void:
 	s = table()
 	propose(s)
 	s.sick[2] = true
-	expect("a sick Lawyer can't sign", send(s, 2, respond(3, true))[0]["reason"], "Sick players can't use role powers.")
+	expect("a sick Lawyer can't sign", send(s, 2, respond(3, true))[0]["reason"], "Sick players can't use pledges.")
 	expect("... and the offer is still waiting", s.will_offers.has(3), true)
 
 	s = table()
