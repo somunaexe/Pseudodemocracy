@@ -295,6 +295,20 @@ Some cards need the player to decide. The card is drawn and applied as far as it
 | Do exams and other votes time out too? | Not yet. Only the performance, its vote and the choice have timers. A real server will need a rule for absent players everywhere. | **Known gap** |
 | Can a card choose several players ("choose up to 3")? | Not yet. One choice of one thing. | Next step |
 
+### Kept cards and the hand (built: card_effects.gd, unions.gd)
+
+Some Settlement cards say "keep this card" or "play anytime". They go into the player's hand and are played later with `play_card`.
+
+| Question | Decision | Status |
+|---|---|---|
+| Which kept cards are built? | The three union cards: found an Activist union, found an Agbero mob, found either (the player then chooses which). The other kept cards (vote of no confidence, 25% levy reduction, the youth wing) need mechanics that don't exist yet and stay with the table. | **Built** (3 cards) |
+| Who sees a hand? | The owner sees their cards. Everyone sees how many cards each player holds. The server keeps the hands. | Assumed, please confirm |
+| When can a card be played? | At any time, even between terms or during an election ("play anytime"). A card can't be played while a choice is waiting. | Confirmed (card text) |
+| Who can found a union? | Anyone in the game who is not already in a union (Article 8: a member of another union can't be recruited). A card that can't be played stays in the hand. | Assumed |
+| The "either" card. | Playing it asks which kind (an option choice with the usual 10 seconds, then the server picks at random). If they have joined a union by then, nothing is founded and the event says why. | **Built** |
+| What happens to a hand at elimination? | The cards are lost. | Assumed |
+| Is a pending choice still tied to a turn? | No: it is one global choice (`state.choice`) that is public. A player can't end their own turn while their own choice waits; other people's turns are unaffected. | **Built** |
+
 ### Income (built: scripts/income.gd)
 
 | Question | Decision | Status |

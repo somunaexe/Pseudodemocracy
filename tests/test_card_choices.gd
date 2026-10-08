@@ -38,7 +38,7 @@ func an_option() -> void:
 	expect("... and the turn waits: it can't end", send(s, 2, {"type": "end_turn"})[0]["reason"], "Make your choice first.")
 	for bad in [null, "1", true, 1.5, -1, 2, [1], {"a": 1}]:
 		expect("option answer %s is refused" % str(bad), send(s, 2, {"type": "choose", "choice": bad})[0]["reason"], "Choose one of the 2 options by its number.")
-	expect("... and the choice is still waiting", s.term["act"].has("choice"), true)
+	expect("... and the choice is still waiting", not s.choice.is_empty(), true)
 	expect("a missing answer is refused too", send(s, 2, {"type": "choose"})[0]["type"], "rejected")
 
 	var cash: int = s.psd[2]
@@ -46,7 +46,7 @@ func an_option() -> void:
 	var ev := send(s, 2, {"type": "choose", "choice": 1})
 	expect("the chosen option is applied: 70 PSD from the treasury", [types(ev), s.psd[2] - cash, treasury - s.treasury], [["choice_made"], 70, 70])
 	expect("... the event says what was chosen and what happened", [ev[0]["kind"], ev[0]["choice"], ev[0]["psd"]], ["option", 1, 70])
-	expect("... the choice is gone and the turn can end", [s.term["act"].has("choice"), types(send(s, 2, {"type": "end_turn"}))[0]], [false, "turn_ended"])
+	expect("... the choice is gone and the turn can end", [not s.choice.is_empty(), types(send(s, 2, {"type": "end_turn"}))[0]], [false, "turn_ended"])
 
 	s = win_with(SPEECH)
 	var pop: int = PopularityScript.effective(s, 2)
@@ -125,29 +125,29 @@ func nothing_to_choose_from() -> void:
 	for role in RolesScript.names():
 		RolesScript.grant(s, 2, role)
 	win(s, TALENTS)
-	expect("a player who holds every role has nothing to choose: said so, and not stuck", [types(s.event_log.slice(-3)).has("choice_unavailable"), s.term["act"].has("choice")], [true, false])
+	expect("a player who holds every role has nothing to choose: said so, and not stuck", [types(s.event_log.slice(-3)).has("choice_unavailable"), not s.choice.is_empty()], [true, false])
 	expect("... so the turn can end", types(send(s, 2, {"type": "end_turn"}))[0], "turn_ended")
 
 	s = new_turn()
 	win(s, SWAP)
-	expect("a swap with nobody holding a role is unavailable too", [last_of(s, "choice_unavailable")["kind"], s.term["act"].has("choice")], ["player", false])
+	expect("a swap with nobody holding a role is unavailable too", [last_of(s, "choice_unavailable")["kind"], not s.choice.is_empty()], ["player", false])
 
 
 func who_may_choose() -> void:
 	var s := win_with(SPEECH)
 	expect("only the player who drew the card chooses", send(s, 3, {"type": "choose", "choice": 0})[0]["reason"], "It isn't your choice.")
 	expect("... not the server", send(s, 0, {"type": "choose", "choice": 0})[0]["reason"], "It isn't your choice.")
-	expect("nothing changed", s.term["act"].has("choice"), true)
+	expect("nothing changed", not s.choice.is_empty(), true)
 	s = new_turn()
 	expect("with nothing pending there is nothing to choose", send(s, 2, {"type": "choose", "choice": 0})[0]["reason"], "There is nothing to choose.")
 	s = GameScript.new_game([1, 2, 3], 5)
-	expect("outside a turn it isn't possible", send(s, 1, {"type": "choose", "choice": 0})[0]["reason"], "'choose' isn't possible at this stage.")
+	expect("a choice can be made at any time, so outside a turn there is just nothing to choose", send(s, 1, {"type": "choose", "choice": 0})[0]["reason"], "There is nothing to choose.")
 
 
 func logging_views_and_saves() -> void:
 	var s := win_with(PRAISE)
 	var view: Dictionary = ViewsScript.state_view(s, 4)
-	expect("everyone can see a choice that is waiting", [view["term"]["act"]["choice"]["player"], view["term"]["act"]["choice"]["kind"]], [2, "player"])
+	expect("everyone can see a choice that is waiting", [view["choice"]["player"], view["choice"]["kind"]], [2, "player"])
 	var errors: Array = []
 	var restored: GameStateScript = SerializerScript.state_from_json(SerializerScript.state_to_json(s), errors)
 	expect("a game saved while a choice waits loads without errors", errors, [])
@@ -161,9 +161,9 @@ func logging_views_and_saves() -> void:
 func running_out_of_time() -> void:
 	var s := win_with(SPEECH)
 	var needed: Dictionary = last_of(s, "choice_needed")
-	var deadline: int = int(s.term["act"]["choice"]["deadline"])
+	var deadline: int = int(s.choice["deadline"])
 	expect("a choice has 10 seconds on the server clock", [needed["seconds"], needed["ends_at_ms"], deadline - s.clock_ms], [10, deadline, 10000])
-	expect("before the deadline the server does nothing", [types(GameScript.tick(s, deadline - 1)), s.term["act"].has("choice")], [[], true])
+	expect("before the deadline the server does nothing", [types(GameScript.tick(s, deadline - 1)), not s.choice.is_empty()], [[], true])
 	expect("... and the player can still choose in the last millisecond", types(send(s, 2, {"type": "choose", "choice": 1})), ["choice_made"])
 	expect("... which is their own choice, not the server's", last_of(s, "choice_made")["auto"], false)
 
@@ -177,14 +177,14 @@ func running_out_of_time() -> void:
 		win(s, card)
 		var offered: Dictionary = last_of(s, "choice_needed")
 		var total: int = total_money(s)
-		var ev := GameScript.tick(s, int(s.term["act"]["choice"]["deadline"]))
+		var ev := GameScript.tick(s, int(s.choice["deadline"]))
 		var made: Dictionary = last_of(s, "choice_made")
 		var valid: bool = (made["choice"] in range(offered["labels"].size())) if offered["kind"] == "option" else (made["choice"] in offered["candidates"])
 		expect("card %d (%s): the server chooses a valid answer when time runs out" % [card, offered["kind"]], [types(ev).has("choice_made"), made["auto"], valid], [true, true, true])
-		expect("... the choice is gone, the turn can end, and the event is logged once", [s.term["act"].has("choice"), count(s.event_log, "choice_made"), types(send(s, 2, {"type": "end_turn"}))[0]], [false, 1, "turn_ended"])
+		expect("... the choice is gone, the turn can end, and the event is logged once", [not s.choice.is_empty(), count(s.event_log, "choice_made"), types(send(s, 2, {"type": "end_turn"}))[0]], [false, 1, "turn_ended"])
 		expect("... and all the money is still there", total_money(s), total)
 	s = win_with(SPEECH)
-	GameScript.tick(s, int(s.term["act"]["choice"]["deadline"]))
+	GameScript.tick(s, int(s.choice["deadline"]))
 	expect("it is too late to answer once the server has chosen", send(s, 2, {"type": "choose", "choice": 0})[0]["reason"], "There is nothing to choose.")
 
 	# At random, but reproducibly: the same game chooses the same, and the choices vary.
@@ -201,13 +201,13 @@ func running_out_of_time() -> void:
 		games += 1
 		GameScript.handle(g, 2, {"type": "pass_window"})
 		win(g, SPEECH)
-		GameScript.tick(g, int(g.term["act"]["choice"]["deadline"]))
+		GameScript.tick(g, int(g.choice["deadline"]))
 		picks[last_of(g, "choice_made")["choice"]] = true
 	expect("across games the random choice takes both options", picks.keys().size(), 2)
 	var a := win_with(TALENTS)
 	var b := win_with(TALENTS)
-	GameScript.tick(a, int(a.term["act"]["choice"]["deadline"]))
-	GameScript.tick(b, int(b.term["act"]["choice"]["deadline"]))
+	GameScript.tick(a, int(a.choice["deadline"]))
+	GameScript.tick(b, int(b.choice["deadline"]))
 	expect("the same game makes the same random choice", SerializerScript.state_to_json(a) == SerializerScript.state_to_json(b), true)
 
 	# A game saved while the choice waits keeps its deadline.
@@ -215,7 +215,7 @@ func running_out_of_time() -> void:
 	var errors: Array = []
 	var restored: GameStateScript = SerializerScript.state_from_json(SerializerScript.state_to_json(s), errors)
 	for g in [s, restored]:
-		GameScript.tick(g, int(g.term["act"]["choice"]["deadline"]))
+		GameScript.tick(g, int(g.choice["deadline"]))
 	expect("a restored game times out in the same way", [errors, SerializerScript.state_to_json(s) == SerializerScript.state_to_json(restored)], [[], true])
 
 

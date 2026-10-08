@@ -39,7 +39,7 @@ func every_listed_card() -> void:
 	for deck in ["settlement", "scandal"]:
 		for card in CardsScript.count(deck):
 			var effect: Dictionary = CardsScript.effects(deck, card)
-			if effect.is_empty() or effect.has("choose"):
+			if effect.is_empty() or effect.has("choose") or effect.has("keep"):
 				continue   # the cards that ask for a choice are tested in test_card_choices.gd
 			listed += 1
 			var s := new_game()

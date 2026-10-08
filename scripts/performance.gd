@@ -85,9 +85,6 @@ static func step(state: GameStateScript, performer: int) -> Array:
 		VOTING:
 			if state.clock_ms >= int(act["deadline"]) or _everyone_voted(state, act):
 				return _resolve(state, act)
-		DONE:
-			if act.has("choice"):
-				return CardEffectsScript.time_out(state)   # a choice nobody made in time is made for them
 	return []
 
 

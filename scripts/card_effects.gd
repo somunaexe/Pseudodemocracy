@@ -10,13 +10,16 @@ class_name CardEffects
 #
 #   sick > 0     the player is sick for that many rounds (unless already sick or immune: skipped, and said)
 #   immune > 0   the player can't be sickened for that many rounds
+# A card with "keep" goes into the player's hand instead (state.hands), to be played later with the command
+# "play_card" (see play()). The union cards do that: playing one founds a union (see Unions).
 # A card with "choose" stops the turn until the player chooses (command "choose", see choose()):
 #   option   one of the card's options, each its own psd/popularity
 #   role     any role the player can be given; they gain it
 #   player   another player in the game (with who = has_role, one who holds a role card). The card
 #            can then move the chosen player's popularity (target), swap all roles with them
 #            (swap_with) and give the drawer a role (gain_role).
-# The pending choice sits in state.term["act"]["choice"]; the turn can't end while it is there.
+# The pending choice sits in state.choice; its player's turn can't end while it is there. (A card played from the hand
+# can ask for one too, outside any turn.)
 # The player has choiceSeconds (10) on the server clock. If they let it run out, the server chooses at
 # random among the valid answers, with the game's own generator, and says so (auto = true).
 # What can't be done any more (a role card that has run out) is skipped and said so in the event.
@@ -29,6 +32,7 @@ const CardsScript = preload("res://scripts/cards.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
+const UnionsScript = preload("res://scripts/unions.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const RngScript = preload("res://scripts/rng.gd")
@@ -39,6 +43,12 @@ const EventsScript = preload("res://scripts/events.gd")
 static func apply(state: GameStateScript, player_id: int, deck: String, card: int) -> Array:
 	var effect: Dictionary = CardsScript.effects(deck, card)
 	var data: Dictionary = {"player": player_id, "deck": deck, "card": card, "by_table": effect.is_empty()}
+	if effect.has("keep"):
+		if not state.hands.has(player_id):
+			state.hands[player_id] = []
+		state.hands[player_id].append({"deck": deck, "card": card})   # kept to play later; nothing happens yet
+		data["kept"] = true
+		return [_log(state, "card_applied", data)]
 	_apply_money(state, player_id, effect, data)
 	var extra: Array = _apply_status(state, player_id, effect, data)
 	data["asks_choice"] = effect.has("choose")
@@ -116,7 +126,7 @@ static func _ask(state: GameStateScript, player_id: int, deck: String, card: int
 			shown["candidates"] = pending["candidates"]
 	if pending.has("candidates") and pending["candidates"].is_empty():
 		return [_log(state, "choice_unavailable", {"player": player_id, "deck": deck, "card": card, "kind": kind})]
-	state.term["act"]["choice"] = pending
+	state.choice = pending
 	return [_log(state, "choice_needed", shown)]
 
 
@@ -139,14 +149,52 @@ static func _player_candidates(state: GameStateScript, player_id: int, who: Stri
 	return result
 
 
+# --- commands ----------------------------------------------------------------------------
+
+static func handle(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
+	match str(command.get("type", "")):
+		"choose":
+			return choose(state, player_id, command)
+		"play_card":
+			return play(state, player_id, command)
+	return [_reject(player_id, "Unknown command.")]
+
+
+# --- playing a kept card -----------------------------------------------------------------
+#   { "type": "play_card", "index": the card's place in your hand, counting from 0 }
+
+static func play(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
+	if not player_id in state.player_ids or state.eliminated.get(player_id, false):
+		return [_reject(player_id, "You are not in the game.")]
+	if not state.choice.is_empty():
+		return [_reject(player_id, "Make your choice first.")]
+	var hand: Array = state.hands.get(player_id, [])
+	var index = command.get("index", null)
+	if typeof(index) != TYPE_INT or index < 0 or index >= hand.size():
+		return [_reject(player_id, "Choose a card in your hand by its number.")]
+	var kept: Dictionary = hand[index]
+	var effect: Dictionary = CardsScript.effects(kept["deck"], kept["card"])
+	var problem: String = UnionsScript.problem_founding(state, player_id)   # every kept card so far founds a union
+	if problem != "":
+		return [_reject(player_id, problem)]   # the card stays in the hand
+	hand.remove_at(index)
+	if hand.is_empty():
+		state.hands.erase(player_id)
+	var events: Array = [_log(state, "card_played", {"player": player_id, "deck": kept["deck"], "card": kept["card"]})]
+	if effect.has("found_union"):
+		events.append_array(_log_all(state, UnionsScript.found(state, player_id, effect["found_union"])))
+	else:
+		events.append_array(_ask(state, player_id, kept["deck"], kept["card"], effect["choose"]))   # which kind of union?
+	return events
+
+
 # --- choosing ----------------------------------------------------------------------------
 #   { "type": "choose", "choice": <an option number, a role name or a player id> }
 
 static func choose(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
-	var act: Dictionary = state.term.get("act", {})
-	if not act.has("choice"):
+	if state.choice.is_empty():
 		return [_reject(player_id, "There is nothing to choose.")]
-	var pending: Dictionary = act["choice"]
+	var pending: Dictionary = state.choice
 	if player_id != pending["player"]:
 		return [_reject(player_id, "It isn't your choice.")]
 	var value = command.get("choice", null)
@@ -156,13 +204,12 @@ static func choose(state: GameStateScript, player_id: int, command: Dictionary) 
 	return _make_choice(state, pending, value, false)
 
 
-# The time is up: choose at random for the player. Called by the performance when the clock passes the
+# The time is up: choose at random for the player. Called from the game loop when the clock passes the
 # deadline. Returns [] if there is no choice or time is left.
 static func time_out(state: GameStateScript) -> Array:
-	var act: Dictionary = state.term.get("act", {})
-	if not act.has("choice") or state.clock_ms < int(act["choice"]["deadline"]):
+	if state.choice.is_empty() or state.clock_ms < int(state.choice["deadline"]):
 		return []
-	var pending: Dictionary = act["choice"]
+	var pending: Dictionary = state.choice
 	var value: Variant = 0
 	match pending["kind"]:
 		"option":
@@ -174,14 +221,21 @@ static func time_out(state: GameStateScript) -> Array:
 
 static func _make_choice(state: GameStateScript, pending: Dictionary, value: Variant, auto: bool) -> Array:
 	var player_id: int = pending["player"]
-	state.term["act"].erase("choice")
+	state.choice = {}
 	var effect: Dictionary = CardsScript.effects(pending["deck"], pending["card"])
 	var data: Dictionary = {"player": player_id, "deck": pending["deck"], "card": pending["card"], "kind": pending["kind"], "choice": value, "auto": auto}
 	var events: Array = []
 	var skipped: Array = []
 	match pending["kind"]:
 		"option":
-			_apply_money(state, player_id, effect["choose"]["options"][value], data)
+			var option: Dictionary = effect["choose"]["options"][value]
+			_apply_money(state, player_id, option, data)
+			if option.has("found_union"):
+				var union_problem: String = UnionsScript.problem_founding(state, player_id)
+				if union_problem != "":
+					skipped.append("found a union: " + union_problem)
+				else:
+					events.append_array(UnionsScript.found(state, player_id, option["found_union"]))
 		"role":
 			_gain_role(state, player_id, str(value), events, skipped)
 		"player":

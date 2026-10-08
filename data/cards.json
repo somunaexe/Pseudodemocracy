@@ -157,6 +157,30 @@
  ],
  "effects": {
   "settlement": {
+   "7": {
+    "keep": true,
+    "found_union": "activist"
+   },
+   "8": {
+    "keep": true,
+    "found_union": "agbero"
+   },
+   "9": {
+    "keep": true,
+    "choose": {
+     "kind": "option",
+     "options": [
+      {
+       "label": "Found an Activist union",
+       "found_union": "activist"
+      },
+      {
+       "label": "Found an Agbero mob",
+       "found_union": "agbero"
+      }
+     ]
+    }
+   },
    "19": {
     "psd": 75
    },

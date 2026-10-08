@@ -117,6 +117,7 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 			events.append_array(NepoScript.become(state, event["heir"]))
 	events.append_array(_leave_unions(state, player_id))
 	_leave_term(state, player_id)
+	state.hands.erase(player_id)   # kept cards are lost with their owner
 
 	# Every event is logged exactly once, in order. The election and the re-checks log their own,
 	# so ours are written to the log first.

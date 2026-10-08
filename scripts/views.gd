@@ -17,18 +17,18 @@ const WillsScript = preload("res://scripts/wills.gd")
 const PUBLIC_FIELDS = [
 	"player_count", "turns_played", "leader_id", "leader_type", "sick",
 	"windows_used", "treasury", "psd", "debts", "debt_terms", "eliminated", "player_ids",
-	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "last_turn_player", "leader_goes_first", "levy_band",
+	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "choice", "last_turn_player", "leader_goes_first", "levy_band",
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).
 const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term"]
 
 # Extra keys a view carries that are not GameState fields.
-const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills"]
+const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills", "my_hand", "hand_sizes"]
 
 # Never leave the server. A will is secret until its owner is eliminated; then it is read out
 # in an event. rng_state is secret because whoever knew it could predict every random draw. (Exam keys will go here when they exist.) dose_secret is the bead in the Doctor's hand.
-const SERVER_ONLY_FIELDS = ["wills", "will_offers", "rng_state", "decks", "dose_secret", "role_cards", "agent_used"]
+const SERVER_ONLY_FIELDS = ["wills", "will_offers", "rng_state", "decks", "dose_secret", "role_cards", "agent_used", "hands"]
 
 
 # Fields of GameState that are in none of the three lists.
@@ -78,6 +78,10 @@ static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
 	view["event_log"] = visible_events(state.event_log, player_id)
 	# Your own will, and if you are a Lawyer the wills you keep: the only wills anyone is shown.
 	view["my_will"] = _copy(state.wills.get(player_id, {}))
+	view["my_hand"] = _copy(state.hands.get(player_id, []))   # your own kept cards; everyone sees how many each holds
+	view["hand_sizes"] = {}
+	for id in state.hands:
+		view["hand_sizes"][id] = state.hands[id].size()
 	view["kept_wills"] = {}
 	if RolesScript.has(state, player_id, "Lawyer"):
 		view["kept_wills"] = WillsScript.kept_by(state, player_id)

@@ -9,6 +9,7 @@ const SerializerScript = preload("res://scripts/serializer.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
 const DoctorScript = preload("res://scripts/doctor.gd")
+const UnionsScript = preload("res://scripts/unions.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const ScoringScript = preload("res://scripts/scoring.gd")
@@ -99,8 +100,8 @@ func _init() -> void:
 		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
 
 	# Choices come up too (only some cards ask for one, so across all the ordinary games).
-	for kind in ["choice_needed", "choice_made", "role_gained"]:
-		expect("the twelve ordinary games produced a '%s' event" % kind, all_types.has(kind), true)
+	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded"]:
+		expect("the twelve ordinary games produced a '%s' event (%d times)" % [kind, all_types.count(kind)], all_types.has(kind), true)
 
 	# The same seed always plays out the same way, to the last byte.
 	var a := play(5, 42, 5)
@@ -204,6 +205,12 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 func next_move(s: GameStateScript) -> Dictionary:
 	if not s.election.is_empty():
 		return election_move(s)
+	var choosing := choice_move(s)
+	if not choosing.is_empty():
+		return choosing
+	var played := hand_move(s)
+	if not played.is_empty():
+		return played
 	var dose := doctor_move(s)
 	if not dose.is_empty():
 		return dose
@@ -258,6 +265,33 @@ func doctor_move(s: GameStateScript) -> Dictionary:
 				return {"player": doctor_id, "command": {"type": "dose_offer", "patient": id, "kind": "heal", "dose": dose_name, "price": 20, "poison": poison}}
 			if SicknessScript.problem_sickening(s, id) == "":
 				return {"player": doctor_id, "command": {"type": "dose_offer", "patient": id, "kind": "sicken", "dose": "Concoction", "price": 10}}   # 2 rounds, so a later Agbo only shortens it
+	return {}
+
+
+# A card choice that is waiting, whoever it belongs to. Every kind is made, taking different answers in turn so
+# none is always the first, and some are never answered so the server chooses.
+func choice_move(s: GameStateScript) -> Dictionary:
+	if s.choice.is_empty():
+		return {}
+	var chooser: int = s.choice["player"]
+	if (s.current_round + chooser + s.turns_played) % 3 == 0:
+		return {"tick": int(s.choice["deadline"])}   # they never answered: the server chooses
+	var answer: Variant = 0
+	match s.choice["kind"]:
+		"option":
+			answer = (s.current_round + chooser) % s.choice["labels"].size()
+		"role", "player":
+			answer = s.choice["candidates"][(s.current_round + chooser) % s.choice["candidates"].size()]
+	return {"player": chooser, "command": {"type": "choose", "choice": answer}}
+
+
+# Players play the union cards they are keeping as soon as they can.
+func hand_move(s: GameStateScript) -> Dictionary:
+	var owners: Array = s.hands.keys()
+	owners.sort()
+	for owner in owners:
+		if not s.eliminated.get(owner, false) and UnionsScript.problem_founding(s, owner) == "":
+			return {"player": owner, "command": {"type": "play_card", "index": 0}}
 	return {}
 
 
@@ -379,18 +413,6 @@ func performance_move(s: GameStateScript) -> Dictionary:
 			if act["votes"].size() >= 2 and act["card"] % 2 == 0:
 				return {"tick": int(act["deadline"])}   # the rest never voted
 			return {"player": waiting[0], "command": {"type": "performance_vote", "good": (waiting[0] * 7 + act["card"]) % 3 != 0}}
-	if act.has("choice") and (s.current_round + performer) % 3 == 0:
-		return {"tick": int(act["choice"]["deadline"])}   # they never answered: the server chooses
-	if act.has("choice"):
-		# Every kind of choice is made, taking different answers in turn so none is always the first.
-		var choice: Dictionary = act["choice"]
-		var answer: Variant = 0
-		match choice["kind"]:
-			"option":
-				answer = (s.current_round + performer) % choice["labels"].size()
-			"role", "player":
-				answer = choice["candidates"][(s.current_round + performer) % choice["candidates"].size()]
-		return {"player": performer, "command": {"type": "choose", "choice": answer}}
 	return {"player": performer, "command": {"type": "end_turn"}}
 
 
@@ -465,6 +487,20 @@ func check_rules(s: GameStateScript, step: int) -> void:
 			problems.append(where + "player %d has a malformed will" % id)
 		if will.get("on_hold", false) != (int(will.get("arrears", 0)) > 0) and will.has("lawyer"):
 			problems.append(where + "player %d's will: on hold and arrears disagree" % id)
+	var in_union: Dictionary = {}
+	for union_id in s.unions:
+		var union: Dictionary = s.unions[union_id]
+		if union["members"].is_empty() or union["members"][0] != union["owner"]:
+			problems.append(where + "union %d: the Unionizer isn't its first member" % union_id)
+		for member in union["members"]:
+			if in_union.has(member):
+				problems.append(where + "player %d is in two unions" % member)
+			in_union[member] = union_id
+			if s.eliminated.get(member, false):
+				problems.append(where + "an eliminated player %d is in union %d" % [member, union_id])
+	for owner in s.hands:
+		if s.eliminated.get(owner, false) or s.hands[owner].is_empty():
+			problems.append(where + "player %d has a hand that should not exist" % owner)
 	if not s.role_cards.is_empty():
 		var stickers: int = 0
 		for card in s.role_cards:

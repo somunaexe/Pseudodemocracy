@@ -14,6 +14,7 @@ for (const name of DECKS) {
 }
 
 const ROLES = V.components.roleCards;
+const UNIONS = ['activist', 'agbero'];
 const MONEY_KEYS = ['psd', 'popularity'];
 const SELF_KEYS = ['psd', 'popularity', 'sick', 'immune'];   // what a card can do to its drawer (sick and immune must be positive)
 
@@ -30,7 +31,14 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 }
 
 function validate(deck, prefix, text, effect) {
-  const known = [...SELF_KEYS, 'choose', 'gain_role', 'swap_with', 'target'];
+  const known = [...SELF_KEYS, 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union'];
+  if ('keep' in effect) {
+    if (effect.keep !== true) fail(deck, prefix, '"keep" must be true');
+    for (const key of Object.keys(effect)) if (!['keep', 'found_union', 'choose'].includes(key)) fail(deck, prefix, `a kept card can't also have "${key}"`);
+    if (!('found_union' in effect) && !('choose' in effect)) fail(deck, prefix, 'a kept card must do something when played');
+  }
+  if ('found_union' in effect && !UNIONS.includes(effect.found_union)) fail(deck, prefix, `unknown union "${effect.found_union}"`);
+  if ('found_union' in effect && 'choose' in effect) fail(deck, prefix, 'a card founds a union directly or by a choice, not both');
   for (const key of Object.keys(effect)) if (!known.includes(key)) fail(deck, prefix, `unknown effect "${key}"`);
   checkAmounts(deck, prefix, text, Object.fromEntries(SELF_KEYS.filter((k) => k in effect).map((k) => [k, effect[k]])), SELF_KEYS);
   for (const k of ['sick', 'immune']) if (k in effect && effect[k] < 0) fail(deck, prefix, `${k} must be positive`);
@@ -44,7 +52,8 @@ function validate(deck, prefix, text, effect) {
     if (!Array.isArray(choose.options) || choose.options.length < 2) fail(deck, prefix, 'an option choice needs at least two options');
     for (const option of choose.options) {
       if (typeof option.label !== 'string' || !option.label) fail(deck, prefix, 'every option needs a label');
-      checkAmounts(deck, prefix, text, option, SELF_KEYS);
+      checkAmounts(deck, prefix, text, Object.fromEntries(Object.entries(option).filter(([k]) => k !== 'found_union')), SELF_KEYS);
+      if ('found_union' in option && !UNIONS.includes(option.found_union)) fail(deck, prefix, `unknown union "${option.found_union}"`);
     }
     for (const key of ['gain_role', 'swap_with', 'target']) if (key in effect) fail(deck, prefix, `"${key}" doesn't go with an option choice`);
   }

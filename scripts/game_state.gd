@@ -106,3 +106,10 @@ var role_cards: Dictionary = {}     # card id -> { "role": String, "sticker": bo
 
 # Secret Agents who have used their power this round (they get one use a round). Server only.
 var agent_used: Dictionary = {}     # player id -> true
+
+# A card choice waiting for its player (see CardEffects). Only one at a time. {} when there is none. Public.
+var choice: Dictionary = {}         # { "player", "deck", "card", "kind", "deadline", + "labels" or "candidates" }
+
+# Cards kept to play later ("play anytime"), by player. SECRET to the owner: the server keeps them, a view shows
+# each player their own hand and everyone the size of every hand.
+var hands: Dictionary = {}          # player id -> list of { "deck": String, "card": int }

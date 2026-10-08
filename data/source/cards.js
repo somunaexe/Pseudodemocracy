@@ -190,6 +190,11 @@ const effects = {
     ['Your cousin abroad wires funds', { psd: 80 }],
     ['You donate to charity live on camera', { psd: -30, popularity: 15 }],
     ['You lived by Dr. Sebi', { immune: 2 }],
+    // Cards the drawer KEEPS to play later ("play anytime"): keep: true. A union card founds a union when played;
+    // the player becomes its Unionizer (an Agbero mob's Capon). The third lets them choose which when they play it.
+    ["You've had enough", { keep: true, found_union: 'activist' }],
+    ["You're ready to stir up trouble", { keep: true, found_union: 'agbero' }],
+    ['The people are ready to move', { keep: true, choose: { kind: 'option', options: [{ label: 'Found an Activist union', found_union: 'activist' }, { label: 'Found an Agbero mob', found_union: 'agbero' }] } }],
     // Cards that ask the drawer to choose. `choose` is { kind: 'option' | 'role' | 'player', ... }:
     //   option  one of `options`, each its own effects (with a label shown to the player)
     //   role    any role the drawer can be given;   player  any other player in the game
