@@ -15,11 +15,12 @@ const percent = (name, slot, label, expect, source) => ({ name, slot, type: 'per
 const whole = (name, slot, label, expect, source, min = 0, max = 99999) => ({ name, slot, type: 'int', label, expect, source, min, max });
 const choice = (name, slot, label, expect, source, values) => ({ name, slot, type: 'enum', label, expect, source, values });
 const MULTIPLIERS = { single: 1, double: 2, triple: 3, quadruple: 4 };
+const COMPARISONS = { more: 1, less: -1, fewer: -1 };
 const SIGNS = { '\u2212': -1, '-': -1, '+': 1 };
 
 module.exports = [
   { chapter: 'Chapter I — Elections & the Treasury', articles: [
-    ['Exam Pass Mark', `Players pass the exam by answering __more__ than __${V.passMark}%__ of questions correctly.`, [percent('passMark', 1, 'the exam pass mark', V.passMark, 'passMark')]],
+    ['Exam Pass Mark', `Players pass the exam by answering __more__ than __${V.passMark}%__ of questions correctly.`, [choice('passCompare', 0, 'the exam pass comparison', 'more', null, COMPARISONS), percent('passMark', 1, 'the exam pass mark', V.passMark, 'passMark')]],
     ['Tax', `Tax: __${V.taxRate}%__ of income goes to __the treasury__ every __round__.`, [percent('taxRate', 0, 'the tax rate', V.taxRate, 'taxRate')]],
     ['Levy', `__Every__ __player__ __pays__ a levy of __${V.levy.start}__ __PSD__ to __the treasury__ every round, regardless of income. The levy must stay within the levy band.`, [whole('levy', 3, 'the levy', V.levy.start, 'levy.start')]],
     ['Levy Band', `__The Leader__ sets the levy between ${V.levy.bandLow} and ${V.levy.bandHigh} PSD.`],

@@ -44,3 +44,10 @@ var wills: Dictionary = {}          # player id -> { "psd_heir": int, "on_hold":
 
 # Nepo Babies: the heirs whose popularity is temporarily reduced (Articles 30 and 31).
 var nepo: Dictionary = {}           # player id -> step 1, 2 or 3 of the debuff; absent = not a Nepo Baby
+
+# The election of the next Leader (see Election). Part of it is secret: Views removes it.
+enum ElectionPhase { NONE, EXAM_WRITING, EXAM_ANSWERING, VOTING }
+var election: Dictionary = {}       # {} when there is no election under way
+
+# The server's random number generator (see Rng). SECRET: whoever knew it could predict every draw.
+var rng_state: int = 2463534242

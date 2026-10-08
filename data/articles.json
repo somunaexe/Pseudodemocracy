@@ -70,6 +70,19 @@
      ],
      "bindings": [
       {
+       "name": "passCompare",
+       "slot": 0,
+       "type": "enum",
+       "label": "the exam pass comparison",
+       "expect": "more",
+       "source": null,
+       "values": {
+        "more": 1,
+        "less": -1,
+        "fewer": -1
+       }
+      },
+      {
        "name": "passMark",
        "slot": 1,
        "type": "percent",

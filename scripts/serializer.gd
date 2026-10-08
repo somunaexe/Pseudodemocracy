@@ -17,7 +17,7 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 
 # Bump this whenever GameState fields or enum values change meaning, so an old save is
 # refused instead of being silently misread.
-const SCHEMA_VERSION := 3   # 2: added wills; 3: added nepo
+const SCHEMA_VERSION := 4   # 2: added wills; 3: added nepo; 4: added election and rng_state
 const PAIRS_KEY := "$pairs"
 const MAX_DEPTH := 32
 const MAX_COMMAND_BYTES := 65536

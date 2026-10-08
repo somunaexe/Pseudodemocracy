@@ -19,14 +19,14 @@ const PUBLIC_FIELDS = [
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).
-const REDACTED_FIELDS = ["amend", "event_log", "popularity"]
+const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election"]
 
 # Extra keys a view carries that are not GameState fields.
 const DERIVED_KEYS = ["popularity_base"]
 
 # Never leave the server. A will is secret until its owner is eliminated; then it is read out
-# in an event. (Role cards, exam keys and the Doctor's beads will go here when they exist.)
-const SERVER_ONLY_FIELDS = ["wills"]
+# in an event. rng_state is secret because whoever knew it could predict every random draw. (Role cards, exam keys and the Doctor's beads will go here when they exist.)
+const SERVER_ONLY_FIELDS = ["wills", "rng_state"]
 
 
 # Fields of GameState that are in none of the three lists.
@@ -71,6 +71,7 @@ static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
 	view["popularity"] = effective
 	view["popularity_base"] = PopularityScript.bases(state)
 	view["amend"] = _amend_view(state.amend, player_id)
+	view["election"] = _election_view(state.election, player_id)
 	view["event_log"] = visible_events(state.event_log, player_id)
 	return view
 
@@ -90,6 +91,30 @@ static func _amend_view(amend: Dictionary, player_id: int) -> Dictionary:
 	var voters: Array = votes.keys()
 	voters.sort()
 	view["voted"] = voters
+	if votes.has(player_id):
+		view["my_vote"] = votes[player_id]
+	return view
+
+
+# The election, without the answer key, anyone's exam answers or anyone's ballot. Everyone sees
+# WHO has answered and WHO has voted; you also see your own answers and ballot.
+static func _election_view(election: Dictionary, player_id: int) -> Dictionary:
+	if election.is_empty():
+		return {}
+	var view: Dictionary = election.duplicate(true)
+	view.erase("key")
+	var answers: Dictionary = view.get("answers", {})
+	var votes: Dictionary = view.get("votes", {})
+	view.erase("answers")
+	view.erase("votes")
+	var answered: Array = answers.keys()
+	answered.sort()
+	var voted: Array = votes.keys()
+	voted.sort()
+	view["answered"] = answered
+	view["voted"] = voted
+	if answers.has(player_id):
+		view["my_answers"] = answers[player_id]
 	if votes.has(player_id):
 		view["my_vote"] = votes[player_id]
 	return view

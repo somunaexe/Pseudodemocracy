@@ -52,6 +52,10 @@ const V = {
   // Inheritance
   nepoDebuff: [30, 20, 10],
 
+  // Elections (digital version)
+  electionRunoffs: 1,             // a tied vote is re-run among the tied candidates this many times, then decided by lot
+  examMaxQuestions: 20, examMaxOptions: 6, examTextMax: 200,   // limits on what a Leader may write in an exam
+
   // Debt (digital version)
   debtMaxTerms: 3,                // eliminated when still in debt at the end of this many of their own turns
 };

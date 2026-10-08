@@ -50,6 +50,20 @@ top and lifts by itself. What counts for being CANCELLED, for ranking and for wh
 **effective** popularity: base + modifier, kept on the track. `Popularity.change_base` is how votes
 and fines move it. `TurnEnd.end_turn` is the single call for the end of a player's own turn.
 
+## The election (scripts/election.gd) and random numbers (scripts/rng.gd)
+
+Choosing the next Leader is a second state machine beside the amendment flow:
+
+```
+begin("term_ended") --> EXAM_WRITING --write_exam--> EXAM_ANSWERING --last answers--> VOTING
+begin("first" | "vacancy") ------------------------------------------------------> VOTING
+VOTING --last ballot--> winner (or one runoff, then a lot) --> role card draw --> NONE
+```
+
+The answer key, exam answers and ballots are secret in server state; events carry only THAT someone
+answered or voted. `Rng` is a one-number seedable generator whose state (`rng_state`) never leaves the
+server.
+
 ## Rules of the codebase
 
 - **Never read `state.popularity` directly. Use `Popularity.effective` (or `.base`).**
@@ -100,7 +114,7 @@ The server holds the whole truth; a phone only gets a **view**.
 settles the estate (to the heir, or the treasury), reassigns debts owed to the dead player,
 ends union memberships, and re-checks any vote waiting on them. It returns events like
 everything else. `Debt.end_of_turn` only reports that the limit was reached.
-Schema version 2 added `GameState.wills` (server-only; see Views).
+Schema version 2 added `GameState.wills` (server-only; see Views). Version 4 added the election and `rng_state`.
 
 ## Not built yet
 

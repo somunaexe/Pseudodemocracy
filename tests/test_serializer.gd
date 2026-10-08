@@ -193,6 +193,13 @@ func rich_state() -> GameStateScript:
 	s.heirs[6] = 4
 	s.wills[2] = {"psd_heir": 4, "on_hold": false}
 	s.nepo[4] = 2
+	s.rng_state = 3735928559
+	s.election = {
+		"phase": GameStateScript.ElectionPhase.VOTING, "reason": "term_ended", "runoff": 1,
+		"exam": {"questions": [{"text": "Who rules?", "options": ["Me", "You"]}]}, "key": [0],
+		"takers": [2, 3, 4], "answers": {2: [0], 3: [1], 4: [0]},
+		"voters": [2, 3, 4], "candidates": [2, 3], "votes": {2: 3, 4: 2},
+	}
 
 	# 1) an amendment that is voted on (so the log holds a result with player ids as keys)
 	send(s, 1, propose(s, INAUG, {1: "30%"}))

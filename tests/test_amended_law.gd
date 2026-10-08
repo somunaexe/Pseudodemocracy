@@ -149,7 +149,7 @@ func an_eliminated_leader() -> void:
 	var s := open_vote(make_state(), TAX, {0: "30%"}, INAUG)
 	send(s, 2, {"type": "vote", "keep": true})
 	var ev := ElimScript.eliminate(s, 1, "test")
-	expect("the amendment is abandoned and the seat is vacant", types(ev), ["player_eliminated", "estate_settled", "amendment_abandoned", "leader_vacant"])
+	expect("the amendment is abandoned, the seat is vacant, and a new Leader is voted for", types(ev), ["player_eliminated", "estate_settled", "amendment_abandoned", "leader_vacant", "election_started", "vote_started"])
 	expect("no Leader", s.leader_id, -1)
 	expect("nothing in progress", s.amend.is_empty(), true)
 	expect("the wording is unchanged", ConstitutionScript.to_text(s.articles[TAX]), "Tax: 20% of income goes to the treasury every round.")
@@ -161,7 +161,7 @@ func an_eliminated_leader() -> void:
 
 	s = make_state()
 	ev = ElimScript.eliminate(s, 1, "test")
-	expect("a Leader with no amendment under way: just the vacancy", types(ev), ["player_eliminated", "estate_settled", "leader_vacant"])
+	expect("a Leader with no amendment under way: the vacancy and the election", types(ev), ["player_eliminated", "estate_settled", "leader_vacant", "election_started", "vote_started"])
 	ev = ElimScript.eliminate(s, 2, "test")
 	expect("an ordinary player leaves the seat alone", [types(ev).has("leader_vacant"), s.leader_id], [false, -1])
 

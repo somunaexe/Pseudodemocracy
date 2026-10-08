@@ -110,6 +110,10 @@
   20,
   10
  ],
+ "electionRunoffs": 1,
+ "examMaxQuestions": 20,
+ "examMaxOptions": 6,
+ "examTextMax": 200,
  "debtMaxTerms": 3,
  "startMoney": 1000,
  "treasuryReserve": 2550,

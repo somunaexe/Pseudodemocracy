@@ -12,11 +12,12 @@ class_name Elimination
 # Debts owed TO the dead player go to the heir too, or are cleared if there is no heir.
 # Their union memberships end (Article 25).
 #
-# If the eliminated player is the Leader the seat becomes vacant (a new Leader is voted for).
+# If the eliminated player is the Leader the seat becomes vacant and a new Leader is voted for
+# (an election with no exam, because there is nobody to write it).
 #
 # Every heir becomes a Nepo Baby (see Nepo).
 #
-# Not built yet: roles, and the election itself.
+# Not built yet: roles.
 # See docs/design_decisions.md.
 
 const GameStateScript = preload("res://scripts/game_state.gd")
@@ -25,6 +26,7 @@ const LawScript = preload("res://scripts/law.gd")
 const NepoScript = preload("res://scripts/nepo.gd")
 const EventsScript = preload("res://scripts/events.gd")
 const FlowScript = preload("res://scripts/amendment_flow.gd")
+const ElectionScript = preload("res://scripts/election.gd")
 
 
 # Call at the END of a player's own turn. Counts a debt term and eliminates them if it was
@@ -97,7 +99,10 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 	events.append_array(_leave_unions(state, player_id))
 	if player_id == state.leader_id:
 		events.append_array(_vacate_seat(state))
-	events.append_array(FlowScript.recheck(state))   # an amendment vote may now be complete
+		if state.election.is_empty():
+			events.append_array(ElectionScript.begin(state, "vacancy"))   # a new Leader is voted for
+	events.append_array(FlowScript.recheck(state))        # an amendment vote may now be complete
+	events.append_array(ElectionScript.recheck(state))    # so may an exam or an election
 	return events
 
 

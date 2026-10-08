@@ -116,7 +116,7 @@ Handbook sentences that now contradict "an heir cannot refuse":
 
 Decided, not built yet:
 - **Nepo Baby debuff.** Built; see the Nepo Baby section below.
-- **The Leader is eliminated.** The seat is vacant and a new Leader is voted for. Built: the seat is vacated and an amendment in progress is abandoned (its window stays used). Not built: the election itself.
+- **The Leader is eliminated.** Built: the seat is vacated, an amendment in progress is abandoned (its window stays used), and an election with no exam starts (see Election).
 
 Not built yet, and why:
 - **Roles** don't exist in the game state yet, so they can't be inherited or rescinded.
@@ -132,7 +132,7 @@ Not built yet, and why:
 
 | Question | Decision | Status |
 |---|---|---|
-| Which words does the game enforce? | A "binding" ties one highlighted word to one rule (data/source/articles.js). 12 of the 116 highlighted words are bound today. | **Built** |
+| Which words does the game enforce? | A "binding" ties one highlighted word to one rule (data/source/articles.js). 13 of the 116 highlighted words are bound today. | **Built** |
 | What about the other 104 highlighted words? | Free text, enforced by the table as in the physical game. The Constitution shows them but the game does not apply them. | **Built** |
 | What may a Leader write in a bound word? | A word the game can read: a whole percentage (30%), a whole number in a range, or one of a fixed list of words (single, double, triple, quadruple; plus or minus). Anything else fails the check. | **Built**, please confirm |
 | What happens if they write something else (e.g. "banana" as a tax rate)? | It is a failed check, because they chose to write it: 100 PSD, popularity loss, window used. No free retry. | **Built** (rule changed by the designer) |
@@ -144,6 +144,7 @@ Rules enforced today:
 
 | Rule | Article | Reads as |
 |---|---|---|
+| passCompare | 1 Exam Pass Mark | more / less / fewer ("more than 50%") |
 | passMark | 1 Exam Pass Mark | percentage |
 | taxRate | 2 Tax | percentage |
 | levy | 3 Levy | whole number |
@@ -186,3 +187,36 @@ Rule for the code: nothing outside `Popularity` reads `state.popularity` (a test
 The end of a player's turn is now `TurnEnd.end_turn` (debt term, possible elimination, then the Nepo step).
 
 Handbook wording to check: Article 31 says "over the next 3 rounds" and the handbook says "removed in the 4th round"; the digital version counts the Nepo Baby's own turns, not table rounds.
+
+## The Leader election (built: scripts/election.gd, rng.gd; 170 + 12 checks)
+
+Round order from the handbook: Exam, Vote, Role card draw, then the Inauguration amendment window. Same pattern as the amendment flow: commands in (`write_exam`, `skip_exam`, `answer_exam`, `cast_vote`), events out, a state machine in between.
+
+| Question | Decision | Status |
+|---|---|---|
+| When is there an exam? | Only when a term has ended normally and the Leader can write one. Not in the first election, not after a vacancy (nobody to write it), not if the Leader is sick or CANCELLED ("no exam ready: everyone votes and runs"). | **Built** |
+| What does the Leader write? | 5 to 20 multiple-choice questions, each with 2 to 6 options and one right answer (the limits are in game_data). The answer key is sealed in server state. | **Built** |
+| Who sits it? | Everyone alive and not sick, except the Leader. | **Built** |
+| When is it marked? | When everyone who can sit it has handed in answers. The key is then revealed. | **Built** |
+| How is it marked? | "More than" the pass mark, with no fractions (3 of 6 is exactly 50% and does not pass). The pass mark AND the word "more" are in Article 1 and can be amended (to "less" or "fewer", the Exam rule flips). | **Built** |
+| The Leader's own exam. | The Leader is counted as having passed it. | Assumed, please confirm |
+| Who can vote and stand? | Only players who passed. Sick and eliminated players can't take part (Article 21). A CANCELLED player can vote but not stand. | **Built** (CANCELLED: assumed) |
+| Is there a "running" step? | No. Any eligible player can be voted for. | Assumed, please confirm |
+| Can you vote for yourself? | Yes. | Assumed, please confirm |
+| Is the vote secret? | Yes, until all ballots are in: everyone sees THAT you voted, never for whom. Then the result reveals every ballot. | **Built** |
+| Who wins? | The most votes. | Assumed, please confirm |
+| A tie. | The tied candidates are voted on again, once. A second tie is decided by lot. | Assumed, please confirm |
+| Only one candidate can stand. | They win unopposed, with no ballots. | **Built** |
+| Nobody who passed can stand. | The exam is void and everyone eligible may vote and stand. | Assumed |
+| Nobody can stand at all. | The election fails and is cleared. | Assumed |
+| The Leader role card draw. | One of 5 cards (Dictator 1, President 3, Commander 1) at random, put back after each draw, so a coup or election draws independently. | Assumed, please confirm |
+| The outgoing Leader's score. | A term that ends normally is credited 2 half-rounds when the election begins. A term ended by elimination is credited nothing. | Assumed, please confirm |
+| What starts a new term? | `install_leader`: the draw, 0 turns played, all three amendment windows open again, and the round counter goes up by one (except the first election). A coup will use the same function. | **Built** |
+| What if the exam never arrives? | The server can skip it (`skip_exam`, server only). It also skips itself if the Leader is eliminated while writing. | **Built** |
+| What if someone leaves mid-election? | An elimination re-checks the exam and the vote, so it finishes if they were the last one awaited. Ballots for a dead candidate are discarded. | **Built** |
+
+Random numbers: `Rng` is a small seedable generator whose whole state is one whole number (`rng_state`), so a save restores it exactly and tests are repeatable. `rng_state` is server-only: whoever knew it could predict every draw. `Rng.seed_from_clock` must be called when a real game is created.
+
+Not built yet: the exam's effect cards (skip an exam, rig the marking), Loyalists voting with you, "can't run for 2 terms" (Scandal 20), and the trigger that starts `Election.begin("term_ended")` when the Farewell window closes.
+
+Handbook wording to settle: the handbook never says how ties, self-votes or the running step work, nor whether the card is put back.
