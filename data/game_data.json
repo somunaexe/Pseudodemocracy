@@ -46,6 +46,7 @@
  "discussionMinutes": 1,
  "malpracticeFine": 25,
  "performanceSeconds": 60,
+ "choiceSeconds": 10,
  "performanceVoteSeconds": 15,
  "amendPenalty": 100,
  "swing": [

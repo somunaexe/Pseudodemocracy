@@ -291,7 +291,8 @@ Some cards need the player to decide. The card is drawn and applied as far as it
 | Everyone sees the choice? | Yes, and who it is waiting on. | **Built** |
 | What if there is nothing to choose from? | The card says so ("choice_unavailable") and the turn carries on. Example: you already hold every role. | **Built** |
 | What if the effect can't be done after the choice? | That part is skipped and the event says why. Example: "you gain the Lawyer role" when you are already a Lawyer; the chosen player still gains their popularity. | Assumed |
-| What if the player never chooses? | Nothing happens: the turn waits. There is no time limit yet, nor for exams or votes outside the performance. A real server will need a rule for absent players. | **Known gap** |
+| What if the player never chooses? | They have 10 seconds on the server clock (`choiceSeconds`). Then the server chooses at random among the valid answers, using the game's own random generator, so a saved game stays reproducible. The event says it was automatic. | Confirmed |
+| Do exams and other votes time out too? | Not yet. Only the performance, its vote and the choice have timers. A real server will need a rule for absent players everywhere. | **Known gap** |
 | Can a card choose several players ("choose up to 3")? | Not yet. One choice of one thing. | Next step |
 
 ### Income (built: scripts/income.gd)

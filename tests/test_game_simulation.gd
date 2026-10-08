@@ -196,6 +196,8 @@ func performance_move(s: GameStateScript) -> Dictionary:
 			if act["votes"].size() >= 2 and act["card"] % 2 == 0:
 				return {"tick": int(act["deadline"])}   # the rest never voted
 			return {"player": waiting[0], "command": {"type": "performance_vote", "good": (waiting[0] * 7 + act["card"]) % 3 != 0}}
+	if act.has("choice") and (s.current_round + performer) % 3 == 0:
+		return {"tick": int(act["choice"]["deadline"])}   # they never answered: the server chooses
 	if act.has("choice"):
 		# Every kind of choice is made, taking different answers in turn so none is always the first.
 		var choice: Dictionary = act["choice"]

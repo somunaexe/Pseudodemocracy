@@ -26,6 +26,7 @@ func _init() -> void:
 	nothing_to_choose_from()
 	who_may_choose()
 	logging_views_and_saves()
+	running_out_of_time()
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -155,6 +156,67 @@ func logging_views_and_saves() -> void:
 		send(g, 2, {"type": "end_turn"})
 	expect("... and carries on exactly as the original does", SerializerScript.state_to_json(s) == SerializerScript.state_to_json(restored), true)
 	expect("each event was logged once", [count(s.event_log, "choice_made"), count(s.event_log, "role_gained"), count(s.event_log, "choice_needed")], [1, 1, 1])
+
+
+func running_out_of_time() -> void:
+	var s := win_with(SPEECH)
+	var needed: Dictionary = last_of(s, "choice_needed")
+	var deadline: int = int(s.term["act"]["choice"]["deadline"])
+	expect("a choice has 10 seconds on the server clock", [needed["seconds"], needed["ends_at_ms"], deadline - s.clock_ms], [10, deadline, 10000])
+	expect("before the deadline the server does nothing", [types(GameScript.tick(s, deadline - 1)), s.term["act"].has("choice")], [[], true])
+	expect("... and the player can still choose in the last millisecond", types(send(s, 2, {"type": "choose", "choice": 1})), ["choice_made"])
+	expect("... which is their own choice, not the server's", last_of(s, "choice_made")["auto"], false)
+
+	# Each kind of choice is made at random from the valid answers.
+	var cases: Array = [SPEECH, TALENTS, PRAISE, SWAP]
+	for card in cases:
+		s = new_turn()
+		if card == SWAP:
+			RolesScript.grant(s, 3, "Doctor")
+			RolesScript.grant(s, 4, "Agbero")
+		win(s, card)
+		var offered: Dictionary = last_of(s, "choice_needed")
+		var total: int = total_money(s)
+		var ev := GameScript.tick(s, int(s.term["act"]["choice"]["deadline"]))
+		var made: Dictionary = last_of(s, "choice_made")
+		var valid: bool = (made["choice"] in range(offered["labels"].size())) if offered["kind"] == "option" else (made["choice"] in offered["candidates"])
+		expect("card %d (%s): the server chooses a valid answer when time runs out" % [card, offered["kind"]], [types(ev).has("choice_made"), made["auto"], valid], [true, true, true])
+		expect("... the choice is gone, the turn can end, and the event is logged once", [s.term["act"].has("choice"), count(s.event_log, "choice_made"), types(send(s, 2, {"type": "end_turn"}))[0]], [false, 1, "turn_ended"])
+		expect("... and all the money is still there", total_money(s), total)
+	s = win_with(SPEECH)
+	GameScript.tick(s, int(s.term["act"]["choice"]["deadline"]))
+	expect("it is too late to answer once the server has chosen", send(s, 2, {"type": "choose", "choice": 0})[0]["reason"], "There is nothing to choose.")
+
+	# At random, but reproducibly: the same game chooses the same, and the choices vary.
+	var picks: Dictionary = {}
+	var games: int = 0
+	for seed_value in range(1, 400):
+		if games >= 25:
+			break
+		var g := GameScript.new_game([1, 2, 3, 4, 5], seed_value)
+		for id in [1, 2, 3, 4, 5]:
+			GameScript.handle(g, id, {"type": "cast_vote", "candidate": 2})
+		if g.leader_type != PRESIDENT:
+			continue
+		games += 1
+		GameScript.handle(g, 2, {"type": "pass_window"})
+		win(g, SPEECH)
+		GameScript.tick(g, int(g.term["act"]["choice"]["deadline"]))
+		picks[last_of(g, "choice_made")["choice"]] = true
+	expect("across games the random choice takes both options", picks.keys().size(), 2)
+	var a := win_with(TALENTS)
+	var b := win_with(TALENTS)
+	GameScript.tick(a, int(a.term["act"]["choice"]["deadline"]))
+	GameScript.tick(b, int(b.term["act"]["choice"]["deadline"]))
+	expect("the same game makes the same random choice", SerializerScript.state_to_json(a) == SerializerScript.state_to_json(b), true)
+
+	# A game saved while the choice waits keeps its deadline.
+	s = win_with(PRAISE)
+	var errors: Array = []
+	var restored: GameStateScript = SerializerScript.state_from_json(SerializerScript.state_to_json(s), errors)
+	for g in [s, restored]:
+		GameScript.tick(g, int(g.term["act"]["choice"]["deadline"]))
+	expect("a restored game times out in the same way", [errors, SerializerScript.state_to_json(s) == SerializerScript.state_to_json(restored)], [[], true])
 
 
 # --- helpers -----------------------------------------------------------------------------

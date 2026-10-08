@@ -15,6 +15,8 @@ class_name CardEffects
 #            can then move the chosen player's popularity (target), swap all roles with them
 #            (swap_with) and give the drawer a role (gain_role).
 # The pending choice sits in state.term["act"]["choice"]; the turn can't end while it is there.
+# The player has choiceSeconds (10) on the server clock. If they let it run out, the server chooses at
+# random among the valid answers, with the game's own generator, and says so (auto = true).
 # What can't be done any more (a role card that has run out) is skipped and said so in the event.
 # Total money never changes.
 #
@@ -25,6 +27,8 @@ const CardsScript = preload("res://scripts/cards.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const RolesScript = preload("res://scripts/roles.gd")
+const GameDataScript = preload("res://scripts/game_data.gd")
+const RngScript = preload("res://scripts/rng.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 
@@ -66,8 +70,10 @@ static func _apply_money(state: GameStateScript, player_id: int, effect: Diction
 
 static func _ask(state: GameStateScript, player_id: int, deck: String, card: int, spec: Dictionary) -> Array:
 	var kind: String = spec["kind"]
-	var pending: Dictionary = {"player": player_id, "deck": deck, "card": card, "kind": kind}
-	var shown: Dictionary = {"player": player_id, "deck": deck, "card": card, "kind": kind}
+	var seconds: int = GameDataScript.get_int("choiceSeconds")
+	var ends_at: int = state.clock_ms + seconds * 1000
+	var pending: Dictionary = {"player": player_id, "deck": deck, "card": card, "kind": kind, "deadline": ends_at}
+	var shown: Dictionary = {"player": player_id, "deck": deck, "card": card, "kind": kind, "seconds": seconds, "ends_at_ms": ends_at}
 	match kind:
 		"option":
 			var labels: Array = []
@@ -120,10 +126,30 @@ static func choose(state: GameStateScript, player_id: int, command: Dictionary) 
 	var problem: String = _problem_with(pending, value)
 	if problem != "":
 		return [_reject(player_id, problem)]
-	act.erase("choice")
+	return _make_choice(state, pending, value, false)
 
+
+# The time is up: choose at random for the player. Called by the performance when the clock passes the
+# deadline. Returns [] if there is no choice or time is left.
+static func time_out(state: GameStateScript) -> Array:
+	var act: Dictionary = state.term.get("act", {})
+	if not act.has("choice") or state.clock_ms < int(act["choice"]["deadline"]):
+		return []
+	var pending: Dictionary = act["choice"]
+	var value: Variant = 0
+	match pending["kind"]:
+		"option":
+			value = RngScript.below(state, pending["labels"].size())
+		"role", "player":
+			value = RngScript.pick(state, pending["candidates"])
+	return _make_choice(state, pending, value, true)
+
+
+static func _make_choice(state: GameStateScript, pending: Dictionary, value: Variant, auto: bool) -> Array:
+	var player_id: int = pending["player"]
+	state.term["act"].erase("choice")
 	var effect: Dictionary = CardsScript.effects(pending["deck"], pending["card"])
-	var data: Dictionary = {"player": player_id, "deck": pending["deck"], "card": pending["card"], "kind": pending["kind"], "choice": value}
+	var data: Dictionary = {"player": player_id, "deck": pending["deck"], "card": pending["card"], "kind": pending["kind"], "choice": value, "auto": auto}
 	var events: Array = []
 	var skipped: Array = []
 	match pending["kind"]:
