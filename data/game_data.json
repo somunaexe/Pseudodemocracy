@@ -120,6 +120,8 @@
  "concoctionRounds": 2,
  "doseOfferSeconds": 30,
  "doseGuessSeconds": 10,
+ "commandVoteMultiplier": 2,
+ "scenarioMax": 280,
  "unionInviteSeconds": 30,
  "willOfferSeconds": 30,
  "willPriceMax": 5000,

@@ -429,10 +429,22 @@ From the handbook (Part 6, Activists & Agberos, Articles 7 to 17). Founding a gr
 | Does an Agbero mob disperse when it acts? | Yes, at once (Article 13). It used not to; the confront now ends with `union_dispersed`. | **Built** (new) |
 | Can Agberos re-form? | After a mob disperses, any of its members who still hold an Agbero role card may form a new one straight away (`union_reform`), once. A union that merely dissolves gives no such right. | Confirmed (handbook); "once" is assumed |
 | Does the Activist or Agbero role card matter otherwise? | Not for anything but re-forming. Holding the role earns nothing (they earn no income) and is not needed to be in a union. | Assumed, please confirm |
-| **Not built: Command Performance** (Articles 16 and 17) | "The Leader performs a scenario scripted by the unionizer; the Leader's popularity is voted on after." If the Leader is in the union, "its actions target a rival of the Leader's choice". | **Needs your answers** |
-| **Not built: shared and personal gains** (Articles 12 and 13) | "Activist gains and losses are shared; Agbero gains and losses are personal." The handbook gives no numbers for what is gained or lost. | **Needs your answers** |
+| Command Performance (Articles 16 and 17) | **Built**, see below. | **Built** |
+| "Shared" and "personal" gains (Articles 12 and 13) | Only a description of how the two groups mirror each other ("both sides of the same coin"). It adds no rule. | Confirmed (your answer) |
 
-The questions I need answered before Command Performance: Who writes the scenario, how long is it, and is it free text? Does the Leader then perform it for the usual 60 seconds, with everyone else (members included) voting Good or Bad? Whose popularity moves by what? And what does "shared" mean for an Activist union (do all members gain or lose what the Leader's vote gives)?
+### Command Performance (built: scripts/command_performance.gd)
+
+| Question | Decision | Status |
+|---|---|---|
+| Who writes the scenario? | The group's leader (Unionizer or Capon), in free text, 1 to 280 characters. | Confirmed (free text); the limit is mine |
+| Who performs it? | A player the leader names, for 60 seconds. It can be a regular player or the Leader, as long as they are not in the group. They may finish early. | Confirmed (you said it now reaches regular players) |
+| Who votes? | Everyone except the performer, Good or Bad, for 15 seconds, or until all have voted. | Confirmed |
+| What moves? | The performer's popularity, by exactly +swing (more Good) or -swing (more Bad). A tie changes nothing. No Settlement or Scandal card. | Confirmed |
+| The "union's total popularity vote is doubled". | Each member of the commanding union or mob counts twice, whether it is Activists or Agberos, and even after a mob has dispersed. | Confirmed (the handbook text you gave); applied to the vote on the performance, as a fixed 2 |
+| When? | Only on the Unionizer's (or Capon's) OWN turn, once their own performance has finished. Not on the Leader's turn, even if the Leader is a member. The turn can't end until it is over. Once per group per turn, one at a time. Needs 2 members. | Confirmed (your answer); the rest is assumed |
+| Article 17: the Leader is in the group. | The Unionizer still commands on their own turn, but the Leader chooses the target ("a rival of the Leader's choice"), among players outside the group. They have 10 seconds; if they don't choose, the server picks at random. | Confirmed (Article 17); the timing is mine |
+| Does a mob disperse? | Yes, the instant it acts (Article 13); its Agbero-card holders may re-form. An Activist union lingers. | Confirmed |
+| When is it void? | If the term ends (a coup, the Leader eliminated) or the performer leaves the game. | Assumed |
 
 ## Roles (skeleton built: scripts/roles.gd)
 

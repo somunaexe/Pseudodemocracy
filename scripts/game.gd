@@ -21,6 +21,7 @@ const DoctorScript = preload("res://scripts/doctor.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const SecretAgentScript = preload("res://scripts/secret_agent.gd")
+const CommandPerformanceScript = preload("res://scripts/command_performance.gd")
 const GendersScript = preload("res://scripts/genders.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const WillsScript = preload("res://scripts/wills.gd")
@@ -38,6 +39,7 @@ const SERVER_ID := 0
 
 const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
 const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
+const COMMAND_COMMANDS := ["union_command", "command_target", "command_finish", "command_vote"]
 const GENDER_COMMANDS := ["set_gender"]
 const UNION_COMMANDS := ["union_recruit", "union_respond", "union_leave", "union_kick", "union_disperse", "union_reform"]
 const CARD_COMMANDS := ["choose", "play_card"]
@@ -90,6 +92,8 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 		events = ElectionScript.handle(state, player_id, command)
 	elif type in TERM_COMMANDS:
 		events = TermLoopScript.handle(state, player_id, command)
+	elif type in COMMAND_COMMANDS:
+		events = CommandPerformanceScript.handle(state, player_id, command)
 	elif type in GENDER_COMMANDS:
 		events = GendersScript.handle(state, player_id, command)
 	elif type in UNION_COMMANDS:

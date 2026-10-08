@@ -35,6 +35,7 @@ const ElectionScript = preload("res://scripts/election.gd")
 const LevyBandScript = preload("res://scripts/levy_band.gd")
 const IncomeScript = preload("res://scripts/income.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
+const CommandPerformanceScript = preload("res://scripts/command_performance.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const DoctorScript = preload("res://scripts/doctor.gd")
@@ -88,6 +89,8 @@ static func _end_turn(state: GameStateScript, player_id: int) -> Array:
 		return [_reject(player_id, "Finish your performance first.")]
 	if not state.choice.is_empty() and state.choice["player"] == player_id:
 		return [_reject(player_id, "Make your choice first.")]
+	if not state.command.is_empty():
+		return [_reject(player_id, "A Command Performance is under way.")]
 	state.term.erase("act")
 	waiting.pop_front()
 	state.term["played"].append(player_id)
@@ -122,6 +125,9 @@ static func _step(state: GameStateScript) -> Array:
 	var wills: Array = WillsScript.step(state)   # so does a will nobody signed in time
 	if not wills.is_empty():
 		return wills
+	var command: Array = CommandPerformanceScript.step(state)   # a Command Performance moves on with the clock
+	if not command.is_empty():
+		return command
 	var invites: Array = UnionsScript.step(state)   # and an invitation to join a union
 	if not invites.is_empty():
 		return invites

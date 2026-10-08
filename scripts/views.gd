@@ -21,7 +21,7 @@ const PUBLIC_FIELDS = [
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).
-const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term"]
+const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term", "command"]
 
 # Extra keys a view carries that are not GameState fields.
 const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills", "my_hand", "hand_sizes"]
@@ -75,6 +75,7 @@ static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
 	view["amend"] = _amend_view(state.amend, player_id)
 	view["election"] = _election_view(state.election, player_id)
 	view["term"] = _term_view(state.term, player_id)
+	view["command"] = _command_view(state.command, player_id)
 	view["event_log"] = visible_events(state.event_log, player_id)
 	# Your own will, and if you are a Lawyer the wills you keep: the only wills anyone is shown.
 	view["my_will"] = _copy(state.wills.get(player_id, {}))
@@ -129,6 +130,20 @@ static func _election_view(election: Dictionary, player_id: int) -> Dictionary:
 		view["my_answers"] = answers[player_id]
 	if votes.has(player_id):
 		view["my_vote"] = votes[player_id]
+	return view
+
+
+# A Command Performance, without how anyone voted: everyone sees who has voted, you also see your own vote.
+static func _command_view(command: Dictionary, player_id: int) -> Dictionary:
+	var view: Dictionary = command.duplicate(true)
+	if view.has("votes"):
+		var votes: Dictionary = view["votes"]
+		var voted: Array = votes.keys()
+		voted.sort()
+		view.erase("votes")
+		view["voted"] = voted
+		if votes.has(player_id):
+			view["my_vote"] = votes[player_id]
 	return view
 
 

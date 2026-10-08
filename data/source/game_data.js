@@ -58,6 +58,8 @@ const V = {
   doctorCharges: 2, agboRounds: 1, concoctionRounds: 2,
   doseOfferSeconds: 30,           // (digital version) a patient has this long to accept or reject a dose; silence is a rejection
   doseGuessSeconds: 10,           // (digital version) after a cure is accepted, anyone may guess Sabotage for this long
+  commandVoteMultiplier: 2,      // in a Command Performance the commanding union's or mob's total popularity vote is doubled (Article 16)
+  scenarioMax: 280,              // (digital version) the most characters in a scenario a union or mob scripts for a Command Performance
   unionInviteSeconds: 30,         // (digital version) a player asked to join a union has this long to answer; silence is a refusal
   willOfferSeconds: 30,           // (digital version) a Lawyer has this long to accept a will; silence is a refusal
   willPriceMax: 5000,             // (digital version) the most a Lawyer may ask as a fee, or as upkeep a round

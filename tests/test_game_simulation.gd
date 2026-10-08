@@ -98,7 +98,8 @@ func _init() -> void:
 		union_types.append_array(run["types"])
 		expect("union game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
 		expect("union game %d: no rule was ever broken" % seed_value, run["problems"], [])
-	for kind in ["union_founded", "union_invited", "union_joined", "union_invitation_refused", "union_invitation_expired", "union_left", "union_dispersed"]:
+	for kind in ["union_founded", "union_invited", "union_joined", "union_invitation_refused", "union_invitation_expired", "union_left", "union_dispersed",
+			"command_started", "command_performance_started", "command_voting_opened", "command_vote_cast", "command_performance_resolved"]:
 		expect("the union games produced a '%s' event (%d times)" % [kind, union_types.count(kind)], union_types.has(kind), true)
 	var union_straight := play(5, 503, 7, 0, 0, 0, 0, 0, true)
 	var union_restarted := play(5, 503, 7, 0, 5, 0, 0, 0, true)
@@ -232,6 +233,9 @@ func next_move(s: GameStateScript) -> Dictionary:
 	var played := hand_move(s)
 	if not played.is_empty():
 		return played
+	var commanding := command_move(s)
+	if not commanding.is_empty():
+		return commanding
 	var union := union_move(s)
 	if not union.is_empty():
 		return union
@@ -319,6 +323,32 @@ func hand_move(s: GameStateScript) -> Dictionary:
 	return {}
 
 
+# A Command Performance under way: the Leader picks a target (or doesn't), the performer finishes early (or doesn't),
+# voters vote (or don't), so every way it can end gets played.
+func command_move(s: GameStateScript) -> Dictionary:
+	if s.command.is_empty():
+		return {}
+	var cmd: Dictionary = s.command
+	match cmd["phase"]:
+		GameStateScript.CommandPhase.TARGETING:
+			if (s.turns_played + s.current_round) % 2 == 0:
+				return {"tick": int(cmd["deadline"])}   # the Leader never chooses
+			return {"player": cmd["chooser"], "command": {"type": "command_target", "target": cmd["candidates"][0]}}
+		GameStateScript.CommandPhase.PERFORMING:
+			if (cmd["target"] + s.turns_played) % 2 == 0:
+				return {"player": cmd["target"], "command": {"type": "command_finish"}}
+			return {"tick": int(cmd["deadline"])}
+		GameStateScript.CommandPhase.VOTING:
+			var waiting: Array = []
+			for id in s.player_ids:
+				if id != cmd["target"] and not s.eliminated.get(id, false) and not cmd["votes"].has(id):
+					waiting.append(id)
+			if cmd["votes"].size() >= 2 and (cmd["target"] + s.turns_played) % 3 == 0:
+				return {"tick": int(cmd["deadline"])}   # the rest never voted
+			return {"player": waiting[0], "command": {"type": "command_vote", "good": (waiting[0] + count_events(s, "command_started")) % 3 != 0}}
+	return {}
+
+
 # Unions: invitations are answered (some ignored), Unionizers recruit on their turns, members leave on theirs, big
 # unions kick, some disperse, and Agberos re-form. All limited by counts so the script cannot ask forever.
 func union_move(s: GameStateScript) -> Dictionary:
@@ -347,6 +377,19 @@ func union_move(s: GameStateScript) -> Dictionary:
 			return {"player": now, "command": {"type": "union_leave"}}
 		if (union["owner"] == now or (now == s.leader_id and s.leader_id in members)) and not s.sick.get(union["owner"], false):
 			var turn_number: int = count_events(s, "turn_started")
+			var act: Dictionary = s.term.get("act", {})
+			if s.command.is_empty() and now == union["owner"] and not act.is_empty() and act["phase"] == GameStateScript.ActPhase.DONE \
+					and members.size() >= 2 and turn_number % 3 != 0 and commands_this_term(s) < 2 \
+					and union.get("commanded", -1) != s.current_round * 1000 + s.turns_played:
+				var outside: Array = []
+				for candidate in s.player_ids:
+					if not candidate in members and not s.eliminated.get(candidate, false):
+						outside.append(candidate)
+				if not outside.is_empty():
+					var order := {"type": "union_command", "union_id": union_id, "scenario": "scenario %d" % turn_number}
+					if not s.leader_id in members:
+						order["target"] = outside[turn_number % outside.size()]
+					return {"player": union["owner"], "command": order}
 			if members.size() >= 3 and turn_number % 4 == 0:
 				return {"player": union["owner"], "command": {"type": "union_kick", "union_id": union_id, "target": members[members.size() - 1]}}
 			if members.size() >= 2 and turn_number % 9 == 0:
@@ -357,6 +400,17 @@ func union_move(s: GameStateScript) -> Dictionary:
 							and UnionsScript.union_of(s, candidate) == -1 and not s.union_invites.has(candidate):
 						return {"player": union["owner"], "command": {"type": "union_recruit", "union_id": union_id, "target": candidate}}
 	return {}
+
+
+func commands_this_term(s: GameStateScript) -> int:
+	var n: int = 0
+	for i in range(s.event_log.size() - 1, -1, -1):
+		var kind: String = s.event_log[i]["type"]
+		if kind == "term_started":
+			break
+		if kind == "command_started":
+			n += 1
+	return n
 
 
 func recruits_this_term(s: GameStateScript) -> int:
