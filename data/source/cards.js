@@ -157,7 +157,7 @@ const performance = [
     "Choose a player — apologize to them for something you didn't do, and make it sound sincere.",
     "You're being roasted by the press. Respond to three imagined headlines the table shouts at you.",
     "Deliver a farewell address as if you're leaving office forever (you're not).",
-    "Choose a rival — publicly challenge them to a debate on any topic, 30 seconds each side.",
+    "You have just been arrested for drugtrafficking and have to defend yourself in court.",
     "Convince the table that a recent scandal was actually a \"misunderstanding.\"",
     "Pitch a new tax to the table and get them to believe it's for their own good.",
     "Choose a player — try to recruit them into your union/mob with a single sentence.",
@@ -274,7 +274,6 @@ const effects = {
   performance: [
     ['A rival union wants your backing', { pitch: true }],
     ['Debate a rival', { debate: true }],
-    ['Choose a rival \u2014 publicly challenge them', { debate: true }],
   ],
 };
 

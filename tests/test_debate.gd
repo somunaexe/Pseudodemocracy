@@ -29,8 +29,8 @@ func _init() -> void:
 
 
 func the_cards() -> void:
-	for prefix in ["Debate a rival", "Choose a rival — publicly challenge"]:
-		expect("'%s' is a debate card" % prefix, CardsScript.effects("performance", card_number(prefix)), {"debate": true})
+	expect("'Debate a rival' is a debate card", CardsScript.effects("performance", card_number("Debate a rival")), {"debate": true})
+	expect("the court card is an ordinary performance", CardsScript.effects("performance", card_number("You have just been arrested")), {})
 	var s := debating()
 	expect("the performance starts as a debate with nobody challenged yet", s.term["act"]["debate"], {"rival": 0, "topic": "", "side": -1})
 	expect("an ordinary card has no debate", plain_turn().term["act"].has("debate"), false)

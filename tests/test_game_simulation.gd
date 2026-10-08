@@ -217,7 +217,7 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		RolesScript.grant(s, 3, "Agbero")
 		RolesScript.grant(s, 4, "Agbero")
 	if seed_value <= 12 and seed_value % 4 == 1:
-		s.decks["performance"] = [37, 15, 10]   # a debate, another, then a rival union's pitch: they are the first cards drawn
+		s.decks["performance"] = [15, 15, 10]   # two debates, then a rival union's pitch: they are the first cards drawn
 	if seed_value <= 12 and seed_value % 3 == 0:
 		s.decks["settlement"] = [11]   # the keys to the city are the first Settlement card drawn, so the Vice appears
 	if seed_value >= 300 and seed_value < 500 and seed_value % 2 == 1:

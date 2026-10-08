@@ -11,7 +11,7 @@ class_name PerformanceTurn
 #               More Good: the player draws a Settlement card. More Bad: a Scandal card.
 #               A tie (or nobody voting): no change and no card. The player may now end their turn.
 #
-# A DEBATE card ("Debate a rival", "Choose a rival - publicly challenge them"; effect `debate` in the card data) changes the
+# A DEBATE card ("Debate a rival"; effect `debate` in the card data) changes the
 # middle: the performer challenges a rival (debate_challenge, a rival of theirs if they have any, with a topic), the
 # performer speaks for debateSeconds (30) and then the rival does (each may end their side early with debate_finish), and the
 # table votes for the winner (debate_vote; everyone but the two debaters; Loyalists vote with their owner). A performer who
