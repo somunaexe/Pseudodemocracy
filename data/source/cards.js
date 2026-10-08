@@ -172,9 +172,44 @@ const performance = [
     "Choose a player — convince them to publicly endorse you, on the spot.",
   ];
 
+// EFFECTS the game applies by itself when a Settlement or Scandal card is drawn. A card is found by the
+// start of its text (the export fails if that matches no card or more than one). Only effects on the
+// drawer alone are listed: psd is money to (+) or from (-) the treasury, popularity moves the base.
+// Cards not listed here are read out to the table and carried out by the table, as before.
+// The export also checks that every amount appears as a number in the card's own text.
+const effects = {
+  settlement: [
+    ['You found a loophole in your own tax', { psd: 75 }],
+    ['An old investment matures', { psd: 120 }],
+    ['A viral video shows you helping', { popularity: 10 }],
+    ['You cried at a funeral', { popularity: 5 }],
+    ['You privatized a public asset', { psd: 150, popularity: -10 }],
+    ['A foreign government sends', { psd: 100 }],
+    ['You throw a lavish independence day party', { psd: -50, popularity: 10 }],
+    ['Your cousin abroad wires funds', { psd: 80 }],
+    ['You donate to charity live on camera', { psd: -30, popularity: 15 }],
+  ],
+  scandal: [
+    ['You overpaid for office supplies', { psd: -40 }],
+    ['An old speech resurfaces', { popularity: -8 }],
+    ['Your handshake photo ages badly', { popularity: -5 }],
+    ['Your motorcade damages a market stall', { psd: -70, popularity: -5 }],
+    ['A contractor overcharges you', { psd: -80 }],
+    ['Your official portrait is mocked online', { popularity: -7 }],
+    ['You skip a mandatory public event', { popularity: -10 }],
+    ['Your car breaks down on the way to a summit', { psd: -30 }],
+    ['A leaked memo embarrasses you', { popularity: -10 }],
+    ['Your response to a crisis lands flat', { popularity: -12 }],
+    ['Bad investment', { psd: -60 }],
+    ["You're forced to publicly refund a donor", { psd: -40, popularity: -5 }],
+    ['You lose a bet made in confidence', { psd: -35 }],
+  ],
+};
+
 module.exports = {
   glossary,
   settlement: settlement.map(fill),
   scandal: scandal.map(fill),
   performance: performance.map(fill),
+  effects,
 };

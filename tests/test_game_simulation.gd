@@ -36,7 +36,7 @@ func _init() -> void:
 		expect("%d players: no rule was ever broken" % count, run["problems"], [])
 
 	# A poor player drifts into debt, is eliminated, and their heir becomes a Nepo Baby. The one thing
-	# that can save them is leading: a Leader earns 100 PSD a turn, which pays the levy and the debt.
+	# that can save them is leading (a Leader earns 100 PSD a turn) or a Settlement card that pays them.
 	var poor_runs: int = 0
 	var eliminations: int = 0
 	var nepo_babies: int = 0
@@ -46,7 +46,7 @@ func _init() -> void:
 		var run := play(5, 200 + seed_value, 8, 3)
 		expect("poor game %d: ran to the end" % seed_value, run["finished"], true)
 		expect("poor game %d: no rule was ever broken" % seed_value, run["problems"], [])
-		if run["leaders"].has(3):
+		if run["leaders"].has(3) or run["windfalls"] > 0:
 			rescued += 1
 			continue
 		poor_runs += 1
@@ -54,7 +54,7 @@ func _init() -> void:
 		nepo_babies += 1 if run["types"].has("nepo_baby") else 0
 		leaders_lost += 1 if run["types"].has("leader_vacant") else 0
 	expect("some poor players never led (%d of 12), so the test means something" % poor_runs, poor_runs >= 4, true)
-	expect("a poor player who never led was eliminated, every time (%d of %d)" % [eliminations, poor_runs], eliminations, poor_runs)
+	expect("a poor player who never led or got a windfall was eliminated, every time (%d of %d)" % [eliminations, poor_runs], eliminations, poor_runs)
 	expect("... and their heir became a Nepo Baby each time", nepo_babies, poor_runs)
 
 	# Everything that can happen did happen somewhere.
@@ -62,7 +62,7 @@ func _init() -> void:
 	for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
 			"term_started", "levy_collected", "turn_started", "turn_ended", "farewell_opened", "term_ended", "window_passed",
 			"amendment_proposed", "amendment_resolved", "article_changed", "ballot_cast", "exam_answered",
-			"performance_started", "performance_voting_opened", "performance_vote_cast", "performance_resolved", "income_paid"]:
+			"performance_started", "performance_voting_opened", "performance_vote_cast", "performance_resolved", "income_paid", "card_applied"]:
 		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
 
 	# The same seed always plays out the same way, to the last byte.
@@ -105,6 +105,7 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 	var steps: int = 0
 	var types_seen: Array = []
 	var leaders: Array = []
+	var windfalls: int = 0
 	var log_size: int = 0
 	while s.current_round <= terms and not s.game_over and steps < 4000:
 		var move := next_move(s)
@@ -124,6 +125,8 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 			types_seen.append(event["type"])
 			if event["type"] == "leader_installed":
 				leaders.append(event["leader"])
+			if event["type"] == "card_applied" and event["player"] == poor and event.get("psd", 0) > 0:
+				windfalls += 1   # a Settlement card paid the poor player
 		check_rules(s, steps)
 		if s.event_log.size() < log_size:
 			problems.append("step %d: the event log shrank" % steps)
@@ -146,7 +149,7 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		if s.eliminated[id]:
 			eliminated.append(id)
 	return {"steps": steps, "finished": s.current_round > terms, "problems": problems.duplicate(), "types": types_seen,
-		"eliminated": eliminated, "leaders": leaders, "final": SerializerScript.state_to_json(s)}
+		"eliminated": eliminated, "leaders": leaders, "windfalls": windfalls, "final": SerializerScript.state_to_json(s)}
 
 
 # What a sensible player does next, in the order the game needs it: an election first, then an

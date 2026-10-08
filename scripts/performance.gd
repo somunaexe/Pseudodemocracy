@@ -15,8 +15,9 @@ class_name PerformanceTurn
 #   { "phase": ActPhase, "player": id, "card": n, "deadline": clock_ms, "votes": { voter: bool } }
 # The votes are SECRET until the result (see Views). Time is GameState.clock_ms (whole milliseconds), moved by Game.tick.
 #
-# A card's effect is announced to everyone and carried out by the table for now, like the
-# highlighted words of the Constitution the game doesn't read. The game applies the popularity.
+# The drawn card is announced to everyone. If its effect is only about the player's own money and
+# popularity, the game applies it (see CardEffects); any other card is carried out by the table,
+# like the highlighted words of the Constitution the game doesn't read.
 #
 # Every event this file creates is logged here, once.
 
@@ -24,6 +25,7 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const CardsScript = preload("res://scripts/cards.gd")
+const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 const PERFORMING := GameStateScript.ActPhase.PERFORMING
@@ -130,7 +132,10 @@ static func _resolve(state: GameStateScript, act: Dictionary) -> Array:
 		data["text"] = CardsScript.text(deck, card)
 	data["outcome"] = outcome
 	act["phase"] = DONE
-	return [_log(state, "performance_resolved", data)]
+	var events: Array = [_log(state, "performance_resolved", data)]
+	if data.has("card"):
+		events.append_array(CardEffectsScript.apply(state, act["player"], data["deck"], data["card"]))   # logs its own event
+	return events
 
 
 # --- who may vote ------------------------------------------------------------------------

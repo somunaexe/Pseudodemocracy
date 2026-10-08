@@ -154,5 +154,82 @@
   "You embezzled funds. Collect 200 PSD from the treasury. The leader can stay quiet, split the money with you, or expose you, giving you a corruption marker.",
   "You missed your own policy announcement. Skip your next income collection.",
   "You draw an extra Performance card for your next turn."
- ]
+ ],
+ "effects": {
+  "settlement": {
+   "19": {
+    "psd": 75
+   },
+   "20": {
+    "psd": 120
+   },
+   "21": {
+    "popularity": 10
+   },
+   "26": {
+    "popularity": 5
+   },
+   "32": {
+    "psd": 150,
+    "popularity": -10
+   },
+   "35": {
+    "psd": 100
+   },
+   "37": {
+    "psd": -50,
+    "popularity": 10
+   },
+   "40": {
+    "psd": 80
+   },
+   "42": {
+    "psd": -30,
+    "popularity": 15
+   }
+  },
+  "scandal": {
+   "20": {
+    "psd": -40
+   },
+   "21": {
+    "popularity": -8
+   },
+   "22": {
+    "popularity": -5
+   },
+   "24": {
+    "psd": -70,
+    "popularity": -5
+   },
+   "26": {
+    "psd": -80
+   },
+   "27": {
+    "popularity": -7
+   },
+   "29": {
+    "popularity": -10
+   },
+   "33": {
+    "psd": -30
+   },
+   "34": {
+    "popularity": -10
+   },
+   "37": {
+    "popularity": -12
+   },
+   "40": {
+    "psd": -60
+   },
+   "41": {
+    "psd": -40,
+    "popularity": -5
+   },
+   "44": {
+    "psd": -35
+   }
+  }
+ }
 }

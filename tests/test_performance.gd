@@ -105,7 +105,7 @@ func who_may_vote() -> void:
 	s.eliminated[5] = true
 	send(s, 2, {"type": "finish_performance"})
 	expect("an eliminated player can't vote", send(s, 5, vote(true))[0]["reason"], "You can't vote on this performance.")
-	expect("... and isn't waited for: three votes decide it", [types(send(s, 1, vote(true))), types(send(s, 3, vote(true))), types(send(s, 4, vote(false)))], [["performance_vote_cast"], ["performance_vote_cast"], ["performance_vote_cast", "performance_resolved"]])
+	expect("... and isn't waited for: three votes decide it", [types(send(s, 1, vote(true))), types(send(s, 3, vote(true))), types(send(s, 4, vote(false)))], [["performance_vote_cast"], ["performance_vote_cast"], ["performance_vote_cast", "performance_resolved", "card_applied"]])
 
 
 func a_good_performance() -> void:
@@ -117,7 +117,7 @@ func a_good_performance() -> void:
 	send(s, 4, vote(true))
 	var ev := send(s, 5, vote(false))
 	var done: Dictionary = ev[1]
-	expect("the last vote ends the voting at once, without waiting for the clock", [types(ev), s.term["act"]["phase"]], [["performance_vote_cast", "performance_resolved"], DONE])
+	expect("the last vote ends the voting at once, without waiting for the clock", [types(ev), s.term["act"]["phase"]], [["performance_vote_cast", "performance_resolved", "card_applied"], DONE])
 	expect("3 Good against 1 Bad: a win is exactly +swing, not one swing per vote", [done["good"], done["bad"], done["popularity_delta"], PopularityScript.effective(s, 2) - before], [3, 1, SWING, SWING])
 	expect("... a Settlement card is drawn", [done["outcome"], done["deck"], done["text"]], ["good", "settlement", CardsScript.text("settlement", done["card"])])
 	expect("... and the votes are shown at last", done["votes"], {1: true, 3: true, 4: true, 5: false})

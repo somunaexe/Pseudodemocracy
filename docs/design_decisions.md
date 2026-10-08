@@ -274,7 +274,9 @@ A turn: the levy has already been paid (at the start of the term). The player dr
 | Are the votes secret? | Yes until the result. Everyone sees WHO has voted, you see your own vote, and the result reveals all of them. | **Built** |
 | Are the decks secret? | Yes. The draw piles are server-only, shuffled with the game's own random generator, and reshuffled when empty. | **Built** |
 | Does the Activist doubling apply to a performance vote? | No. It applies only when a confrontation is triggered. | Confirmed |
-| What do Settlement, Scandal and Performance cards DO? | For now the card is drawn and read out to everyone, and the table carries out its effect. The game applies only the popularity from the vote. | Assumed, please confirm |
+| What do Settlement and Scandal cards DO? | The drawn card is read out to everyone. If it only concerns the player's own PSD and popularity (22 of 100 cards so far, listed in `cards.js`), the game applies it: money to or from the treasury (a short treasury pays what it has; what a player can't pay becomes debt) and popularity on the track. Every other card is carried out by the table, and the event says so. Performance cards are just things to perform. | Confirmed (self-only cards first) |
+| Where do a card's effects live? | In an `effects` table in `cards.js`, keyed by the start of the card's text. The export fails if a key matches no card or two, or if an amount isn't a number in the card's own text. | **Built** |
+| What is still left to the table? | Cards with choices, other players, timing ("keep this", "next term"), corruption markers, the sick duration, Loyalists and Vices. Each needs its own mechanic first. | Next steps |
 | Can a turn end before the result? | No. `end_turn` is refused until the performance is done. | **Built** |
 
 ### Income (built: scripts/income.gd)
@@ -290,7 +292,7 @@ A turn: the levy has already been paid (at the start of the term). The player dr
 | Are role cards secret? | No. Everyone can see who holds which roles. (I wrongly assumed they were secret from the card text; you corrected this.) | Confirmed |
 | How are roles gained? | From Settlement cards. So dealing roles comes with the card effects. | Confirmed |
 
-Not built yet, and the next steps: dealing and gaining roles, the effects of the cards, coups.
+Not built yet, and the next steps: more card effects (roles first, since Settlement cards are how roles are gained), then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That will be a server-only record when coups are built; one Scandal card lets a rival check it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 
