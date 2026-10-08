@@ -125,10 +125,17 @@ function validate(deck, prefix, text, effect) {
 
 // Find each card by the start of its text and keep its number (position in the deck).
 let counted = 0;
+const PERFORMANCE_SPECIALS = ['sell_product', 'neighbour_dispute', 'custody', 'loan_pitch', 'fraud', 'mediation', 'pitch_union', 'word_wrestle', 'excuse'];   // the names in scripts/performance_cards.gd
 for (const [prefix, effect] of cards.effects.performance) {
   const found = out.performance.map((t, i) => (t.startsWith(prefix) ? i : -1)).filter((i) => i >= 0);
   if (found.length !== 1) fail('performance', prefix, `matches ${found.length} cards, expected exactly 1`);
-  for (const [key, value] of Object.entries(effect)) if (!['pitch', 'debate'].includes(key) || value !== true) fail('performance', prefix, `unknown or bad effect "${key}"`);
+  for (const [key, value] of Object.entries(effect)) {
+    if (key === 'special') {
+      if (!PERFORMANCE_SPECIALS.includes(value)) fail('performance', prefix, `unknown special "${value}"`);
+    } else if (!['pitch', 'debate'].includes(key) || value !== true) {
+      fail('performance', prefix, `unknown or bad effect "${key}"`);
+    }
+  }
   if (found[0] in out.effects.performance) fail('performance', prefix, 'this card is listed twice');
   out.effects.performance[found[0]] = effect;
   counted++;

@@ -198,7 +198,7 @@ func running_out_of_time() -> void:
 			GameScript.handle(g, id, {"type": "cast_vote", "candidate": 2})
 		if g.leader_type != PRESIDENT:
 			continue
-		g.decks["performance"] = [1]   # a plain performance card, not a debate
+		g.decks["performance"] = [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]   # plain performance cards: nothing asks a question
 		GameScript.handle(g, 2, {"type": "pass_window"})
 		GameScript.handle(g, 2, {"type": "pass_window"})
 		win(g, SPEECH)
@@ -242,7 +242,7 @@ func new_turn() -> GameStateScript:
 		for id in [1, 2, 3, 4, 5]:
 			GameScript.handle(s, id, {"type": "cast_vote", "candidate": 2})
 		if s.leader_type == PRESIDENT:
-			s.decks["performance"] = [1]   # a plain performance card, not a debate
+			s.decks["performance"] = [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]   # plain performance cards: nothing asks a question
 			GameScript.handle(s, 2, {"type": "pass_window"})
 			return s
 	assert(false, "no seed gave a President")

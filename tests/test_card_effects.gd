@@ -31,7 +31,7 @@ func the_table_of_effects() -> void:
 	expect("a pay card", CardsScript.effects("scandal", 20), {"psd": -40})
 	expect("a card with both", CardsScript.effects("settlement", 37), {"psd": -50, "popularity": 10})
 	expect("a card that needs other players is a special card", CardsScript.effects("settlement", 1), {"special": "old_boys"})
-	expect("a Performance card has no effect", CardsScript.effects("performance", 0), {})
+	expect("a Performance card has no effect", CardsScript.effects("performance", 20), {})
 
 
 func every_listed_card() -> void:

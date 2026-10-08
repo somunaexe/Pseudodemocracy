@@ -191,6 +191,19 @@ static func _send_invite(state: GameStateScript, union_id: int, owner: int, targ
 	return {"union_id": union_id, "unionizer": owner, "target": target, "seconds": seconds, "ends_at_ms": ends_at}
 
 
+# A member of a union invites a player to join it (a Performance card: "pitch your union/mob", "recruit them with a single sentence"):
+# the same invitation as a Unionizer's, answered with union_respond. Returns the events (not yet logged); a refusal reason is an event too.
+static func invite(state: GameStateScript, union_id: int, inviter: int, target: int) -> Array:
+	if not state.unions.has(union_id):
+		return [EventsScript.make("union_pitch_unavailable", {"player": inviter, "reason": "there is no such union or mob"})]
+	if target == inviter or not target in state.player_ids or state.eliminated.get(target, false):
+		return [EventsScript.make("union_pitch_unavailable", {"player": inviter, "reason": "that player can't be asked"})]
+	var problem: String = _problem_recruiting(state, target, state.unions[union_id])
+	if problem != "":
+		return [EventsScript.make("union_pitch_unavailable", {"player": inviter, "reason": problem})]
+	return [EventsScript.make("union_invited", _send_invite(state, union_id, inviter, target))]
+
+
 # "A rival union wants your backing" (a Performance card): the Unionizer or Capon of a union that is not the player's pitches
 # them for unionInviteSeconds (30) and they decide, by answering the invitation (union_respond). The union is one led by one
 # of the player's rivals if there is one, otherwise any other union (chosen at random). Nothing happens, and it is said, if

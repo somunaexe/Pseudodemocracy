@@ -323,6 +323,10 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 				leaders.append(event["leader"])
 			if event["type"] in ["card_applied", "choice_made"] and event["player"] == poor and event.get("psd", 0) > 0:
 				windfalls += 1   # a Settlement card paid the poor player
+			if event["type"] in ["diaspora_set", "hospital_opened", "fundraiser", "stipend_paid", "loan_made", "product_sold", "mediation_paid", "dispute_settled", "flyover_gave", "old_boys_gave", "collapse_accepted"]:
+				for key in ["player", "drawer", "seller", "mediator", "winner", "borrower"]:
+					if event.get(key, 0) == poor and (event.get("collected", 1) > 0 and event.get("amount", 1) > 0 and event.get("now", 1) > 0):
+						windfalls += 1   # or another card did
 			if event["type"] == "income_paid" and event["player"] == poor and event["net"] > 0:
 				windfalls += 1   # or a role (a Lawyer's 50, say) did
 		check_rules(s, steps)

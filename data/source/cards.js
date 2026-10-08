@@ -324,6 +324,17 @@ const effects = {
   //   debate  the performer challenges a rival to a debate that the table judges
   performance: [
     ['A rival union wants your backing', { pitch: true }],
+    // special: a card with a consequence of its own, written in scripts/performance_cards.gd
+    ['You have a useless product', { special: 'sell_product' }],
+    ['Your neighbour (on your right)', { special: 'neighbour_dispute' }],
+    ['You and the 4th player', { special: 'custody' }],
+    ['You need a loan', { special: 'loan_pitch' }],
+    ['Your Doctor gave you a convenient', { special: 'excuse' }],
+    ["You're accused of election fraud", { special: 'fraud' }],
+    ['Mediate a live dispute', { special: 'mediation' }],
+    ['Pitch your union/mob', { special: 'pitch_union' }],
+    ['Choose a player \u2014 challenge them to a public arm-wrestle', { special: 'word_wrestle' }],
+    ['Choose a player \u2014 try to recruit them', { special: 'pitch_union' }],
     ['Debate a rival', { debate: true }],
   ],
 };

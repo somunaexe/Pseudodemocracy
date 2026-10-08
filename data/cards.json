@@ -671,11 +671,41 @@
    }
   },
   "performance": {
+   "0": {
+    "special": "sell_product"
+   },
+   "1": {
+    "special": "neighbour_dispute"
+   },
+   "4": {
+    "special": "custody"
+   },
+   "7": {
+    "special": "loan_pitch"
+   },
+   "8": {
+    "special": "excuse"
+   },
+   "9": {
+    "special": "fraud"
+   },
    "10": {
     "pitch": true
    },
+   "12": {
+    "special": "mediation"
+   },
    "15": {
     "debate": true
+   },
+   "18": {
+    "special": "pitch_union"
+   },
+   "31": {
+    "special": "word_wrestle"
+   },
+   "40": {
+    "special": "pitch_union"
    }
   }
  }

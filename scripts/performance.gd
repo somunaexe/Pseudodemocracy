@@ -35,6 +35,7 @@ const GameDataScript = preload("res://scripts/game_data.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const CardsScript = preload("res://scripts/cards.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
+const PerformanceCardsScript = preload("res://scripts/performance_cards.gd")
 const PollsScript = preload("res://scripts/polls.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const ModifiersScript = preload("res://scripts/modifiers.gd")
@@ -233,6 +234,8 @@ static func _start(state: GameStateScript, performer: int) -> Array:
 	var events: Array = [_log(state, "performance_started", {"player": performer, "card": card, "text": CardsScript.text("performance", card), "seconds": seconds, "ends_at_ms": ends_at})]
 	if CardsScript.effects("performance", card).has("debate"):
 		state.term["act"]["debate"] = {"rival": 0, "topic": "", "side": -1}
+	if CardsScript.effects("performance", card).has("special"):
+		events.append_array(PerformanceCardsScript.started(state, performer, str(CardsScript.effects("performance", card)["special"])))
 	if CardsScript.effects("performance", card).has("pitch"):
 		# "A rival union wants your backing": the performer is pitched and decides (union_respond) while they perform.
 		for event in UnionsScript.pitch(state, performer):
@@ -247,7 +250,9 @@ static func _open_voting(state: GameStateScript) -> Array:
 	var ends_at: int = state.clock_ms + seconds * 1000
 	act["phase"] = VOTING
 	act["deadline"] = ends_at
-	return [_log(state, "performance_voting_opened", {"player": act["player"], "voters": _voters(state, act), "seconds": seconds, "ends_at_ms": ends_at})]
+	var opened: Array = [_log(state, "performance_voting_opened", {"player": act["player"], "voters": _voters(state, act), "seconds": seconds, "ends_at_ms": ends_at})]
+	opened.append_array(PerformanceCardsScript.finished(state, act))   # a dispute may be put to the Leader
+	return opened
 
 
 static func _resolve(state: GameStateScript, act: Dictionary) -> Array:
@@ -298,6 +303,7 @@ static func _resolve(state: GameStateScript, act: Dictionary) -> Array:
 	data["outcome"] = outcome
 	act["phase"] = DONE
 	var events: Array = [_log(state, "performance_resolved", data)]
+	events.append_array(PerformanceCardsScript.resolved(state, act, outcome))
 	if data.has("card"):
 		events.append_array(SpecialCardsScript.deliver(state, act["player"], data["deck"], data["card"]))   # others may react; a reroll may be offered; then it applies
 	if ModifiersScript.active(state, act["player"], "free_settlement") and not state.frozen.has(act["player"]):

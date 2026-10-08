@@ -125,6 +125,8 @@ static func player_candidates(state: GameStateScript, player_id: int, who: Strin
 		return RivalsScript.candidates(state, player_id)
 	if who == "loyalist":
 		return result.filter(func(id): return LoyalistsScript.problem_appointing(state, player_id, id) == "")
+	if who == "unaffiliated":
+		return result.filter(func(id): return UnionsScript.union_of(state, id) == -1 and id != state.leader_id and id != state.vice_id)
 	if who == "union_member":
 		var union_id: int = UnionsScript.union_of(state, player_id)
 		if union_id == -1:

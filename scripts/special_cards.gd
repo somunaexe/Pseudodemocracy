@@ -11,6 +11,7 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const CardsScript = preload("res://scripts/cards.gd")
 const ChoicesScript = preload("res://scripts/choices.gd")
+const PerformanceCardsScript = preload("res://scripts/performance_cards.gd")
 const PollsScript = preload("res://scripts/polls.gd")
 const ModifiersScript = preload("res://scripts/modifiers.gd")
 const ScheduleScript = preload("res://scripts/schedule.gd")
@@ -100,6 +101,8 @@ static func _ask(state: GameStateScript, drawer: int, deck: String, card: int, s
 
 # The drawer (or whoever was asked) has answered.
 static func answered(state: GameStateScript, pending: Dictionary, value: Variant, auto: bool) -> Array:
+	if pending["special"] in PerformanceCardsScript.NAMES:
+		return PerformanceCardsScript.answered(state, pending, value, auto)
 	var drawer: int = pending.get("subject", pending["player"])
 	var data: Dictionary = {"player": pending["player"], "subject": drawer, "deck": pending["deck"], "card": pending["card"], "kind": pending["kind"], "choice": value, "auto": auto, "special": pending["special"], "step": pending["step"]}
 	var events: Array = [_log(state, "choice_made", data)]
@@ -135,6 +138,8 @@ static func answered(state: GameStateScript, pending: Dictionary, value: Variant
 
 # Every target of a poll has answered (or run out of time): what each answer does.
 static func poll_closed(state: GameStateScript, poll: Dictionary, answers: Dictionary) -> Array:
+	if poll["special"] in PerformanceCardsScript.NAMES:
+		return PerformanceCardsScript.poll_closed(state, poll, answers)
 	var drawer: int = poll["drawer"]
 	var events: Array = []
 	match poll["special"]:

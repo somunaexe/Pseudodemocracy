@@ -653,3 +653,21 @@ Not built yet, and the next steps: choices of several players, the other kept ca
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 
 The simulation (`tests/test_game_simulation.gd`) plays whole games with scripted players, including a poor player who falls into debt and is eliminated, and checks after every move: money is neither made nor lost, a player in debt holds no cash, popularity stays on the track, the turn order matches the counts, no dead player is still in play, and a game restored from its save carries on exactly as the original would.
+
+## Performance cards with mechanics
+
+Built in `scripts/performance_cards.gd`; state lives in `state.term["act"]["special"]` and `["card_data"]`.
+
+| Card | What happens |
+|---|---|
+| Useless product | The table may buy it; Good vote pays the performer, a Bad vote costs them popularity. |
+| Neighbour dispute | The player on the performer's right is the rival; the table's vote decides who wins 100 PSD (the Leader is asked to judge if neither is the Leader). |
+| Custody (the 4th player) | Same shape as the dispute; the winner takes 150 PSD from the treasury and the loser pays 50 costs. |
+| Loan pitch | The performer picks a lender, who sets the interest (0, 10, 25 or 50%, or refuses) and lends 200 PSD, repaid in 3 rounds. |
+| Convenient excuse | The sold excuse skips the buyer's next exam. |
+| Election fraud | Believed: +10 popularity; not believed: -15. |
+| Mediation | Two players are mediated live; a Good vote pays both. |
+| Pitch your union/mob | The performer's union invites a player in no union; with no union nothing happens. |
+| Word wrestle | A named opponent; whoever sends `concede` first loses 20 PSD to the treasury. |
+
+Tests: `tests/test_performance_cards.gd`.

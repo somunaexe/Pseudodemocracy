@@ -123,6 +123,7 @@ func new_term() -> GameStateScript:
 		for id in [1, 2, 3, 4, 5]:
 			GameScript.handle(s, id, {"type": "cast_vote", "candidate": 2})
 		if s.leader_type == PRESIDENT:
+			s.decks["performance"] = [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]   # plain performance cards: nothing asks a question
 			GameScript.handle(s, 2, {"type": "pass_window"})
 			return s
 	assert(false, "no seed gave a President")

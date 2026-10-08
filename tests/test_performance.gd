@@ -58,7 +58,7 @@ func a_performance_starts() -> void:
 	expect("... the player has 60 seconds on the server's clock", act["deadline"], s.clock_ms + 60000)
 	var started: Dictionary = last_of(s, "performance_started")
 	expect("... everyone is told the card and the time", [started["player"], started["text"], started["seconds"], started["audience"]], [2, CardsScript.text("performance", act["card"]), 60, []])
-	expect("... and a card was drawn from the secret pile", s.decks["performance"].size(), CardsScript.count("performance") - 1)
+	expect("... and a card was drawn from the secret pile", s.decks["performance"].size(), 11)   # the 12 plain cards the test put in the pile, less the one drawn
 
 
 func the_clock() -> void:
@@ -102,6 +102,7 @@ func who_may_vote() -> void:
 	expect("... and the first vote stands", s.term["act"]["votes"][3], true)
 
 	s = new_turn()
+	s.decks["settlement"] = [19]   # a plain result card
 	s.eliminated[5] = true
 	send(s, 2, {"type": "finish_performance"})
 	expect("an eliminated player can't vote", send(s, 5, vote(true))[0]["reason"], "You can't vote on this performance.")
@@ -110,6 +111,7 @@ func who_may_vote() -> void:
 
 func a_good_performance() -> void:
 	var s := new_turn()
+	s.decks["settlement"] = [19, 19]   # plain result cards: pay 75
 	var before: int = PopularityScript.effective(s, 2)
 	send(s, 2, {"type": "finish_performance"})
 	send(s, 1, vote(true))
@@ -121,11 +123,12 @@ func a_good_performance() -> void:
 	expect("3 Good against 1 Bad: a win is exactly +swing, not one swing per vote", [done["good"], done["bad"], done["popularity_delta"], PopularityScript.effective(s, 2) - before], [3, 1, SWING, SWING])
 	expect("... a Settlement card is drawn", [done["outcome"], done["deck"], done["text"]], ["good", "settlement", CardsScript.text("settlement", done["card"])])
 	expect("... and the votes are shown at last", done["votes"], {1: true, 3: true, 4: true, 5: false})
-	expect("... from a secret pile that is now one card shorter", s.decks["settlement"].size(), CardsScript.count("settlement") - 1)
+	expect("... from a secret pile that is now one card shorter", s.decks["settlement"].size(), 1)   # the 2 plain cards the test put in the pile, less the one drawn
 
 
 func a_bad_performance() -> void:
 	var s := new_turn()
+	s.decks["scandal"] = [20, 20]   # plain result cards: lose 40
 	var before: int = PopularityScript.effective(s, 2)
 	send(s, 2, {"type": "finish_performance"})
 	send(s, 1, vote(false))
@@ -216,6 +219,7 @@ func new_turn() -> GameStateScript:
 		for id in [1, 2, 3, 4, 5]:
 			GameScript.handle(s, id, {"type": "cast_vote", "candidate": 2})
 		if s.leader_type == PRESIDENT:
+			s.decks["performance"] = [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]   # plain performance cards: nothing asks a question
 			GameScript.handle(s, 2, {"type": "pass_window"})
 			return s
 	assert(false, "no seed gave a President")
