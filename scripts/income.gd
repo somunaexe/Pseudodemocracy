@@ -16,6 +16,7 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const LawScript = preload("res://scripts/law.gd")
 const DebtScript = preload("res://scripts/debt.gd")
+const RolesScript = preload("res://scripts/roles.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 
@@ -24,7 +25,7 @@ static func gross(state: GameStateScript, player_id: int) -> int:
 	var total: int = 0
 	if player_id == state.leader_id:
 		total += GameDataScript.get_int("leaderIncome")
-	for role in state.roles.get(player_id, []):
+	for role in RolesScript.held(state, player_id):
 		total += GameDataScript.get_nested_int("roleIncome", str(role))
 	return total
 

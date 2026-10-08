@@ -38,7 +38,7 @@ Open:
 
 Open debt questions:
 - All income must go through `Debt.receive()` (roles, cards, treasury payouts), or it will skip collection.
-- Elimination is built for cash, debt, wills, unions and the Nepo Baby debuff. Roles are not (see Elimination below).
+- Elimination is built for cash, debt, wills, unions, roles and the Nepo Baby debuff.
 - A round cut short by a coup gives some players no turn that round. By the "own turn" definition, no debt term is counted for them.
 
 ## Other
@@ -119,7 +119,7 @@ Decided, not built yet:
 - **The Leader is eliminated.** Built: the seat is vacated, an amendment in progress is abandoned (its window stays used), and an election with no exam starts (see Election).
 
 Not built yet, and why:
-- **Roles** don't exist in the game state yet, so they can't be inherited or rescinded.
+- **Roles** are rescinded unless willed; a will may name a different role heir (see Roles).
 - **Wills.** Nothing creates one yet (the Lawyer, the fee, "on hold" upkeep). Tests set them directly.
 - **Scoring** a term cut short because the Leader was eliminated: ½, like a coup, or something else?
 - **A dissolved union's earlier confront.** If an Activist union confronts and then dissolves before the vote ends, its automatic votes disappear and its members vote by hand. Is that intended?
@@ -292,7 +292,31 @@ A turn: the levy has already been paid (at the start of the term). The player dr
 | Are role cards secret? | No. Everyone can see who holds which roles. (I wrongly assumed they were secret from the card text; you corrected this.) | Confirmed |
 | How are roles gained? | From Settlement cards. So dealing roles comes with the card effects. | Confirmed |
 
-Not built yet, and the next steps: more card effects (roles first, since Settlement cards are how roles are gained), then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That will be a server-only record when coups are built; one Scandal card lets a rival check it.
+## Roles (skeleton built: scripts/roles.gd)
+
+The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.
+
+| Role | Income | In the handbook files | Built | Still needed from you |
+|---|---|---|---|---|
+| Doctor | 70 | Doses (Agbo, Concoction, Surgery), no fixed prices. Hidden bead: blue Cure, red Poison. A patient can reject a cure. Sabotage is guessed before the bead is taken. A right guess means the Doctor pays the guesser, gives a real Cure and loses their licence; a wrong guess means the guesser pays the Doctor what the patient paid. | Holding and income only | Sickness itself (how long, immunity, how it ends), the dose and bead commands, the licence |
+| Lawyer | 50 | Signs wills for an agreed fee and collects upkeep every round (Article 54). | Holding and income only | Who must have their will signed, the fee, the upkeep amount, and a command to write a will (there isn't one yet) |
+| Secret Agent | 80 | Stays (CHANGES.md); no power described. Cards mention checking coup status and role draws. | Holding and income only | What the Secret Agent does |
+| Activist | none | Founds an Activist union (a Settlement card, played any time). Unions exist: recruit, kick, confront the Leader. | The union rules built earlier | How a player becomes an Activist, and how a Settlement card founds a union |
+| Agbero | none | Founds an Agbero mob; its leader is the Capon. Can re-form straight away if they hold an Agbero card. | The union rules built earlier | The same |
+
+| Question | Decision | Status |
+|---|---|---|
+| How many of each role? | Five cards of each (`roleCopies`), so at most five holders. A player never holds two of the same role, but can hold several different ones. | Assumed (never two of the same) |
+| What is a player with no role? | A Civilian. There is no Civilian card. | Confirmed (CHANGES.md) |
+| Are roles visible? | Yes, to everyone. A coup sticker on a role card is the hidden part. | Confirmed |
+| Who may use a role's power? | Someone who holds it, is in the game, and isn't sick (Article 17). Frozen role cards come with corruption markers and a Scandal card. | **Built** (the shared rule) |
+| What happens to roles on elimination? | Rescinded (the cards go back in the box), unless willed. | Confirmed (Article 53 and CHANGES.md) |
+| Can a will name a different heir for roles? | Yes (Article 56): an optional `role_heir` in the will, by default the heir of the money. A will on hold, or a role heir who is the testator, a stranger or eliminated, means the roles are rescinded. | **Built** |
+| Does a role heir become a Nepo Baby? | Only the heir of the money does, as before. | Assumed, please confirm |
+| The heir already holds that role. | They can't hold it twice, so that card goes back in the box. | Assumed |
+| How are roles gained? | From Settlement cards. Those cards need the player to choose (a role, a player to swap with), so they come with the choice mechanism. | Next step |
+
+Not built yet, and the next steps: the choice mechanism for cards (then the role cards, swaps and the union-founding cards), each role's power, sickness, then coups. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That will be a server-only record when coups are built; one Scandal card lets a rival check it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

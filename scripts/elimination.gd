@@ -17,12 +17,14 @@ class_name Elimination
 #
 # Every heir becomes a Nepo Baby (see Nepo).
 #
-# Not built yet: roles.
+# Their roles go to the role heir named in the will (by default the heir of the money), or are
+# rescinded (see Roles). A role heir who isn't also the money heir is not a Nepo Baby.
 # See docs/design_decisions.md.
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const LawScript = preload("res://scripts/law.gd")
+const RolesScript = preload("res://scripts/roles.gd")
 const NepoScript = preload("res://scripts/nepo.gd")
 const EventsScript = preload("res://scripts/events.gd")
 const FlowScript = preload("res://scripts/amendment_flow.gd")
@@ -53,6 +55,13 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 			void_reason = "the named heir is not available"
 		if void_reason != "":
 			heir = 0
+	# Roles go to the role heir, who may differ from the heir of the money (Article 56). Without a
+	# usable will, or if the named role heir isn't available, the roles are rescinded.
+	var role_heir: int = 0
+	if not will.is_empty() and not will["on_hold"]:
+		var wanted: int = int(will.get("role_heir", will["psd_heir"]))
+		if wanted != player_id and wanted in state.player_ids and not state.eliminated.get(wanted, false):
+			role_heir = wanted
 	state.wills.erase(player_id)
 	if heir != 0:
 		state.heirs[player_id] = heir
@@ -94,6 +103,7 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 		"debt_cleared": debt_cleared,
 		"claims_cleared": claims_cleared,
 	}))
+	events.append_array(RolesScript.settle_estate(state, player_id, role_heir))
 	if heir != 0:
 		events.append_array(NepoScript.become(state, heir))   # an heir cannot refuse, so every heir is one (Article 30)
 	events.append_array(_leave_unions(state, player_id))
