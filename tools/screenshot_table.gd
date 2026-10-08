@@ -1,10 +1,11 @@
 # Draws the table for N players with the real client code and saves a picture:
-#   xvfb-run -a godot --rendering-driver opengl3 --resolution 1280x720 --script tools/screenshot_table.gd -- 7 /tmp/table.png [perform|vote|result|choice|debate]
+#   xvfb-run -a godot --rendering-driver opengl3 --resolution 1280x720 --script tools/screenshot_table.gd -- 7 /tmp/table.png [perform|vote|result|choice|debate|exam_write|exam_take|ballot]
 # The last word picks the moment shown in the dock (default: your own performance).
 # Needs a display (xvfb-run -a godot ...), so it is a look-at-it tool, not part of the test run.
 extends SceneTree
 
 const GameScript = preload("res://scripts/game.gd")
+const ElectionScript = preload("res://scripts/election.gd")
 const ViewsScript = preload("res://scripts/views.gd")
 const TableScreenScript = preload("res://client/table_screen.gd")
 const SessionModelScript = preload("res://client/session_model.gd")
@@ -41,6 +42,19 @@ func _init() -> void:
 			s.choice = {"player": performer, "subject": performer, "deck": "settlement", "card": 22, "kind": "option", "labels": ["Gain 15 popularity", "Take 150 PSD"], "deadline": s.clock_ms + 10000, "prompt": "Pick your reward."}
 		"debate":
 			s.term["act"]["debate"] = {"rival": 0, "topic": "", "side": -1}
+		"exam_write", "exam_take", "ballot":
+			s.term = {}
+			ElectionScript.begin(s, "term_ended")
+			me = s.leader_id if mode == "exam_write" else 1
+			if mode != "exam_write":
+				var picks: Array = []
+				for i in 5:
+					picks.append({"id": i * 3, "answer": i % 3})
+				GameScript.handle(s, s.leader_id, {"type": "write_exam", "picks": picks})
+			if mode == "ballot":
+				for id in ids:
+					if id != s.leader_id:
+						GameScript.handle(s, id, {"type": "answer_exam", "answers": [0, 1, 2, 0, 1]})
 	var model = SessionModelScript.new()
 	model.seat = me
 	model.view = ViewsScript.state_view(s, me)

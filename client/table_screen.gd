@@ -6,6 +6,7 @@ const SessionModelScript = preload("res://client/session_model.gd")
 const TableLayoutScript = preload("res://client/table_layout.gd")
 const TableModelScript = preload("res://client/table_model.gd")
 const TurnModelScript = preload("res://client/turn_model.gd")
+const ExamScreenScript = preload("res://client/exam_screen.gd")
 
 signal constitution_requested
 signal command_requested(command: Dictionary)
@@ -38,6 +39,7 @@ var dock_buttons: HFlowContainer
 var dock_input: Dictionary = {"topic": "", "selection": []}
 var dock_shown: Dictionary = {}     # what the dock currently describes (see TurnModel)
 var clock_timer: float = 0.0
+var exam: Control
 
 
 func _ready() -> void:
@@ -65,6 +67,11 @@ func _build() -> void:
 	centre_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(centre_label)
 	_build_dock()
+	exam = ExamScreenScript.new()
+	exam.model = model
+	exam.visible = false
+	exam.command_requested.connect(func(command): command_requested.emit(command))
+	add_child(exam)
 	overlay = Panel.new()
 	overlay.position = Vector2(120, 70)
 	overlay.size = Vector2(1040, 600)
@@ -96,17 +103,27 @@ func _build_dock() -> void:
 	dock.add_child(column)
 	var head := HBoxContainer.new()
 	column.add_child(head)
+	var left_side := Label.new()   # an empty twin of the clock's side, so the title is truly centred
+	left_side.custom_minimum_size.x = 130
+	head.add_child(left_side)
 	dock_title = Label.new()
 	dock_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dock_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dock_title.add_theme_font_size_override("font_size", 21)
 	dock_title.clip_text = true
 	head.add_child(dock_title)
-	dock_lines = Label.new()
-	dock_lines.add_theme_font_size_override("font_size", 16)
-	head.add_child(dock_lines)
+	var right_side := VBoxContainer.new()
+	right_side.custom_minimum_size.x = 130
+	right_side.add_theme_constant_override("separation", -4)
+	head.add_child(right_side)
 	dock_clock = Label.new()
+	dock_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	dock_clock.add_theme_font_size_override("font_size", 24)
-	head.add_child(dock_clock)
+	right_side.add_child(dock_clock)
+	dock_lines = Label.new()
+	dock_lines.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	dock_lines.add_theme_font_size_override("font_size", 14)
+	right_side.add_child(dock_lines)
 	dock_card = Label.new()
 	dock_card.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	dock_card.max_lines_visible = 4
@@ -120,8 +137,8 @@ func _build_dock() -> void:
 	column.add_child(dock_topic)
 	dock_buttons = HFlowContainer.new()
 	dock_buttons.alignment = FlowContainer.ALIGNMENT_CENTER
-	dock_buttons.add_theme_constant_override("h_separation", 10)
-	dock_buttons.add_theme_constant_override("v_separation", 6)
+	dock_buttons.add_theme_constant_override("h_separation", 28)   # room between buttons, so a thumb hits one and not its neighbour
+	dock_buttons.add_theme_constant_override("v_separation", 10)
 	column.add_child(dock_buttons)
 
 
@@ -156,7 +173,7 @@ func _refresh_dock() -> void:
 	for spec in shown["buttons"]:
 		var button := Button.new()
 		button.text = spec["label"]
-		button.custom_minimum_size = Vector2(110, 48)
+		button.custom_minimum_size = Vector2(150, 50)
 		button.disabled = spec.get("disabled", false)
 		_style_button(button, str(spec.get("tone", "")))
 		button.pressed.connect(_on_dock_button.bind(spec))
@@ -201,6 +218,7 @@ func _process(delta: float) -> void:
 	if clock_timer >= 0.25 and visible and not model.view.is_empty():
 		clock_timer = 0.0
 		_refresh_dock()
+		exam.refresh()
 
 
 func _toggle_constitution() -> void:
@@ -262,6 +280,10 @@ func refresh() -> void:
 		badge.position = spots[i] - size / 2.0
 		_fill_badge(badge, info)
 	_refresh_dock()
+	exam.model = model
+	exam.refresh()
+	move_child(exam, get_child_count() - 1)   # badges are made as players appear: keep the sheet above them
+	move_child(overlay, get_child_count() - 1)
 	queue_redraw()
 
 

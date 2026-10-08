@@ -90,6 +90,17 @@ func writing_the_exam() -> void:
 		["11 questions are too many", exam(11)],
 		["not a list", "questions"],
 		["a pick that isn't an object", good.slice(0, 4) + [5]],
+		["a typed question with no text", good.slice(0, 4) + [{"options": ["A", "B"], "answer": 0}]],
+		["a blank typed question", good.slice(0, 4) + [typed("   ")]],
+		["a typed question that is too long", good.slice(0, 4) + [typed("x".repeat(201))]],
+		["a control character in a typed question", good.slice(0, 4) + [typed("bad\ttext")]],
+		["a typed question that isn't text", good.slice(0, 4) + [typed(7)]],
+		["one option", good.slice(0, 4) + [typed("Q?", ["A"])]],
+		["four options are too many", good.slice(0, 4) + [typed("Q?", ["A", "B", "C", "D"])]],
+		["a blank option", good.slice(0, 4) + [typed("Q?", ["A", " ", "C"])]],
+		["the same option twice", good.slice(0, 4) + [typed("Q?", ["A", "A", "C"])]],
+		["options that aren't a list", good.slice(0, 4) + [typed("Q?", "ABC")]],
+		["a typed answer out of range", good.slice(0, 4) + [typed("Q?", ["A", "B"], 2)]],
 		["a question that isn't in the bank", mutated(good, 0, "id", 9999)],
 		["a negative question number", mutated(good, 0, "id", -1)],
 		["a question number that isn't a whole number", mutated(good, 0, "id", "3")],
@@ -101,11 +112,11 @@ func writing_the_exam() -> void:
 	]:
 		var out := send(s, 1, write(case[1]))
 		expect("refused: " + case[0], types(out), ["rejected"])
-	expect("the old way, typing your own questions, is gone", types(send(s, 1, {"type": "write_exam", "questions": [{"text": "Free?", "options": ["A", "B"], "answer": 0}]})), ["rejected"])
+	expect("the exam must be sent as picks", types(send(s, 1, {"type": "write_exam", "questions": good})), ["rejected"])
 	expect("none of those changed anything", s.election["phase"], EXAM_WRITING)
 
 	# The limits are 5 to 10 questions, and both ends are allowed.
-	for ok in [["5 questions", exam(5)], ["10 questions", exam(10)]]:
+	for ok in [["5 questions", exam(5)], ["10 questions", exam(10)], ["typed questions only", [typed("One?"), typed("Two?"), typed("Three?"), typed("Four?"), typed("Five?")]], ["2 options", good.slice(0, 4) + [typed("Q?", ["A", "B"])]], ["a mix of bank and typed questions", good.slice(0, 3) + [typed("Does the Leader snore?", ["Yes", "Loudly"], 1), typed("Zobo or chapman?", ["Zobo", "Chapman", "Both"], 2)]]]:
 		var fresh := make_state()
 		ElectionScript.begin(fresh, "term_ended")
 		expect(ok[0] + " is allowed", types(send(fresh, 1, write(ok[1]))), ["exam_written"])
@@ -121,6 +132,10 @@ func writing_the_exam() -> void:
 	expect("a second exam is refused, so the answers are locked", types(send(s, 1, write(exam()))), ["rejected"])
 	expect("... and still the first key", s.election["key"], [0, 1, 2, 0, 1])
 	expect("the key is not in any view a player gets", ViewsScript.state_view(s, 2)["election"].has("key"), false)
+	var mixed := make_state()
+	ElectionScript.begin(mixed, "term_ended")
+	var made := send(mixed, 1, write([{"id": 0, "answer": 1}, typed("  Padded?  ", ["Yes", "No"], 1), {"id": 2, "answer": 0}, typed("Own?", ["A", "B", "C"], 2), {"id": 4, "answer": 2}]))
+	expect("typed text is trimmed, and a mix keeps its order and key", [types(made), mixed.election["exam"]["questions"][1], mixed.election["key"], mixed.election["exam"]["questions"][0]["text"] == ExamBankScript.question(0)["text"]], [["exam_written"], {"text": "Padded?", "options": ["Yes", "No"]}, [1, 1, 0, 2, 2], true])
 	expect("the bank is big enough for the longest exam, with room to choose", ExamBankScript.count() >= 30, true)
 	var every_question_ok: bool = true
 	for question in ExamBankScript.all():
@@ -514,6 +529,11 @@ func exam(count: int = 5) -> Array:
 	for i in count:
 		questions.append({"id": i, "answer": i % 3})
 	return questions
+
+
+# A question the Leader typed themselves.
+func typed(text: Variant, options: Variant = ["A", "B", "C"], answer: Variant = 0) -> Dictionary:
+	return {"text": text, "options": options, "answer": answer}
 
 
 # A copy of the exam with one field of one question replaced.

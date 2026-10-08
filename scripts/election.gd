@@ -120,8 +120,9 @@ static func install_leader(state: GameStateScript, winner: int, how: String) -> 
 # --- commands ----------------------------------------------------------------------------
 
 # Commands:
-#   { "type": "write_exam", "picks": [ { "id": int, "answer": int } ] }   the Leader picks 5 to 10 prepared questions (ExamBank) and says what THEIR
-#                                                                  true answer to each is; sending it LOCKS the answers away (see below)
+#   { "type": "write_exam", "picks": [ { "id": int, "answer": int } or { "text": String, "options": [String...], "answer": int } ] }
+#       the Leader sets 5 to 10 questions, each picked from the prepared bank (ExamBank) or typed themselves, and says what THEIR true
+#       answer to each is; sending it LOCKS the answers away (see below)
 #   { "type": "skip_exam" }                       (server only)
 #   { "type": "answer_exam", "answers": [int, ...] }
 #   { "type": "rig_exam", "target": id, "pass": bool }   the Leader, for a taker a card lets the marker manipulate (exam_rig)
@@ -219,14 +220,19 @@ static func _skip_exam(state: GameStateScript, player_id: int) -> Array:
 	return events
 
 
-# The Leader's picks from the prepared bank: [ { "id": question number, "answer": the number of THEIR true option } ].
-# Returns { "problem": String, "questions": Array, "key": Array }. Anything a client sends is untrusted.
+# The Leader's questions: each is EITHER one picked from the prepared bank, { "id": question number, "answer": int }, OR one they
+# typed themselves (for a laugh), { "text": String, "options": [String, String (, String)], "answer": int }. The two can be mixed
+# in one exam. "answer" is the number of THEIR true option. Returns { "problem": String, "questions": Array, "key": Array }.
+# Anything a client sends is untrusted; typed text is limited in length and has no control characters.
 static func _parse_exam(raw: Variant) -> Dictionary:
 	var min_questions: int = GameDataScript.get_int("examQuestions")
 	var max_questions: int = GameDataScript.get_int("examMaxQuestions")
+	var min_options: int = GameDataScript.get_int("examOptions")
+	var max_options: int = GameDataScript.get_int("examMaxOptions")
+	var max_text: int = GameDataScript.get_int("examTextMax")
 	var fail := func(problem: String) -> Dictionary: return {"problem": problem, "questions": [], "key": []}
 	if typeof(raw) != TYPE_ARRAY:
-		return fail.call("An exam is a list of questions picked from the bank.")
+		return fail.call("An exam is a list of questions.")
 	if raw.size() < min_questions or raw.size() > max_questions:
 		return fail.call("An exam needs %d to %d questions." % [min_questions, max_questions])
 	var questions: Array = []
@@ -236,20 +242,51 @@ static func _parse_exam(raw: Variant) -> Dictionary:
 		var item = raw[i]
 		var label: String = "Question %d" % (i + 1)
 		if typeof(item) != TYPE_DICTIONARY:
-			return fail.call("%s must be a question from the bank and your answer." % label)
-		var id = item.get("id", null)
-		if typeof(id) != TYPE_INT or id < 0 or id >= ExamBankScript.count():
-			return fail.call("%s is not a question in the bank." % label)
-		if id in used:
-			return fail.call("%s is already in your exam." % label)
-		used.append(id)
-		var question: Dictionary = ExamBankScript.question(id)
+			return fail.call("%s must be a question from the bank or one you wrote, and your answer." % label)
+		var question: Dictionary
+		if item.has("id"):
+			var id = item["id"]
+			if typeof(id) != TYPE_INT or id < 0 or id >= ExamBankScript.count():
+				return fail.call("%s is not a question in the bank." % label)
+			if id in used:
+				return fail.call("%s is already in your exam." % label)
+			used.append(id)
+			question = ExamBankScript.question(id)
+		else:
+			var text: String = _clean_text(item.get("text", null), max_text)
+			if text == "":
+				return fail.call("%s needs some text (up to %d characters, no control characters)." % [label, max_text])
+			var options_raw = item.get("options", null)
+			if typeof(options_raw) != TYPE_ARRAY or options_raw.size() < min_options or options_raw.size() > max_options:
+				return fail.call("%s needs %d to %d options." % [label, min_options, max_options])
+			var options: Array = []
+			for option_raw in options_raw:
+				var option: String = _clean_text(option_raw, max_text)
+				if option == "":
+					return fail.call("Every option of %s needs some text." % label)
+				if option in options:
+					return fail.call("%s has the same option twice." % label)
+				options.append(option)
+			question = {"text": text, "options": options}
 		var answer = item.get("answer", null)
 		if typeof(answer) != TYPE_INT or answer < 0 or answer >= question["options"].size():
 			return fail.call("%s needs the number of your true answer, from 0 to %d." % [label, question["options"].size() - 1])
 		questions.append({"text": question["text"], "options": question["options"]})
 		key.append(answer)
 	return {"problem": "", "questions": questions, "key": key}
+
+
+# Trimmed text, or "" if it isn't text, is empty, too long, or has control characters.
+static func _clean_text(value: Variant, max_length: int) -> String:
+	if typeof(value) != TYPE_STRING:
+		return ""
+	var text: String = value.strip_edges()
+	if text.is_empty() or text.length() > max_length:
+		return ""
+	for character in text:
+		if character.unicode_at(0) < 32 or character.unicode_at(0) == 127:
+			return ""
+	return text
 
 
 static func _answer_exam(state: GameStateScript, player_id: int, command: Dictionary) -> Array:

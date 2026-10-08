@@ -4,7 +4,7 @@
 #
 # describe(view, me, members, elapsed_ms, input) returns
 #   { "mode": String, "title": String, "card": String, "lines": [String], "seconds": int (-1 = no clock), "buttons": [ {label, command, disabled?, toggle?} ] }
-# modes: "none", "choice", "watch_choice", "perform", "watch", "challenge", "debate_speak", "debate_vote", "vote", "voted", "result", "end_turn"
+# modes: "none", "ballot", "choice", "watch_choice", "perform", "watch", "challenge", "debate_speak", "debate_vote", "vote", "voted", "result", "end_turn"
 # input: { "topic": String, "selection": Array } what the player has typed or ticked so far (for a debate topic, a "pick several" question)
 
 const GameStateScript = preload("res://scripts/game_state.gd")
@@ -24,6 +24,9 @@ static func describe(view: Dictionary, me: int, members: Array, elapsed_ms: int 
 	var choice: Dictionary = view.get("choice", {})
 	if not choice.is_empty():
 		return _choice(out, choice, me, members, clock, input)
+	var election: Dictionary = view.get("election", {})
+	if not election.is_empty():
+		return _election(out, view, election, me, members, clock)
 	var act: Dictionary = view.get("term", {}).get("act", {})
 	if act.is_empty():
 		return out
@@ -67,6 +70,44 @@ static func describe(view: Dictionary, me: int, members: Array, elapsed_ms: int 
 				if act.has("end_by"):
 					out["seconds"] = _seconds(int(act["end_by"]), clock)
 				out["buttons"] = [{"label": "End my turn", "command": {"type": "end_turn"}}]
+	return out
+
+
+# The election: who is writing the exam, who has handed theirs in, and the ballot (the exam pages themselves are ExamModel's).
+static func _election(out: Dictionary, view: Dictionary, election: Dictionary, me: int, members: Array, clock: int) -> Dictionary:
+	if election.has("deadline"):
+		out["seconds"] = _seconds(int(election["deadline"]), clock)
+	match int(election.get("phase", GameStateScript.ElectionPhase.NONE)):
+		GameStateScript.ElectionPhase.EXAM_WRITING:
+			out["mode"] = "watch"
+			if me == int(view.get("leader_id", -1)):
+				out["mode"] = "none"   # the Leader is on the exam sheet
+			else:
+				out["title"] = "%s is setting the exam" % TableModelScript.name_of(members, int(view.get("leader_id", -1)))
+		GameStateScript.ElectionPhase.EXAM_ANSWERING:
+			var takers: Array = election.get("takers", [])
+			var answered: Array = election.get("answered", [])
+			out["lines"] = ["%d of %d handed in" % [answered.size(), takers.size()]]
+			if me in takers and not me in answered:
+				out["mode"] = "none"   # an exam sheet is open for them
+			else:
+				out["mode"] = "watch"
+				out["title"] = "The exam is being sat" if me in takers or me == int(view.get("leader_id", -1)) else "The exam is being sat (you are sitting it out)"
+		GameStateScript.ElectionPhase.VOTING:
+			var voters: Array = election.get("voters", [])
+			var voted: Array = election.get("voted", [])
+			out["lines"] = ["%d have voted" % voted.size()]
+			if not me in voters:
+				out["mode"] = "watch"
+				out["title"] = "The ballot is open. You can't vote this time"
+			elif me in voted:
+				out["mode"] = "voted"
+				out["title"] = "You voted. Waiting for the others"
+			else:
+				out["mode"] = "ballot"
+				out["title"] = "Vote for the next Leader"
+				for id in election.get("candidates", []):
+					out["buttons"].append({"label": TableModelScript.name_of(members, int(id)), "command": {"type": "cast_vote", "candidate": int(id)}})
 	return out
 
 

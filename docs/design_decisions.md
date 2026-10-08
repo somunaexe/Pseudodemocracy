@@ -195,7 +195,7 @@ Round order from the handbook: Exam, Vote, Role card draw, then the Inauguration
 | Question | Decision | Status |
 |---|---|---|
 | When is there an exam? | Only when a term has ended normally and the Leader can write one. Not in the first election, not after a vacancy (nobody to write it), not if the Leader is sick or CANCELLED ("no exam ready: everyone votes and runs"). | **Built** |
-| What does the Leader write? | 5 to 10 multiple-choice questions, each with 2 to 3 options and one right answer (the limits are in game_data). The answer key is sealed in server state. | **Built** |
+| What does the Leader write? | 5 to 10 multiple-choice questions, each with 2 to 3 options and one right answer. Each is EITHER picked from a **bank of 46 prepared questions** about the Leader (data/source/exam_questions.js; they are there if the Leader wants them) OR **typed by the Leader for a laugh** (up to 200 characters, no control characters); the two can be mixed. The Leader marks THEIR true answer to each. The key is sealed in server state. | **Built** (your decision) |
 | Who sits it? | Everyone alive and not sick, except the Leader. | **Built** |
 | When is it marked? | When everyone who can sit it has handed in answers. The key is then revealed. | **Built** |
 | How is it marked? | "More than" the pass mark, with no fractions (3 of 6 is exactly 50% and does not pass). The pass mark AND the word "more" are in Article 1 and can be amended (to "less" or "fewer", the Exam rule flips). | **Built** |
@@ -212,7 +212,7 @@ Round order from the handbook: Exam, Vote, Role card draw, then the Inauguration
 | The Leader role cards. | Three cards, one for each role (Dictator, President, Commander). The Leader KEEPS their card for their whole term: it is their role. It goes back into the pile and is shuffled only when it is time to draw, so all three cards are in every draw and each is equally likely (a re-elected Leader can draw the same card again). | **Built**, corrected by the designer |
 | The outgoing Leader's score. | A term that ends normally is credited 2 half-rounds when the election begins. A Leader eliminated mid-term is credited 1 half-round for the cut-short term, like a coup. It is kept for the record only: an eliminated player can never win, so it never ranks. (If the term had already ended and an election was under way, nothing more is added.) | Confirmed |
 | A CANCELLED (or sick) Leader. | Keeps the seat; becoming CANCELLED starts no election. At the end of the term the election runs as normal with no exam: they can vote but cannot stand. | **Built** (tested end to end: a failed amendment drives the Leader to -50) |
-| Can a Leader tamper with the exam? | No. The answer key is sealed when the exam is written and nothing can change it afterwards, so answers can't be altered after seeing responses. Questions are free text, so a Leader writes whatever they like. Nothing special is built for the handbook's "insider question" sample, which is only an example, not a rule. | Confirmed |
+| Can a Leader tamper with the exam? | No. The answer key is sealed when the exam is written and nothing can change it afterwards, so answers can't be altered after seeing responses. The phone's **Lock in** button asks "are you sure?" first, and says the answers will be sealed: nobody can change or see them, the Leader included, until the marking. Typed questions are free text, so a Leader writes whatever they like (moderating typed text is a release item). Nothing special is built for the handbook's "insider question" sample. | Confirmed |
 | What starts a new term? | `install_leader`: the draw, 0 turns played, all three amendment windows open again, and the round counter goes up by one (except the first election). A coup will use the same function. | **Built** |
 | What if the exam never arrives? | The server can skip it (`skip_exam`, server only). It also skips itself if the Leader is eliminated while writing. | **Built** |
 | What if someone leaves mid-election? | An elimination re-checks the exam and the vote, so it finishes if they were the last one awaited. Ballots for a dead candidate are discarded. | **Built** |
@@ -750,3 +750,15 @@ Checks: `tests/test_client_lobby.gd` (model, screen) and `tools/smoke_server.sh`
 
 Looked at (docs/screenshots/): one bug found by looking, not by the tests: with a three-line card the Good/Bad buttons were cut off; fixed by moving short notes into the title row. Checks: `tests/test_client_turn.gd` presses the real buttons against the real server core.
 | Who is being voted on | A thick **yellow outline** round that player's badge while the table votes: the performer during the Good/Bad vote (both debaters in a debate), every candidate in an election ballot. The player whose turn it is, outside a vote, has a thin white outline; you have blue. | **Built** |
+
+### The exam and the ballot on the phone (built: client/exam_model.gd, exam_screen.gd)
+
+| Question | Decision | Status |
+|---|---|---|
+| The Leader's sheet | A full-screen page: your exam so far (each question with its options as buttons, green = your true answer, and Remove), a form to type your own question (2 or 3 options), then the 46 prepared questions to tap in or out. Lock in is off until 5 to 10 questions are all marked, then asks "Lock in your exam?" with Back and Lock it. What you have typed survives a redraw. | **Built** |
+| A taker's sheet | The questions only, one row of option buttons each; Hand in is off until every question is answered. Nobody's answers are ever shown, and the key never reaches a phone (tested). | **Built** |
+| Everyone else | The dock says who is setting the exam, then how many have handed theirs in, each with the clock. | **Built** |
+| The ballot | Buttons, one per candidate who passed, in the centre dock; afterwards "You voted"; a player who failed is told they can't vote. Every candidate has the yellow outline. | **Built** |
+| Dock polish (your request) | Title and card text centred; buttons 150 x 50 with a wide gap between them. | **Built** |
+
+Looked at (docs/screenshots/): the exam sheet first drew UNDER the player badges (they are made later); fixed by keeping the sheet on top.
