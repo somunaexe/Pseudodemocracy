@@ -256,7 +256,14 @@ func confront_rules() -> void:
 	s.unions[13] = union(ACTIVIST, 2, [2, 3])
 	expect("only the unionizer decides", types(send(s, 3, {"type": "confront", "union_id": 13})), ["rejected"])
 	s.unions[14] = union(ACTIVIST, 2, [1, 2])
-	expect("a union with the Leader in it can't confront", types(send(s, 2, {"type": "confront", "union_id": 14})), ["rejected"])
+	expect("a union with the Leader in it must name a rival", types(send(s, 2, {"type": "confront", "union_id": 14})), ["rejected"])
+	expect("... who can't be one of its own members", types(send(s, 2, {"type": "confront", "union_id": 14, "rival": 2})), ["rejected"])
+	var shamed := send(s, 2, {"type": "confront", "union_id": 14, "rival": 4})
+	expect("an Activist union with the Leader shames the rival, and the amendment is untouched", [types(shamed), s.amend.get("phase", 0) != 0], [["union_confronted", "rival_shamed"], true])
+	s.unions[16] = union(AGBERO, 3, [1, 3])
+	var cash: int = s.psd[5]
+	var robbed := send(s, 3, {"type": "confront", "union_id": 16, "rival": 5})
+	expect("a mob with the Leader robs the rival, not the Leader, and disperses", [types(robbed), cash - s.psd[5], s.unions.has(16)], [["union_confronted", "rival_robbed", "union_dispersed"], 100, false])
 	s.unions[15] = union(ACTIVIST, 4, [4, 5])
 	s.sick[4] = true
 	expect("a sick unionizer can't act", types(send(s, 4, {"type": "confront", "union_id": 15})), ["rejected"])

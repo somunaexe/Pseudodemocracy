@@ -28,6 +28,7 @@ const ViceScript = preload("res://scripts/vice.gd")
 const SpecialCardsScript = preload("res://scripts/special_cards.gd")
 const ModifiersScript = preload("res://scripts/modifiers.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
+const RivalsScript = preload("res://scripts/rivals.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 # Only the server may rule on grammar. How it decides (a referee, a tool, word lists)
@@ -286,7 +287,7 @@ static func _confront(state: GameStateScript, player_id: int, command: Dictionar
 	if union["confront_used"]:
 		return [_reject(player_id, "This %s has already confronted the Leader." % UnionsScript.word(union))]
 	if state.leader_id in union["members"] or state.vice_id in union["members"]:
-		return [_reject(player_id, "A %s that includes the Leader can't confront (Article 17 is not built yet)." % UnionsScript.word(union))]
+		return _confront_a_rival(state, player_id, union_id, union, command)
 
 	union["confront_used"] = true
 	var events: Array = [EventsScript.make("union_confronted", {
@@ -299,6 +300,37 @@ static func _confront(state: GameStateScript, player_id: int, command: Dictionar
 	else:
 		state.amend["activists"].append(union_id)
 		events.append_array(_maybe_resolve(state))
+	return events
+
+
+# Article 17: a union or mob that includes the Leader (or the Vice) can't act against its own member. It acts on a rival
+# of the Leader's choice instead, and the amendment carries on untouched. Assumption: the Unionizer sends the name on the
+# Leader's behalf (as `rival`), and it must be one of the Leader's rivals (or anyone outside the group if they have none).
+# A mob makes the rival pay each member the steal amount; Activists cost the rival one swing of popularity.
+static func _confront_a_rival(state: GameStateScript, player_id: int, union_id: int, union: Dictionary, command: Dictionary) -> Array:
+	var chooser: int = state.leader_id if state.leader_id in union["members"] else state.vice_id
+	var allowed: Array = []
+	for id in RivalsScript.candidates(state, chooser):
+		if not id in union["members"] and not state.eliminated.get(id, false):
+			allowed.append(id)
+	if allowed.is_empty():
+		return [_reject(player_id, "There is no rival outside the %s to act on." % UnionsScript.word(union))]
+	var rival = command.get("rival", null)
+	if typeof(rival) != TYPE_INT or not rival in allowed:
+		return [_reject(player_id, "A %s that includes the Leader acts on a rival of the Leader's choice: name one." % UnionsScript.word(union))]
+	union["confront_used"] = true
+	var events: Array = [EventsScript.make("union_confronted", {"union_id": union_id, "union_type": union["type"], "unionizer": player_id, "rival": rival})]
+	if union["type"] == GameStateScript.UnionType.AGBERO:
+		var steal: int = LawScript.get_int(state, "agberoSteal")
+		var became_debt: int = 0
+		for member in union["members"]:
+			became_debt += DebtScript.charge(state, rival, member, steal)
+		events.append(EventsScript.make("rival_robbed", {"union_id": union_id, "rival": rival, "stolen_each": steal, "members": union["members"].duplicate(), "became_debt": became_debt}))
+		events.append_array(UnionsScript.disperse(state, union_id, "the mob acted"))
+	else:
+		var lost: int = GameDataScript.base_swing(_active_players(state).size())
+		PopularityScript.change_base(state, rival, -lost)
+		events.append(EventsScript.make("rival_shamed", {"union_id": union_id, "rival": rival, "popularity_lost": lost}))
 	return events
 
 

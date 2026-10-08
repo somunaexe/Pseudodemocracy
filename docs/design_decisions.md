@@ -68,7 +68,7 @@ Commands in, events out, a state machine in between (NONE, PROPOSED, VOTING). Se
 Assumptions to confirm:
 1. **Agbero steal.** The handbook says "steal 50 x union size". I read it as 50 to *each* member (so 50 x size in total). If the Leader can't pay everyone, members are paid in the order they joined and the rest becomes debt (FIFO). Is "who gets paid first" meant to matter?
 2. **Activist doubling.** I doubled the weight for both the keep/reject count and the popularity swing. The handbook says "the union's total vote is doubled".
-3. **A union that contains the Leader** can't confront at all (Article 17 says its actions target a rival; not built yet).
+3. **A union that contains the Leader (or Vice)** acts on a rival of the Leader's choice instead (Article 17, built): the Unionizer names the rival (one of the Leader's rivals, or anyone outside the group if none). A mob makes the rival pay each member 50; Activists cost the rival one swing of popularity. The amendment carries on untouched. Assumption: the Unionizer names the rival on the Leader's behalf.
 4. ~~Commands from the network carry floats.~~ Solved: `Serializer.parse_command` converts them to ints before `handle` sees them.
 
 ## Serialization (built: scripts/serializer.gd, 105 checks)
