@@ -18,7 +18,7 @@ func _init() -> void:
 	tax_and_the_treasury()
 	debts_are_paid_first()
 	income_arrives_on_your_own_turn()
-	roles_stay_secret()
+	roles_are_public()
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -106,11 +106,13 @@ func income_arrives_on_your_own_turn() -> void:
 	expect("... the money is all still there", total_money(s), 12550)
 
 
-func roles_stay_secret() -> void:
+func roles_are_public() -> void:
 	var s := new_term()
-	s.roles = {3: ["Doctor"]}
-	var view: Dictionary = ViewsScript.state_view(s, 3)
-	expect("nobody's view has role cards, not even their own (peeking comes later)", [view.has("roles"), ViewsScript.state_view_json(s, 4).contains("[\"Doctor\"]")], [false, false])
+	s.roles = {3: ["Doctor", "Lawyer"]}
+	expect("everyone sees who holds which roles", [ViewsScript.state_view(s, 4)["roles"], ViewsScript.state_view(s, 3)["roles"]], [{3: ["Doctor", "Lawyer"]}, {3: ["Doctor", "Lawyer"]}])
+	var view: Dictionary = ViewsScript.state_view(s, 4)
+	view["roles"][3].append("Agbero")
+	expect("the view is a copy", s.roles[3], ["Doctor", "Lawyer"])
 
 
 # --- helpers -----------------------------------------------------------------------------

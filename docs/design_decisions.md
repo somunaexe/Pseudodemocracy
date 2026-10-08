@@ -286,8 +286,9 @@ A turn: the levy has already been paid (at the start of the term). The player dr
 | Can roles stack? | Yes, and each role earns its own income, on top of the Leader's 100 if they lead. | Confirmed |
 | What is the tax? | The tax rate in Article 2 (so it follows amendments) of what was paid, rounded down, in the player's favour. The tax goes back to the treasury; the player gets the rest. | Confirmed |
 | Is income collected against debts? | Yes. It goes through `Debt.receive`, so the oldest debts are paid first. A Leader's income can therefore pull them out of debt. | **Built** |
-| Does the event show where the income came from? | No. It shows the amounts only, because role cards are secret and "70" would give away a Doctor. The balances are public anyway, so careful players can still guess; whether to hide more is open. | Assumed, please confirm |
-| Are role cards secret? | Yes. The `roles` field never leaves the server. Nothing deals roles yet, and a player seeing their own roles comes with that. | **Built** (secrecy), roles not dealt yet |
+| Does the event show where the income came from? | It shows the amounts only (gross, tax, net). Roles are public, so nothing is hidden by this. | **Built** |
+| Are role cards secret? | No. Everyone can see who holds which roles. (I wrongly assumed they were secret from the card text; you corrected this.) | Confirmed |
+| How are roles gained? | From Settlement cards. So dealing roles comes with the card effects. | Confirmed |
 
 Not built yet, and the next steps: dealing and gaining roles, the effects of the cards, coups.
 

@@ -79,6 +79,6 @@ var decks: Dictionary = {}          # deck name -> shuffled list of card numbers
 enum ActPhase { PERFORMING, VOTING, DONE }
 
 # The role cards each player holds (Doctor, Lawyer, Secret Agent, Activist, Agbero). A player can hold
-# several, and each earns its own income. SECRET: role cards can be peeked at (see Views). Nothing
-# deals roles yet.
+# several, and each earns its own income. Public: everyone can see who holds which role. Roles are
+# gained from Settlement cards; nothing deals them yet.
 var roles: Dictionary = {}          # player id -> list of role names; absent = no roles
