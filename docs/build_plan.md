@@ -19,7 +19,7 @@ The rules engine (pure GDScript, tested headless) is nearly complete. What is le
 ## Phase 3: the client (Godot UI), in the order a game needs it
 11. **(done)** **Lobby screen and connection.** Name, room code, ready, player list.
 12. **(done, first version)** **Table view.** Players around the table with popularity, cash, role badges, Leader/Vice, unions and mobs, markers, rivals and loyalists; the treasury; the current Article texts.
-13. **The turn.** Performance card display, timers, Good/Bad voting, debates (sides, topic, vote), Settlement and Scandal reveals, choices (option, role, player pickers).
+13. **(first part done)** **The turn.** Performance card display, timers, Good/Bad voting, debates (sides, topic, vote), Settlement and Scandal reveals, choices (option, role, player pickers).
 14. **Elections and amendments.** Exam writing and answering, ballot, amendment proposal editor (highlighted words only), co-sign prompt, voting, results.
 15. **Private panels.** Your will, hand of kept cards, Secret Agent and peek reports, Doctor doses and bead guessing, hiring an Agent, free checks.
 16. **Actions menu.** Coups, deals, unions (recruit, respond, command performance, confront), pay fine, wills.

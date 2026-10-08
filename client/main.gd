@@ -30,6 +30,7 @@ func _ready() -> void:
 	lobby.join_requested.connect(func(room_code, name, gender): connection.send_text(connection.model.make_join_room(room_code, name, gender)))
 	lobby.start_requested.connect(func(): connection.send_text(connection.model.make_start_game()))
 	lobby.leave_requested.connect(func(): connection.send_text(connection.model.make_leave()))
+	table.command_requested.connect(func(command): connection.send_text(connection.model.make_command(command)))
 	connection.received.connect(func(_message): _refresh())
 	connection.state_changed.connect(_refresh)
 	if connection.model.has_saved_seat() or args.has("--server"):

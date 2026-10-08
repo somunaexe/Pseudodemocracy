@@ -34,9 +34,15 @@ func layout() -> void:
 				apart = apart and not box.intersects(Rect2(spots[j] - size / 2.0, size))
 		expect("%d players: every badge is on the screen" % count, inside, true)
 		expect("%d players: no two badges overlap" % count, apart, true)
+		var clear: bool = true
+		for i in count:
+			var box := Rect2(spots[i] - size / 2.0, size)
+			clear = clear and not box.intersects(LayoutScript.right_dock()) and not box.intersects(LayoutScript.left_dock())
+		expect("%d players: nobody sits in the docks beside your badge" % count, clear, true)
 		expect("%d players: you sit at the bottom middle" % count, [absf(spots[0].x - 640.0) < 0.01, spots[0].y > area.get_center().y], [true, true])
 	var one: Array = LayoutScript.positions(4)
 	expect("the next seat clockwise is on your left, and the one opposite is at the top", [one[1].x < 640.0, one[2].y < one[0].y, absf(one[2].x - 640.0) < 0.01, one[3].x > 640.0], [true, true, true, true])
+	expect("the docks are the bottom corners, either side of you", [LayoutScript.right_dock().position.x > 640.0, LayoutScript.left_dock().end.x < 640.0, LayoutScript.right_dock().end.y <= 720.0], [true, true, true])
 	expect("everyone sees the same order from their own place", [LayoutScript.order_from([1, 2, 3, 4, 5], 3), LayoutScript.order_from([1, 2, 3, 4, 5], 1), LayoutScript.order_from([1, 2, 3], 99)], [[3, 4, 5, 1, 2], [1, 2, 3, 4, 5], [1, 2, 3]])
 
 

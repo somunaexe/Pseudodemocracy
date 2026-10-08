@@ -737,3 +737,15 @@ Checks: `tests/test_client_lobby.gd` (model, screen) and `tools/smoke_server.sh`
 | The middle | What is happening: the election step, the Inauguration, "X's turn", the Farewell, game over. Round, treasury and Leader are in the top bar. The middle will also hold the performance card and the vote (item 13). | **Built** (first part) |
 | Constitution | A button top right opens every article, its title and its current wording over the table. | **Built** |
 | Looked at | `tools/screenshot_table.gd` draws the real screen to a picture (needs a display: `xvfb-run`); see docs/screenshots/. Not yet tried on a phone. | **Built** |
+
+### The turn (item 13, first part, built: client/turn_model.gd and the right dock)
+
+| Question | Decision | Status |
+|---|---|---|
+| Where the card and buttons go | In a **dock in the bottom-right corner, beside your own badge** (your pick, though you were unsure: it is one rectangle in `table_layout.gd`, so it is cheap to move). The bottom-left dock is kept free for what is yours alone (your cards, will, actions: items 15 and 16). No one else's badge is ever in either dock (tested for 3 to 10 players). The other players sit on an oval that stops above the docks; you sit at the bottom middle between them. | **Built** |
+| What the dock shows | Whatever needs you now: your performance card with a countdown and "I'm done"; the Good/Bad vote (green and red) with how many have voted; the result (votes, popularity change, the Settlement or Scandal card drawn) and "End my turn" with its 15-second clock; a debate (pick a rival and type a topic, speak and say "enough", vote for the winner); any question a card asks (option, role, player, several players, number). Others see who is performing or choosing, with the same countdown. | **Built** |
+| Who decides | The buttons carry the exact command; the server checks every one. The phone has no rules in it. | **Built** |
+| Countdowns | The view carries the game clock and the deadline; the phone counts on from the moment the view arrived. | **Built** |
+| Not yet in the dock | Elections (exam, ballot) and amendments (item 14), polls and offers (sell a card, a union invitation, a dose, a will, an Agent hire) and Settlement/Scandal reveals as their own moment (the result line carries the text for now), Command Performance. | Next |
+
+Looked at (docs/screenshots/): one bug found by looking, not by the tests: with a three-line card the Good/Bad buttons were cut off; fixed by moving short notes into the title row. Checks: `tests/test_client_turn.gd` presses the real buttons against the real server core.

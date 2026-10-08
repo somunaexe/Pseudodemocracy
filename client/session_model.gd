@@ -23,6 +23,14 @@ var view: Dictionary = {}          # our latest view of the game (state_view)
 var recent_events: Array = []      # events since the last time the screen looked, oldest first
 var error: String = ""             # the last thing the server refused, until the screen has shown it
 var connected: bool = false        # is the socket open (set by the connection)
+var view_received_ms: int = 0      # local clock (Time.get_ticks_msec) when the view arrived: countdowns run on from there
+
+
+# Milliseconds since the view arrived: the game's clock, as the phone last heard it, has moved on by this much.
+func elapsed_ms(now_ms: int = -1) -> int:
+	if now_ms < 0:
+		now_ms = Time.get_ticks_msec()
+	return maxi(0, now_ms - view_received_ms)
 
 
 func stage() -> int:
@@ -83,6 +91,7 @@ func apply(message: Dictionary) -> void:
 			started = bool(message["started"])
 			members = message["members"]
 		"state":
+			view_received_ms = Time.get_ticks_msec()
 			if message.get("full", false):
 				view = message["view"]
 			else:
