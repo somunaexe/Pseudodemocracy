@@ -4,7 +4,8 @@ class_name TermLoop
 #
 #   INAUGURATION  the Leader may amend one article, or pass
 #      |          then the levy is collected from every player
-#   TURNS         every player takes one turn, the Leader first, then round the table
+#   TURNS         every player takes one turn, carrying on round the table from where the last
+#      |          term stopped (after a coup the new Leader goes first instead)
 #      |          the Mid-term amendment opens once half have played (see Permissions)
 #   FAREWELL      the Leader may amend one article, or pass
 #      |
@@ -76,6 +77,7 @@ static func _end_turn(state: GameStateScript, player_id: int) -> Array:
 	waiting.pop_front()
 	state.term["played"].append(player_id)
 	_sync_counts(state)
+	state.last_turn_player = player_id   # the next term carries on from here
 	var events: Array = [_log(state, "turn_ended", {"player": player_id})]
 	events.append_array(TurnEndScript.end_turn(state, player_id))   # a debt term, a Nepo step; may eliminate
 	return events
@@ -150,10 +152,19 @@ static func _collect_levy(state: GameStateScript) -> Dictionary:
 	return _log(state, "levy_collected", {"levy": levy, "unpaid": unpaid})
 
 
-# The Leader first, then round the table in seat order, skipping anyone who is out.
+# The order of turns this term. Play carries on round the table from where the last term stopped:
+# the first turn goes to the player after the one who took the last turn (the first seat in the very
+# first term). Only after a coup does the new Leader go first, and play continues from them.
+# Eliminated players are skipped. With nobody eliminated and no coup, every term therefore starts
+# with the same player, because a term is one full lap.
 static func _turn_order(state: GameStateScript) -> Array:
 	var seats: Array = state.player_ids
-	var start: int = seats.find(state.leader_id)
+	var start: int = 0
+	if state.leader_goes_first:
+		start = seats.find(state.leader_id)
+	elif state.last_turn_player != 0:
+		start = (seats.find(state.last_turn_player) + 1) % seats.size()
+	state.leader_goes_first = false   # a coup affects one term only
 	var order: Array = []
 	for i in seats.size():
 		var id: int = seats[(start + i) % seats.size()]

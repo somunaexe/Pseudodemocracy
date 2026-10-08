@@ -85,6 +85,7 @@ static func install_leader(state: GameStateScript, winner: int, how: String) -> 
 	state.leader_id = winner
 	state.leader_type = leader_type
 	state.turns_played = 0
+	state.leader_goes_first = (how == "coup")   # after a coup the new Leader takes the first turn
 	state.amend = {}
 	for window in state.windows_used:
 		state.windows_used[window] = false

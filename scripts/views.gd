@@ -15,7 +15,7 @@ const PopularityScript = preload("res://scripts/popularity.gd")
 const PUBLIC_FIELDS = [
 	"player_count", "turns_played", "leader_id", "leader_type", "sick",
 	"windows_used", "treasury", "psd", "debts", "debt_terms", "eliminated", "player_ids",
-	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "term", "game_over",
+	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "term", "game_over", "last_turn_player", "leader_goes_first",
 ]
 
 # Shown only after being cleaned up for the one asking (see state_view).

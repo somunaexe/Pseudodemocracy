@@ -360,6 +360,9 @@ func the_role_card_draw() -> void:
 	expect("... nothing left of the old amendment", s.amend.is_empty(), true)
 	expect("... the round counter moved on", s.current_round, 5)
 	expect("a coup (no election) also installs a Leader and starts a term", [ElectionScript.install_leader(s, 2, "coup")[0]["how"], s.current_round], ["coup", 6])
+	expect("... and after a coup the new Leader goes first", s.leader_goes_first, true)
+	ElectionScript.install_leader(s, 2, "vote")
+	expect("an ordinary election does not", s.leader_goes_first, false)
 
 
 func a_cancelled_leader_keeps_the_seat() -> void:

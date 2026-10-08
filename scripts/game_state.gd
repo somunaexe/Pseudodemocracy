@@ -56,3 +56,8 @@ var rng_state: int = 2463534242
 enum TermPhase { NONE, INAUGURATION, TURNS, FAREWELL }
 var term: Dictionary = {}           # {} between terms; in TURNS and FAREWELL it lists the players who have "played" and who are "waiting", in turn order
 var game_over: bool = false
+
+# Whose turn starts the next term. Play carries on round the table from where the last term stopped,
+# except after a coup, when the new Leader goes first (see TermLoop).
+var last_turn_player: int = 0       # the player who took the most recent turn; 0 before any turn
+var leader_goes_first: bool = false # set by a coup, used up by the next term's turn order

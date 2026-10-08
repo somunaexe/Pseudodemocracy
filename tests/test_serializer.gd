@@ -196,6 +196,8 @@ func rich_state() -> GameStateScript:
 	s.rng_state = 3735928559
 	s.term = {"phase": GameStateScript.TermPhase.TURNS, "played": [2], "waiting": [3, 4], "announced": 3}
 	s.game_over = true
+	s.last_turn_player = 4
+	s.leader_goes_first = true
 	s.election = {
 		"phase": GameStateScript.ElectionPhase.VOTING, "reason": "term_ended", "runoff": 1,
 		"exam": {"questions": [{"text": "Who rules?", "options": ["Me", "You"]}]}, "key": [0],

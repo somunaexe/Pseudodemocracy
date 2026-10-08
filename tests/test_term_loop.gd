@@ -49,32 +49,32 @@ func a_term_from_start_to_finish() -> void:
 
 	var ev := send(s, 2, {"type": "pass_window"})
 	expect("passing the Inauguration collects the levy and starts the first turn", types(ev), ["window_passed", "levy_collected", "turn_started"])
-	expect("the Leader takes the first turn", ev[2]["player"], 2)
+	expect("the first seat takes the first turn: no earlier term, no coup", ev[2]["player"], 1)
 	expect("the levy is 25 from everyone", [ev[1]["levy"], s.psd[1], s.psd[2], s.psd[5]], [25, 975, 975, 975])
 	expect("... it goes to the treasury", s.treasury, 7550 + 125)
 	expect("... and no money was made or lost", total_money(s), 12550)
 	expect("everyone had enough, so nobody owes", ev[1]["unpaid"], {})
-	expect("turn order: the Leader, then round the table", [s.term["waiting"], s.term["played"]], [[2, 3, 4, 5, 1], []])
+	expect("turn order: round the table from the first seat", [s.term["waiting"], s.term["played"]], [[1, 2, 3, 4, 5], []])
 	expect("the Inauguration window is gone", s.windows_used[INAUG], true)
 
-	expect("player 3 can't end player 2's turn", send(s, 3, {"type": "end_turn"})[0]["reason"], "It isn't your turn.")
-	var first := send(s, 2, {"type": "end_turn"})
+	expect("player 3 can't end player 1's turn", send(s, 3, {"type": "end_turn"})[0]["reason"], "It isn't your turn.")
+	var first := send(s, 1, {"type": "end_turn"})
 	expect("a turn ends and the next starts", types(first), ["turn_ended", "turn_started"])
-	expect("... player 3 is next", first[1]["player"], 3)
+	expect("... player 2 is next", first[1]["player"], 2)
 	expect("turns played is counted", s.turns_played, 1)
-	send(s, 3, {"type": "end_turn"})
+	send(s, 2, {"type": "end_turn"})
 	expect("2 of 5 played: the Mid-term window is still closed", Dictionary(send(s, 2, propose(s, 2, MID, "30%"))[0])["reason"], "This amendment window isn't open yet.")
 
-	send(s, 4, {"type": "end_turn"})
+	send(s, 3, {"type": "end_turn"})
 	expect("3 of 5 played (half, rounded up): the Mid-term window is open", types(send(s, 2, propose(s, 2, MID, "30%"))), ["amendment_proposed"])
-	expect("... and the turns carry on while it is voted on", types(send(s, 5, {"type": "end_turn"})), ["turn_ended", "turn_started"])
+	expect("... and the turns carry on while it is voted on", types(send(s, 4, {"type": "end_turn"})), ["turn_ended", "turn_started"])
 	send(s, SERVER, {"type": "rule_grammar", "ok": true})
 	for id in [1, 3, 4, 5]:
 		send(s, id, {"type": "vote", "keep": true})
 	expect("the Mid-term amendment stood", ConstitutionScript.to_text(s.articles[2]), "Tax: 30% of income goes to the treasury every round.")
 
 	expect("the Farewell window isn't open before the last turn", types(send(s, 2, propose(s, 2, FAREW, "35%"))), ["rejected"])
-	var last := send(s, 1, {"type": "end_turn"})
+	var last := send(s, 5, {"type": "end_turn"})
 	expect("the last turn opens the Farewell", types(last), ["turn_ended", "farewell_opened"])
 	expect("... the term is in its Farewell phase", s.term["phase"], FAREWELL)
 	expect("... everyone has played", [s.turns_played, s.player_count], [5, 5])
@@ -89,7 +89,7 @@ func a_term_from_start_to_finish() -> void:
 	# The Farewell window can also be used.
 	s = new_term(PRESIDENT)
 	send(s, 2, {"type": "pass_window"})
-	for id in [2, 3, 4, 5, 1]:
+	for id in [1, 2, 3, 4, 5]:
 		send(s, id, {"type": "end_turn"})
 	expect("in the Farewell the Leader may amend", types(send(s, 2, propose(s, 2, FAREW, "35%"))), ["amendment_proposed"])
 	expect("... and the term waits for that amendment", s.term["phase"], FAREWELL)
@@ -159,7 +159,7 @@ func a_leader_who_cannot_amend() -> void:
 	# A Commander can't amend, so the Inauguration is skipped and the term goes straight on.
 	var s := new_term(COMMANDER)
 	expect("a Commander's Inauguration is skipped, the levy collected and the turns begin", s.term["phase"], TURNS)
-	expect("... the first turn belongs to the Leader", s.term["waiting"][0], s.leader_id)
+	expect("... the first turn belongs to the first seat, not the Leader", s.term["waiting"][0], 1)
 	expect("... the levy was collected", s.psd[1], 975)
 	expect("... and the Inauguration window was never used", s.windows_used[INAUG], false)
 
@@ -168,7 +168,7 @@ func a_leader_who_cannot_amend() -> void:
 	s.sick[2] = true
 	var ev := GameScript.tick(s)
 	expect("a sick Leader's Inauguration is skipped", types(ev), ["levy_collected", "turn_started"])
-	for id in [2, 3, 4, 5, 1]:
+	for id in [1, 2, 3, 4, 5]:
 		TermLoopScript.handle(s, id, {"type": "end_turn"})
 	var end := TermLoopScript.settle(s)
 	expect("... and so is their Farewell: the term ends at once", types(end), ["farewell_opened", "term_ended", "election_started", "vote_started"])
@@ -181,22 +181,77 @@ func a_leader_who_cannot_amend() -> void:
 
 
 func the_order_of_turns() -> void:
+	# The very first term: nobody has played, so it starts at the first seat, whoever the Leader is.
 	var s := bare_term_state()
 	s.leader_id = 4
-	GameScript.tick(s)
-	TermLoopScript.handle(s, 4, {"type": "pass_window"})
-	GameScript.tick(s)
-	expect("the Leader (4) first, then round the table", s.term["waiting"], [4, 5, 1, 2, 3])
+	start_turns(s)
+	expect("the first term starts at the first seat, not with the Leader", s.term["waiting"], [1, 2, 3, 4, 5])
+
+	# Later terms carry on round the table from the player who took the last turn.
+	s = bare_term_state()
+	s.last_turn_player = 3
+	start_turns(s)
+	expect("the next term starts with the player after the last one to play", s.term["waiting"], [4, 5, 1, 2, 3])
 
 	s = bare_term_state()
+	s.last_turn_player = 5
+	start_turns(s)
+	expect("after a full lap the same player starts again", s.term["waiting"], [1, 2, 3, 4, 5])
+
+	# An interrupted term carries on from wherever it stopped.
+	s = bare_term_state()
+	s.last_turn_player = 2
+	start_turns(s)
+	expect("a term cut short carries on from the last turn that was played", s.term["waiting"], [3, 4, 5, 1, 2])
+
+	# The player who took the last turn may since have been eliminated: the seat still counts.
+	s = bare_term_state()
+	s.last_turn_player = 3
+	s.eliminated[3] = true
+	start_turns(s)
+	expect("an eliminated last player is skipped, and the next seat starts", s.term["waiting"], [4, 5, 1, 2])
+	s = bare_term_state()
+	s.last_turn_player = 2
+	s.eliminated[3] = true
+	s.eliminated[4] = true
+	start_turns(s)
+	expect("eliminated players are skipped wherever they sit", s.term["waiting"], [5, 1, 2])
+
+	# After a coup the new Leader goes first, and play continues from them.
+	s = bare_term_state()
 	s.leader_id = 4
-	s.eliminated[5] = true
-	TermLoopScript.handle(s, 4, {"type": "pass_window"})
-	GameScript.tick(s)
-	TermLoopScript.handle(s, 4, {"type": "pass_window"})
-	GameScript.tick(s)
-	expect("an eliminated player has no turn", s.term["waiting"], [4, 1, 2, 3])
-	expect("... and the table counts only those who play", s.player_count, 4)
+	s.last_turn_player = 2
+	s.leader_goes_first = true
+	start_turns(s)
+	expect("after a coup the new Leader takes the first turn", s.term["waiting"], [4, 5, 1, 2, 3])
+	expect("... for that term only", s.leader_goes_first, false)
+
+	# Every turn that ends is remembered, so the next term knows where to carry on.
+	s = bare_term_state()
+	s.term = {"phase": TURNS, "played": [], "waiting": [3, 4, 5, 1, 2], "announced": 3}
+	TermLoopScript.handle(s, 3, {"type": "end_turn"})
+	expect("the last turn taken is remembered", s.last_turn_player, 3)
+	TermLoopScript.handle(s, 4, {"type": "end_turn"})
+	expect("... and moves on with each turn", s.last_turn_player, 4)
+
+	# A whole second term, played through: it starts where the first one stopped.
+	s = new_term(PRESIDENT)
+	for lap in 2:
+		var order: Array = []
+		TermLoopScript.handle(s, s.leader_id, {"type": "pass_window"})
+		TermLoopScript.settle(s)
+		order = s.term["waiting"].duplicate()
+		for id in order:
+			send(s, id, {"type": "end_turn"})
+		if lap == 0:
+			expect("the first term ran 1, 2, 3, 4, 5", order, [1, 2, 3, 4, 5])
+			send(s, s.leader_id, {"type": "pass_window"})
+			skip_election(s)
+		else:
+			expect("the second term started where the first stopped: the same lap", order, [1, 2, 3, 4, 5])
+
+	s = bare_term_state()
+	start_turns(s)
 	expect("the turn is announced once", types(GameScript.tick(s)), [])
 
 
@@ -264,8 +319,8 @@ func stopping_the_game() -> void:
 
 	# Stopping during an election adds nothing: the term was credited when it ended.
 	s = bare_term_state()
-	s.term = {"phase": TURNS, "played": [], "waiting": [2, 3, 4, 5, 1], "announced": 2}
-	for id in [2, 3, 4, 5, 1]:
+	s.term = {"phase": TURNS, "played": [], "waiting": [1, 2, 3, 4, 5], "announced": 1}
+	for id in [1, 2, 3, 4, 5]:
 		TermLoopScript.handle(s, id, {"type": "end_turn"})
 	TermLoopScript.settle(s)
 	TermLoopScript.handle(s, 2, {"type": "pass_window"})
@@ -304,7 +359,7 @@ func every_event_is_logged_once() -> void:
 	DebtScript.charge(s, 3, TREASURY, 25)
 	s.debt_terms[3] = 2
 	returned.append_array(send(s, 2, {"type": "pass_window"}))
-	for id in [2, 3, 4, 5, 1]:
+	for id in [1, 2, 3, 4, 5]:
 		if not s.eliminated.get(id, false):
 			returned.append_array(send(s, id, {"type": "end_turn"}))
 	returned.append_array(send(s, 2, {"type": "pass_window"}))
@@ -345,6 +400,24 @@ func bare_term_state() -> GameStateScript:
 	RngScript.seed_with(s, 321)
 	s.term = {"phase": INAUGURATION}
 	return s
+
+
+# Pass the Inauguration so the levy is collected and the turn order is set.
+func start_turns(s: GameStateScript) -> void:
+	GameScript.tick(s)
+	TermLoopScript.handle(s, s.leader_id, {"type": "pass_window"})
+	GameScript.tick(s)
+
+
+# Get through an election as fast as possible: the server skips any exam and everyone votes for
+# the first candidate.
+func skip_election(s: GameStateScript) -> void:
+	if s.election.get("phase", 0) == GameStateScript.ElectionPhase.EXAM_WRITING:
+		send(s, SERVER, {"type": "skip_exam"})
+	var voters: Array = s.election["voters"].duplicate()
+	var candidate: int = s.election["candidates"][0]
+	for id in voters:
+		send(s, id, {"type": "cast_vote", "candidate": candidate})
 
 
 # Rewrite one highlighted word of an article. `slot` counts highlighted words from 0.
