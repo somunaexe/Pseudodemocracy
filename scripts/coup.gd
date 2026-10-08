@@ -10,8 +10,10 @@ class_name Coup
 #   - 300 PSD in hand (coupCost) and a COUP CARD: a role card with a coup sticker (see Roles; only they can see
 #     which of their cards have one). A CANCELLED player has no roles, so can't coup.
 #   - not to be barred from coups for a term by a Scandal card (coup_ban).
-#   - to be at least coupGap (20) points more popular than the Leader (effective popularity). So a Leader above +30
-#     can't be couped at all. (Assumed: below that gap the attempt is refused and costs nothing.)
+#   - to be at least coupGap (20) points more popular than the Leader (effective popularity) for the coup to SUCCEED. So
+#     a Leader above +30 can't be couped at all.
+# If it FAILS (they are not 20 ahead): they lose the coup card and the 300 PSD, and nothing else happens: the sticker
+# moves and the 300 goes to the treasury.
 # If it succeeds:
 #   - the challenger pays the 300 to the treasury, and the sticker moves from the card they used to another role
 #     card, chosen at random;
@@ -20,8 +22,8 @@ class_name Coup
 #     under way in the term (an amendment, a performance) ends with it;
 #   - there is no exam and no vote: the challenger draws a Leader role card and starts a new term, and takes the
 #     first turn of it (Election.install_leader with how = "coup").
-# A DEAL: the challenger, who could have attempted a coup, negotiates instead and loses only the coup card: the
-# sticker moves as above, they keep their 300 PSD, and there is no coup. (The deal itself is the table's.)
+# A DEAL: the challenger negotiates instead and loses ONLY the coup card: the sticker moves as above, they keep
+# their 300 PSD, and there is no coup. (The deal itself is the table's.)
 #
 # Every event this file creates is logged here, once (the events of the larger steps it calls log themselves).
 
@@ -52,7 +54,7 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 	var challenger_pop: int = PopularityScript.effective(state, player_id)
 	var leader_pop: int = PopularityScript.effective(state, state.leader_id)
 	if challenger_pop - leader_pop < gap:
-		return [_reject(player_id, "You must be at least %d points more popular than the Leader." % gap)]
+		return _fail(state, player_id, card, challenger_pop, leader_pop)
 	return _succeed(state, player_id, card, challenger_pop, leader_pop)
 
 
@@ -90,6 +92,14 @@ static func _coup_card(state: GameStateScript, player_id: int, role: Variant) ->
 static func _deal(state: GameStateScript, player_id: int, card: int) -> Array:
 	RolesScript.move_sticker(state, card)
 	return [_log(state, "coup_deal", {"challenger": player_id, "leader": state.leader_id})]
+
+
+# The coup fails: the challenger loses the coup card (the sticker moves) and the 300 PSD (to the treasury). That's all.
+static func _fail(state: GameStateScript, challenger: int, card: int, challenger_pop: int, leader_pop: int) -> Array:
+	var cost: int = GameDataScript.get_int("coupCost")
+	DebtScript.charge(state, challenger, DebtScript.TREASURY_ID, cost)   # they had the cash: nothing becomes debt
+	RolesScript.move_sticker(state, card)
+	return [_log(state, "coup_failed", {"challenger": challenger, "leader": state.leader_id, "challenger_popularity": challenger_pop, "leader_popularity": leader_pop, "paid": cost})]
 
 
 static func _succeed(state: GameStateScript, challenger: int, card: int, challenger_pop: int, leader_pop: int) -> Array:

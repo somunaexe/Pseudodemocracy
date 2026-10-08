@@ -54,7 +54,7 @@ const TERM_COMMANDS := ["pass_window", "end_turn", "finish_performance", "perfor
 # A new game for 3 to 10 players with ids 1, 2, 3, ... in seat order. Everyone starts with the
 # starting money, the rest of the box goes to the treasury, and the first election begins (no
 # exam: there is no Leader yet). seed_value 0 seeds the random numbers from the clock.
-# genders (optional): player id -> "female", "male" or "other", as entered in the lobby; players can also say
+# genders (optional): player id -> "female" or "male", as entered in the lobby; players can also say
 # theirs with set_gender until the first Leader is installed.
 static func new_game(player_ids: Array, seed_value: int = 0, genders: Dictionary = {}) -> GameStateScript:
 	assert(player_ids.size() >= GameDataScript.get_int("minPlayers") and player_ids.size() <= GameDataScript.get_int("boxPlayers"),

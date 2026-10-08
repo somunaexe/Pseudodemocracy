@@ -51,7 +51,7 @@ const V = {
   roleIncome: { 'Doctor': 70, 'Lawyer': 50, 'Secret Agent': 80, 'Activist': 0, 'Agbero': 0 },   // Activists and Agberos earn nothing
 
   // Gender (digital version): players enter it before the game so the gendered cards can work
-  genders: ['female', 'male', 'other'],
+  genders: ['female', 'male'],
 
   // Health
   beads: { cure: 'blue', poison: 'red' },                   // Doctor's Cure/Poison beads (replace prescription cards)

@@ -123,7 +123,7 @@ var reform: Dictionary = {}         # player id -> true
 
 # Each player's gender, so gendered cards ("every woman at the table") can work. Public. Set in the lobby (before the
 # first Leader) and then fixed. A player who has said nothing is in none of the groups.
-var genders: Dictionary = {}        # player id -> "female", "male" or "other"
+var genders: Dictionary = {}        # player id -> "female" or "male"
 
 # A Command Performance in progress (see CommandPerformance): a union or mob scripts a scenario and a player performs it.
 # At most one at a time. {} when there is none. Public, except the votes, which are secret until the result.

@@ -331,7 +331,7 @@ From the handbook (Part 3, Coups, and the setup and strategy notes). "A coup can
 | What does a coup cost? | 300 PSD in hand, paid to the treasury, and a coup card. Cash only: a player in debt has no cash, so can't coup (your earlier ruling). | Confirmed; "to the treasury" is assumed |
 | What is a coup card? | A role card with a coup sticker. Only the holder can see which of their cards have one (their view lists them); a Secret Agent can check others. A Civilian has none. | Confirmed |
 | When does it succeed? | When the challenger's effective popularity (Nepo debuff included) is at least 20 points above the Leader's. So a Leader above +30 can't be couped at all. | Confirmed |
-| If they are not 20 ahead? | The attempt is refused and costs nothing. The handbook says a coup "succeeds if" they are 20 ahead and never says what a failed attempt costs. | Assumed, please confirm |
+| If they are not 20 ahead? | The coup fails: they lose the coup card (the sticker moves) and the 300 PSD (to the treasury). Nothing else happens. | Confirmed (your answer) |
 | When can it happen? | During a term (the Inauguration, a turn, the Farewell), by anyone but the Leader. Not during an election. CANCELLED players have no roles, so no card. | Confirmed; the Leader and CANCELLED rules are assumed |
 | What happens on success? | The round stops at once. The couped Leader scores half a round (1 half-round, not 2). The levy band shifts on their popularity at that moment. Sickness and charges move on a round. An amendment under way is abandoned, and a performance or Command Performance ends with the term. | Confirmed |
 | Who is Leader next? | The challenger: no exam, no vote, straight to the Leader role card draw and the Inauguration. They take the first turn of the new term. | Confirmed |
@@ -346,7 +346,7 @@ The handbook's online-version note: "players enter their gender so gendered card
 
 | Question | Decision | Status |
 |---|---|---|
-| What can a player enter? | Female, male or other. A player who hasn't said is in none of the groups the cards name, and neither is "other". | Assumed (the three options are mine) |
+| What can a player enter? | Female or male: there are only two options. A player who hasn't said is in neither group the cards name. | Confirmed (your answer) |
 | When? | In the lobby: pass it to `new_game`, or each player sends `set_gender`, and may change it until the first Leader is installed. After that it is fixed, so nobody can change it to dodge a card. | Assumed |
 | Who can see it? | Everyone: the cards name groups at the table ("every woman"). | Assumed |
 | Which cards use it? | One so far: "Collect 5 PSD from every woman at the table" (each other woman pays the drawer; what she can't pay becomes debt). The others need things that aren't built (choosing up to 3 men, Loyalists, a recurring apology). | **Built** (1 card) |

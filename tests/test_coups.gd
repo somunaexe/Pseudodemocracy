@@ -94,16 +94,26 @@ func the_popularity_gap() -> void:
 	var s := ready()
 	s.popularity[LEADER] = 10
 	s.popularity[CHALLENGER] = 29
-	var cash_before: int = s.psd[CHALLENGER]
-	expect("19 points more popular is not enough", send(s, CHALLENGER, coup())[0]["reason"], "You must be at least 20 points more popular than the Leader.")
-	expect("... and the refusal costs nothing: the cash, the Leader and the card are all as they were", [s.psd[CHALLENGER], s.leader_id, RolesScript.coup_cards(s, CHALLENGER).size() > 0], [cash_before, LEADER, true])
+	var cash: int = s.psd[CHALLENGER]
+	var treasury: int = s.treasury
+	var total: int = total_money(s)
+	var card: int = RolesScript.coup_cards(s, CHALLENGER)[0][0]
+	var ev := send(s, CHALLENGER, coup())
+	expect("19 points more popular is not enough: the coup fails", [types(ev), ev[0]["challenger_popularity"], ev[0]["leader_popularity"], ev[0]["paid"]], [["coup_failed"], 29, 10, 300])
+	expect("... a failed coup loses the card (the sticker moves) and the 300 PSD", [s.psd[CHALLENGER] - cash, s.treasury - treasury, s.role_cards[card]["sticker"]], [-300, 300, false])
+	expect("... and nothing else: the Leader stays, no round ends, nobody scores", [s.leader_id, s.current_round, s.half_rounds.get(LEADER, 0), s.term.get("phase") != null], [LEADER, 1, 0, true])
+	expect("... money is conserved and there are still 10 stickers", [total_money(s), count_stickers(s)], [total, 10])
+	expect("... logged once", count(s.event_log, "coup_failed"), 1)
+
+	s = ready()
+	s.popularity[LEADER] = 10
 	s.popularity[CHALLENGER] = 30
 	expect("exactly 20 points more is enough", types(send(s, CHALLENGER, coup())).has("coup_succeeded"), true)
 
 	s = ready()
 	s.popularity[LEADER] = 31
 	s.popularity[CHALLENGER] = 50
-	expect("a Leader above +30 can't be couped at all: even the most popular challenger is only 19 ahead", send(s, CHALLENGER, coup())[0]["type"], "rejected")
+	expect("a Leader above +30 can't be couped at all: even the most popular challenger is only 19 ahead, so the attempt fails", types(send(s, CHALLENGER, coup())), ["coup_failed"])
 	s = ready()
 	s.popularity[LEADER] = 30
 	s.popularity[CHALLENGER] = 50
@@ -113,7 +123,29 @@ func the_popularity_gap() -> void:
 	s = ready()
 	s.popularity[CHALLENGER] = 30
 	s.nepo[CHALLENGER] = 1   # -30 on top
-	expect("the effective popularity is what counts: a Nepo Baby's debuff costs them the coup", send(s, CHALLENGER, coup())[0]["type"], "rejected")
+	expect("the effective popularity is what counts: a Nepo Baby's debuff makes the coup fail", types(send(s, CHALLENGER, coup())), ["coup_failed"])
+
+	# After a failure the player no longer holds that coup card.
+	s = ready()
+	s.popularity[CHALLENGER] = 0
+	var cards_before: int = RolesScript.coup_cards(s, CHALLENGER).size()
+	send(s, CHALLENGER, coup())
+	expect("after a failure the player holds one coup card fewer", RolesScript.coup_cards(s, CHALLENGER).size(), cards_before - 1)
+	expect("... so they can't try again with it", send(s, CHALLENGER, coup())[0]["reason"], "You don't hold a coup card.")
+
+	# A deal, by contrast, loses only the card.
+	s = ready()
+	s.popularity[CHALLENGER] = 0
+	var deal_cash: int = s.psd[CHALLENGER]
+	send(s, CHALLENGER, {"type": "coup", "deal": true})
+	expect("a negotiated deal loses only the card: the PSD is kept", s.psd[CHALLENGER] - deal_cash, 0)
+
+
+func count_stickers(s: GameStateScript) -> int:
+	var n: int = 0
+	for id in s.role_cards:
+		n += 1 if s.role_cards[id]["sticker"] else 0
+	return n
 
 
 func a_successful_coup() -> void:

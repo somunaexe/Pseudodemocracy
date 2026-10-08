@@ -4,9 +4,9 @@ class_name Genders
 # player before the game. It is public (the cards name groups at the table) and is fixed once the first Leader is
 # installed, so nobody can change it to dodge a card.
 #
-#   { "type": "set_gender", "gender": "female" | "male" | "other" }      only before the first Leader is installed
+#   { "type": "set_gender", "gender": "female" | "male" }      only before the first Leader is installed
 #
-# A player who hasn't said is in no group. "other" is in none of the groups the cards name.
+# There are two options. A player who hasn't said is in neither group the cards name.
 #
 # Every event this file creates is logged here, once.
 

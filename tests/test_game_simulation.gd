@@ -115,7 +115,7 @@ func _init() -> void:
 		coup_types.append_array(run["types"])
 		expect("coup game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
 		expect("coup game %d: no rule was ever broken" % seed_value, run["problems"], [])
-	for kind in ["coup_succeeded", "coup_deal", "leader_installed"]:
+	for kind in ["coup_succeeded", "coup_failed", "coup_deal", "leader_installed"]:
 		expect("the coup games produced a '%s' event (%d times)" % [kind, coup_types.count(kind)], coup_types.has(kind), true)
 	var coup_straight := play(5, 603, 7, 0, 0, 0, 0, 0, false, true)
 	var coup_restarted := play(5, 603, 7, 0, 5, 0, 0, 0, false, true)
@@ -463,8 +463,8 @@ func coup_move(s: GameStateScript) -> Dictionary:
 		if CoupScript._problem_with(s, id) != "" or RolesScript.coup_cards(s, id).is_empty():
 			continue
 		var gap: int = PopularityScript.effective(s, id) - PopularityScript.effective(s, s.leader_id)
-		if done % 2 == 0 and gap >= 20:
-			return {"player": id, "command": {"type": "coup"}}
+		if done % 2 == 0 and (gap >= 20 or done % 4 == 2):
+			return {"player": id, "command": {"type": "coup"}}   # (every so often a coup that is bound to fail)
 		if done % 2 == 1:
 			return {"player": id, "command": {"type": "coup", "deal": true}}
 	return {}

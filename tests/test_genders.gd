@@ -27,15 +27,15 @@ func _init() -> void:
 
 
 func the_options() -> void:
-	expect("there are three options", GendersScript.names(), ["female", "male", "other"])
+	expect("there are two options", GendersScript.names(), ["female", "male"])
 	var s := GameScript.new_game([1, 2, 3], 5)
 	expect("a new game has nobody's gender", [s.genders, GendersScript.of(s, 1), GendersScript.players(s, "female")], [{}, "", []])
 
 
 func entering_it_in_the_lobby() -> void:
-	var s := GameScript.new_game([1, 2, 3, 4], 5, {1: "female", 2: "male", 4: "other"})
-	expect("genders can be given to a new game", [s.genders, GendersScript.of(s, 3)], [{1: "female", 2: "male", 4: "other"}, ""])
-	expect("players of a gender, in seat order", [GendersScript.players(s, "female"), GendersScript.players(s, "male"), GendersScript.players(s, "other")], [[1], [2], [4]])
+	var s := GameScript.new_game([1, 2, 3, 4], 5, {1: "female", 2: "male", 4: "male"})
+	expect("genders can be given to a new game", [s.genders, GendersScript.of(s, 3)], [{1: "female", 2: "male", 4: "male"}, ""])
+	expect("players of a gender, in seat order", [GendersScript.players(s, "female"), GendersScript.players(s, "male")], [[1], [2, 4]])
 	s.eliminated[1] = true
 	expect("eliminated players are not counted", GendersScript.players(s, "female"), [])
 
@@ -46,8 +46,8 @@ func saying_it_before_the_game() -> void:
 	expect("a player says their gender in the lobby", [types(ev), s.genders[3], ev[0]["audience"]], [["gender_set"], "female", []])
 	expect("... and can change their mind until the game begins", [types(send(s, 3, {"type": "set_gender", "gender": "male"})), s.genders[3]], [["gender_set"], "male"])
 	expect("... each time it is logged", count(s.event_log, "gender_set"), 2)
-	for bad in [null, "Female", "man", 1, true, ["male"]]:
-		expect("gender %s is refused" % str(bad), send(s, 3, {"type": "set_gender", "gender": bad})[0]["reason"], "Choose one of: female, male, other.")
+	for bad in [null, "Female", "man", "other", 1, true, ["male"]]:
+		expect("gender %s is refused" % str(bad), send(s, 3, {"type": "set_gender", "gender": bad})[0]["reason"], "Choose one of: female, male.")
 	expect("a stranger can't say one", send(s, 9, {"type": "set_gender", "gender": "male"})[0]["reason"], "You are not in the game.")
 	expect("nothing was changed by the refusals", s.genders, {3: "male"})
 
@@ -66,12 +66,12 @@ func it_is_fixed_once_the_game_begins() -> void:
 
 
 func the_market_women_card() -> void:
-	var s := GameScript.new_game([1, 2, 3, 4, 5], 5, {1: "female", 2: "female", 3: "male", 4: "other"})
+	var s := GameScript.new_game([1, 2, 3, 4, 5], 5, {1: "female", 2: "female", 3: "male", 4: "male"})
 	expect("the card is listed", CardsScript.effects("settlement", MARKET_WOMEN), {"collect_each": {"gender": "female", "amount": 5}})
 	var total: int = total_money(s)
 	var ev := CardEffectsScript.apply(s, 2, "settlement", MARKET_WOMEN)
 	expect("every other woman pays the drawer 5 PSD", [s.psd[1], s.psd[2], s.psd[3], s.psd[4], s.psd[5]], [995, 1005, 1000, 1000, 1000])
-	expect("... men, others and players who haven't said pay nothing, and the drawer doesn't pay herself", [ev[0]["collected_from"], ev[0]["collected"], ev[0].has("new_debts")], [[1], 5, false])
+	expect("... men and players who haven't said pay nothing, and the drawer doesn't pay herself", [ev[0]["collected_from"], ev[0]["collected"], ev[0].has("new_debts")], [[1], 5, false])
 	expect("... money is conserved and the event is logged once", [total_money(s), count(s.event_log, "card_applied")], [total, 1])
 
 	# More women, and one who can't pay.

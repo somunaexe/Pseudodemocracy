@@ -108,8 +108,7 @@
  },
  "genders": [
   "female",
-  "male",
-  "other"
+  "male"
  ],
  "beads": {
   "cure": "blue",
