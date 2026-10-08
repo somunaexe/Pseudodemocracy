@@ -48,7 +48,7 @@ subgraph group_server["Session Server"]
   node_memory_store[("Memory Store<br/>[memory_store.gd]")]
   node_server_core["Server Core<br/>[server_core.gd]"]
   node_websocket["WebSocket Server<br/>[ws_server.gd]"]
-  node_sessions["Game Sessions<br/>[session_model.gd]"]
+  node_sessions["Rooms, Seats and Tokens<br/>[server_core.gd]"]
 end
 
 node_player(("Player"))
@@ -61,16 +61,20 @@ node_server_core -.->|"manages"| node_sessions
 node_sessions -.->|"may store in"| node_memory_store
 node_sessions -.->|"may persist to"| node_disk_store
 node_player -.->|"plays at"| node_table
-node_table -.->|"sends actions to"| node_game
+node_table -.->|"sends commands via"| node_connection
+node_connection -.->|"keeps what it hears in"| node_client_models
+node_table -.->|"draws"| node_client_models
+node_server_core -.->|"runs commands in"| node_game
 node_game -.->|"updates"| node_state
 node_game -.->|"advances"| node_turns
 node_game -.->|"handles amendments via"| node_law
 node_game -.->|"applies"| node_cards
 node_game -.->|"calculates results with"| node_scoring
-node_table -.->|"displays"| node_views
+node_server_core -.->|"builds each player's view with"| node_views
 node_player -.->|"takes exam at"| node_exam_ui
 node_exam_ui -.->|"uses questions from"| node_exam_source
 node_game -.->|"uses article content from"| node_articles_source
+node_game -.->|"uses exam questions from"| node_exam_source
 node_game -.->|"uses card content from"| node_cards_source
 node_cards_source -->|"imports rules values from"| node_game_data_source
 
@@ -93,7 +97,7 @@ click node_disk_store "https://github.com/somunaexe/pseudodemocracy/blob/main/se
 click node_memory_store "https://github.com/somunaexe/pseudodemocracy/blob/main/server/memory_store.gd"
 click node_server_core "https://github.com/somunaexe/pseudodemocracy/blob/main/server/server_core.gd"
 click node_websocket "https://github.com/somunaexe/pseudodemocracy/blob/main/server/ws_server.gd"
-click node_sessions "https://github.com/somunaexe/pseudodemocracy/blob/main/client/session_model.gd"
+click node_sessions "https://github.com/somunaexe/pseudodemocracy/blob/main/server/server_core.gd"
 
 classDef toneNeutral fill:#f8fafc,stroke:#334155,stroke-width:1.5px,color:#0f172a
 classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
@@ -109,10 +113,7 @@ class node_disk_store,node_memory_store,node_server_core,node_websocket,node_ses
 class node_player toneIndigo
 ```
 
-The diagram is generated and simplified, so two things are drawn looser than they are:
-
-- **The client never talks to the engine directly.** The table screen sends commands over the WebSocket to the server, and the server runs `Game.handle`. The phone only ever receives the events and view it is allowed to see (`views.gd`), so the rules, and every secret, stay on the server.
-- **"Game Sessions" is really `server/server_core.gd`** (rooms, seats, tokens). `client/session_model.gd` is the phone's own record of what the server told it.
+The phone never reaches the engine directly: the table sends commands through the connection to the server, which runs them in the game coordinator and builds each player's view (`views.gd`). So the rules, and every secret, stay on the server.
 
 ## Principles
 
