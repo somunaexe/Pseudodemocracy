@@ -204,6 +204,8 @@ const effects = {
     ['You appointed an unqualified friend', { choose: { kind: 'player', who: 'loyalist' }, target: { psd: 100 }, target_role: 'random', loyalist: { rounds: 3 } }],
     // keys: the keys to the city. The drawer takes the Leader's role if they are more popular (the Leader becomes Vice), else becomes Vice.
     ["You've obtained the keys to the city", { keys: true }],
+    // favor: a Secret Agent shows the drawer the role cards of the chosen player (whether each has a coup sticker).
+    ['A Secret Agent owes you a favor', { choose: { kind: 'player', who: 'has_role' }, favor: true }],
     ['You survived a vote of no confidence', { keep: true, truce: true, choose: { kind: 'player', who: 'rival' } }],
     ["A rival's scandal breaks", { popularity: 5, choose: { kind: 'player', who: 'rival' }, target: { popularity: -15 } }],
     ['Peace Accord', { choose: { kind: 'player', who: 'rival' }, accord: { rounds: 3, loss: 10 } }],
@@ -229,7 +231,17 @@ const effects = {
     // player too, and pay_chosen is money the drawer pays the chosen player. A choice with chooser: 'leader' is made by the
     // Leader about the drawer: share 'half' takes half of the card's psd off the drawer for the Leader.
     // disband: the drawer's union or mob disperses and its other members become the drawer's rivals.
+    // peek: the chosen player gets a free check of the drawer (kinds: coup = coup-card status, bead = the Doctor's bead), once,
+    // for the rest of the round if round_only. peek_rival: one of the drawer's rivals (either way round), at random, gets it.
+    ['A rival now has your number', { choose: { kind: 'player' }, peek: { kinds: ['bead', 'coup'], round_only: true } }],
+    ['A rival gets to check your coup-card status', { peek_rival: { kinds: ['coup'] } }],
     ['Your mob got caught on camera', { disband: true }],
+    // An option with `then` asks a second question after it is chosen (here: whom to snitch on); `each` is what happens to the
+    // drawer AND the player then chosen.
+    ['Your embezzlement was traced', { choose: { kind: 'option', options: [
+      { label: 'Snitch and split it', then: { kind: 'player' }, each: { psd: -100, popularity: -10, marker: 1 } },
+      { label: 'Take it alone', psd: -200, popularity: -20, marker: 1 },
+    ] } }],
     // popularity_per_loyalist: the drawer loses that much more for each Loyalist of that gender; defect: one of the drawer's
     // Loyalists (chosen at random) leaves them.
     ['The men playing the game', { popularity: -15, popularity_per_loyalist: { gender: 'male', popularity: -5 } }],

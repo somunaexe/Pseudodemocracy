@@ -37,7 +37,11 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 }
 
 function validate(deck, prefix, text, effect) {
-  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband', 'loyalist', 'target_role', 'popularity_per_loyalist', 'defect', 'keys'];
+  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen', 'truce', 'accord', 'skip_draw', 'disband', 'loyalist', 'target_role', 'popularity_per_loyalist', 'defect', 'keys', 'peek', 'peek_rival', 'favor'];
+  const PEEK_KINDS = ['coup', 'bead'];
+  for (const key of ['peek', 'peek_rival']) if (key in effect && (!Array.isArray(effect[key].kinds) || !effect[key].kinds.length || effect[key].kinds.some((k) => !PEEK_KINDS.includes(k)))) fail(deck, prefix, `"${key}" needs kinds from ${PEEK_KINDS}`);
+  if ('peek' in effect && !(effect.choose && effect.choose.kind === 'player')) fail(deck, prefix, '"peek" needs a player choice');
+  if ('favor' in effect && (effect.favor !== true || !(effect.choose && effect.choose.kind === 'player'))) fail(deck, prefix, '"favor" must be true and needs a player choice');
   if ('popularity_per_loyalist' in effect) {
     const spec = effect.popularity_per_loyalist;
     if (!GENDERS.includes(spec.gender)) fail(deck, prefix, `unknown gender "${spec.gender}"`);
@@ -88,8 +92,10 @@ function validate(deck, prefix, text, effect) {
     if (!Array.isArray(choose.options) || choose.options.length < 2) fail(deck, prefix, 'an option choice needs at least two options');
     for (const option of choose.options) {
       if (typeof option.label !== 'string' || !option.label) fail(deck, prefix, 'every option needs a label');
-      checkAmounts(deck, prefix, text, Object.fromEntries(Object.entries(option).filter(([k]) => !['found_union', 'share'].includes(k))), [...SELF_KEYS, 'marker']);
+      checkAmounts(deck, prefix, text, Object.fromEntries(Object.entries(option).filter(([k]) => !['found_union', 'share', 'then', 'each'].includes(k))), [...SELF_KEYS, 'marker']);
       if ('share' in option && (option.share !== 'half' || !('psd' in effect) || effect.psd <= 0)) fail(deck, prefix, 'share "half" needs a card that pays the drawer');
+      if ('then' in option && (option.then.kind !== 'player' || !option.each)) fail(deck, prefix, 'an option with "then" must ask for a player and say what happens to both ("each")');
+      if ('each' in option) checkAmounts(deck, prefix, text, option.each, [...SELF_KEYS, 'marker']);
       if ('found_union' in option && !UNIONS.includes(option.found_union)) fail(deck, prefix, `unknown union "${option.found_union}"`);
     }
     for (const key of ['gain_role', 'swap_with', 'target']) if (key in effect) fail(deck, prefix, `"${key}" doesn't go with an option choice`);

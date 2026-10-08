@@ -303,6 +303,9 @@ func next_move(s: GameStateScript) -> Dictionary:
 	var choosing := choice_move(s)
 	if not choosing.is_empty():
 		return choosing
+	for permit in s.peeks:
+		if permit["kinds"].has("coup") and (s.peeks.size() > 1 or s.current_round % 2 == 0):   # free checks are used now and then
+			return {"player": permit["holder"], "command": {"type": "peek", "target": permit["target"], "kind": "coup"}}
 	var played := hand_move(s)
 	if not played.is_empty():
 		return played
@@ -850,6 +853,9 @@ func check_rules(s: GameStateScript, step: int) -> void:
 			hops += 1
 		if hops >= 20:
 			problems.append(where + "a circle of loyalty through %d" % follower)
+	for permit in s.peeks:
+		if permit["holder"] == permit["target"] or s.eliminated.get(permit["holder"], false) or s.eliminated.get(permit["target"], false) or permit["kinds"].is_empty():
+			problems.append(where + "malformed free check %s" % str(permit))
 	var in_union: Dictionary = {}
 	for union_id in s.unions:
 		var union: Dictionary = s.unions[union_id]

@@ -209,6 +209,7 @@ func rich_state() -> GameStateScript:
 	s.truces = [[2, 3]]
 	s.accords = [{"a": 2, "b": 4, "left": 2, "loss": 10}]
 	s.skip_draw = {5: true}
+	s.peeks = [{"holder": 4, "target": 2, "kinds": ["coup", "bead"], "round_only": true}]
 	s.loyalists = {4: {"owner": 2, "left": 2}}
 	s.frozen = {2: {"left": 2, "drop": 30}}
 	s.agent_offers = {2: {"client": 5, "kind": "will", "target": 3, "role": "", "price": 40, "deadline": 8000}}

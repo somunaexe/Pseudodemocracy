@@ -278,6 +278,13 @@
     },
     "gain_role": "Lawyer"
    },
+   "31": {
+    "choose": {
+     "kind": "player",
+     "who": "has_role"
+    },
+    "favor": true
+   },
    "32": {
     "psd": 150,
     "popularity": -10
@@ -325,6 +332,18 @@
      "popularity": -5
     }
    },
+   "2": {
+    "choose": {
+     "kind": "player"
+    },
+    "peek": {
+     "kinds": [
+      "bead",
+      "coup"
+     ],
+     "round_only": true
+    }
+   },
    "5": {
     "psd": -100,
     "marker": 1
@@ -340,6 +359,30 @@
    },
    "8": {
     "disband": true
+   },
+   "13": {
+    "choose": {
+     "kind": "option",
+     "options": [
+      {
+       "label": "Snitch and split it",
+       "then": {
+        "kind": "player"
+       },
+       "each": {
+        "psd": -100,
+        "popularity": -10,
+        "marker": 1
+       }
+      },
+      {
+       "label": "Take it alone",
+       "psd": -200,
+       "popularity": -20,
+       "marker": 1
+      }
+     ]
+    }
    },
    "15": {
     "popularity": -20,
@@ -409,6 +452,13 @@
    "41": {
     "psd": -40,
     "popularity": -5
+   },
+   "42": {
+    "peek_rival": {
+     "kinds": [
+      "coup"
+     ]
+    }
    },
    "44": {
     "psd": -35

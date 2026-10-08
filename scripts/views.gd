@@ -12,6 +12,7 @@ const SerializerScript = preload("res://scripts/serializer.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const WillsScript = preload("res://scripts/wills.gd")
+const PeeksScript = preload("res://scripts/peeks.gd")
 
 # Everyone at the table may see these.
 const PUBLIC_FIELDS = [
@@ -24,11 +25,11 @@ const PUBLIC_FIELDS = [
 const REDACTED_FIELDS = ["amend", "event_log", "popularity", "election", "term", "command"]
 
 # Extra keys a view carries that are not GameState fields.
-const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills", "my_hand", "hand_sizes", "my_coup_roles"]
+const DERIVED_KEYS = ["popularity_base", "my_will", "kept_wills", "my_hand", "hand_sizes", "my_coup_roles", "my_peeks"]
 
 # Never leave the server. A will is secret until its owner is eliminated; then it is read out
 # in an event. rng_state is secret because whoever knew it could predict every random draw. (Exam keys will go here when they exist.) dose_secret is the bead in the Doctor's hand.
-const SERVER_ONLY_FIELDS = ["wills", "will_offers", "rng_state", "decks", "dose_secret", "role_cards", "agent_used", "agent_offers", "hands"]
+const SERVER_ONLY_FIELDS = ["wills", "will_offers", "rng_state", "decks", "dose_secret", "role_cards", "agent_used", "agent_offers", "hands", "peeks"]
 
 
 # Fields of GameState that are in none of the three lists.
@@ -84,6 +85,7 @@ static func state_view(state: GameStateScript, player_id: int) -> Dictionary:
 	for id in state.hands:
 		view["hand_sizes"][id] = state.hands[id].size()
 	view["my_coup_roles"] = RolesScript.coup_cards(state, player_id).map(func(c): return c[1])   # only you can see which of your cards carry a sticker
+	view["my_peeks"] = PeeksScript.permits_of(state, player_id)   # your own free checks; nobody else knows whether you have one
 	view["kept_wills"] = {}
 	if RolesScript.has(state, player_id, "Lawyer"):
 		view["kept_wills"] = WillsScript.kept_by(state, player_id)

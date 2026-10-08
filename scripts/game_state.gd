@@ -155,4 +155,6 @@ var accords: Array = []             # { "a", "b", "left": rounds, "loss": popula
 var skip_draw: Dictionary = {}      # player id -> true
 # Loyalists (see Loyalists): follower id -> { "owner": the player they vote with, "left": rounds to go }. Public.
 var loyalists: Dictionary = {}
+# Free checks started by cards (see Peeks). SECRET: whether one has been used must not show.
+var peeks: Array = []               # { "holder", "target", "kinds", "round_only" }
 var frozen: Dictionary = {}         # player id -> { "left": rounds until the freeze runs out, "drop": popularity lost }

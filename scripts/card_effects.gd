@@ -15,6 +15,7 @@ class_name CardEffects
 #   marker       the player gets a corruption marker (see Corruption)
 #   popularity_per_loyalist   more popularity moved for each of the player's Loyalists of a gender (see Loyalists)
 #   keys         the keys to the city: take the Leader's role if more popular than them (they become Vice), else become Vice (see Vice)
+#   peek_rival   one of the player's rivals (either way), at random, gets a free check of them (see Peeks)
 #   defect       one of the player's Loyalists, at random, leaves them
 #   disband      the player's union or mob disperses and its other members become the player's rivals (see Rivals)
 # A card with "keep" goes into the player's hand instead (state.hands), to be played later with the command
@@ -52,6 +53,7 @@ const GendersScript = preload("res://scripts/genders.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const EffectClockScript = preload("res://scripts/effect_clock.gd")
+const PeeksScript = preload("res://scripts/peeks.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const ViceScript = preload("res://scripts/vice.gd")
@@ -88,6 +90,8 @@ static func apply(state: GameStateScript, player_id: int, deck: String, card: in
 		extra.append_array(LoyalistsScript.defect_one(state, player_id))
 	if effect.has("keys"):
 		extra.append_array(ViceScript.keys_to_the_city(state, player_id))
+	if effect.has("peek_rival"):
+		extra.append_array(PeeksScript.grant_to_a_rival(state, player_id, effect["peek_rival"]["kinds"]))
 	data["asks_choice"] = effect.has("choose")
 	var events: Array = [_log(state, "card_applied", data)]
 	events.append_array(_log_all(state, extra))
@@ -182,7 +186,7 @@ static func _log_all(state: GameStateScript, events: Array) -> Array:
 
 # --- asking ------------------------------------------------------------------------------
 
-static func _ask(state: GameStateScript, player_id: int, deck: String, card: int, spec: Dictionary) -> Array:
+static func _ask(state: GameStateScript, player_id: int, deck: String, card: int, spec: Dictionary, parent: int = -1) -> Array:
 	var kind: String = spec["kind"]
 	var seconds: int = GameDataScript.get_int("choiceSeconds")
 	var ends_at: int = state.clock_ms + seconds * 1000
@@ -193,6 +197,9 @@ static func _ask(state: GameStateScript, player_id: int, deck: String, card: int
 			return [_log(state, "choice_unavailable", {"player": player_id, "deck": deck, "card": card, "kind": kind})]
 	var pending: Dictionary = {"player": chooser, "subject": player_id, "deck": deck, "card": card, "kind": kind, "deadline": ends_at}
 	var shown: Dictionary = {"player": chooser, "subject": player_id, "deck": deck, "card": card, "kind": kind, "seconds": seconds, "ends_at_ms": ends_at}
+	if parent >= 0:
+		pending["parent"] = parent   # the second question of an option that was chosen
+		shown["parent"] = parent
 	match kind:
 		"option":
 			var labels: Array = []
@@ -311,12 +318,19 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 	var player_id: int = pending.get("subject", chooser)   # whose card it is; the Leader may be the one choosing
 	state.choice = {}
 	var effect: Dictionary = CardsScript.effects(pending["deck"], pending["card"])
+	if pending.has("parent"):
+		return _second_answer(state, pending, value, auto)
 	var data: Dictionary = {"player": chooser, "subject": player_id, "deck": pending["deck"], "card": pending["card"], "kind": pending["kind"], "choice": value, "auto": auto}
 	var events: Array = []
 	var skipped: Array = []
 	match pending["kind"]:
 		"option":
 			var option: Dictionary = effect["choose"]["options"][value]
+			if option.has("then"):
+				# This option asks a second question (whom to snitch on); nothing happens until it is answered.
+				var follow: Array = [_log(state, "choice_made", data)]
+				follow.append_array(_ask(state, player_id, pending["deck"], pending["card"], option["then"], int(value)))
+				return follow
 			_apply_money(state, player_id, option, data)
 			if option.get("share", "") == "half":
 				var half: int = int(effect["psd"]) / 2
@@ -360,6 +374,10 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 					skipped.append("a Loyalist: " + why_not)
 				else:
 					events.append_array(LoyalistsScript.appoint(state, player_id, value, int(effect["loyalist"]["rounds"])))
+			if effect.has("peek"):
+				events.append_array(PeeksScript.grant(state, value, player_id, effect["peek"]["kinds"], bool(effect["peek"]["round_only"])))
+			if effect.has("favor"):
+				events.append(_favor(state, player_id, value))
 			if effect.has("skip_draw"):
 				events.append_array(RivalsScript.skip_next_draw(state, value))
 			if effect.has("pay_chosen"):
@@ -376,6 +394,38 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 	var result: Array = [_log(state, "choice_made", data)]
 	for event in events:
 		state.event_log.append(event)   # the role events are logged here, once
+		result.append(event)
+	return result
+
+
+# "A Secret Agent owes you a favor": if some other player holds the Secret Agent role, the drawer is shown the chosen
+# player's role cards (whether each has a coup sticker), in an event only they receive. Not the Agent's once-a-round check.
+static func _favor(state: GameStateScript, drawer: int, chosen: int) -> Dictionary:
+	var agent: int = 0
+	for id in RolesScript.holders(state, "Secret Agent"):
+		if id != drawer and not state.eliminated.get(id, false):
+			agent = id
+			break
+	if agent == 0:
+		return EventsScript.make("favor_unavailable", {"player": drawer, "reason": "there is no Secret Agent to ask"})
+	return EventsScript.make("favor_report", {"player": drawer, "target": chosen, "cards": PeeksScript.cards_of(state, chosen)}, [drawer])
+
+
+# The second question of an option ("snitch and split"): what the option says happens to the drawer and to the player named.
+static func _second_answer(state: GameStateScript, pending: Dictionary, value: Variant, auto: bool) -> Array:
+	var player_id: int = pending.get("subject", pending["player"])
+	var effect: Dictionary = CardsScript.effects(pending["deck"], pending["card"])
+	var each: Dictionary = effect["choose"]["options"][int(pending["parent"])]["each"]
+	var data: Dictionary = {"player": pending["player"], "subject": player_id, "deck": pending["deck"], "card": pending["card"], "kind": pending["kind"], "choice": value, "parent": pending["parent"], "auto": auto}
+	_apply_money(state, player_id, each, data)
+	_apply_money(state, value, each, data, "target_")
+	var events: Array = []
+	if each.has("marker"):
+		events.append_array(CorruptionScript.give(state, player_id))
+		events.append_array(CorruptionScript.give(state, value))
+	var result: Array = [_log(state, "choice_made", data)]
+	for event in events:
+		state.event_log.append(event)
 		result.append(event)
 	return result
 
