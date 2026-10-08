@@ -7,6 +7,7 @@ const ViewsScript = preload("res://scripts/views.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const FlowScript = preload("res://scripts/amendment_flow.gd")
+const ScoringScript = preload("res://scripts/scoring.gd")
 const SerializerScript = preload("res://scripts/serializer.gd")
 const GameStateScript = preload("res://scripts/game_state.gd")
 const ConstitutionScript = preload("res://scripts/constitution.gd")
@@ -395,11 +396,23 @@ func vacancies_and_eliminations() -> void:
 	expect("the Leader's elimination starts an election", types(ev).has("election_started"), true)
 	expect("... a vacancy election, with no exam", [s.election["reason"], ev[types(ev).find("election_started")]["exam"]], ["vacancy", false])
 	expect("... the dead Leader can't be chosen", s.election["candidates"], [2, 3, 4, 5])
-	expect("... and gets no credit for the term", s.half_rounds.get(1, 0), 0)
+	expect("... and the cut-short term counts half a round (1 half-round)", s.half_rounds.get(1, 0), 1)
 	vote_all(s, {2: 3, 3: 3, 4: 3})
 	var done := send(s, 5, {"type": "cast_vote", "candidate": 4})
 	expect("the vote installs a new Leader", [types(done).has("leader_installed"), s.leader_id], [true, 3])
 	expect("a new term begins (round 2)", s.current_round, 2)
+
+	# The credit is only for the record: an eliminated player never ranks, whatever they have.
+	s = make_state()
+	s.half_rounds = {1: 6, 2: 4, 3: 2}
+	ElimScript.eliminate(s, 1, "test")
+	expect("their rounds are kept for the record: 6 + 1", s.half_rounds[1], 7)
+	expect("... but they can't win, so the next best does", ScoringScript.final_winners(s), [2])
+
+	# A second elimination of a non-Leader adds nothing.
+	s = make_state()
+	ElimScript.eliminate(s, 3, "test")
+	expect("an ordinary player's elimination credits no one", s.half_rounds.is_empty(), true)
 
 	# Eliminating the Leader while an election is already under way doesn't start a second one.
 	s = make_state()

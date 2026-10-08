@@ -98,8 +98,14 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 		events.append_array(NepoScript.become(state, heir))   # an heir cannot refuse, so every heir is one (Article 30)
 	events.append_array(_leave_unions(state, player_id))
 	if player_id == state.leader_id:
+		# If an election is already under way the term was credited when it ended. Otherwise it was
+		# cut short, which counts half a round (1 half-round), like a coup. It is kept for the
+		# record only: an eliminated player can never win, so it never ranks.
+		var mid_term: bool = state.election.is_empty()
+		if mid_term:
+			state.half_rounds[player_id] = int(state.half_rounds.get(player_id, 0)) + 1
 		events.append_array(_vacate_seat(state))
-		if state.election.is_empty():
+		if mid_term:
 			events.append_array(ElectionScript.begin(state, "vacancy"))   # a new Leader is voted for
 	events.append_array(FlowScript.recheck(state))        # an amendment vote may now be complete
 	events.append_array(ElectionScript.recheck(state))    # so may an exam or an election
