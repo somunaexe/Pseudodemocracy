@@ -10,6 +10,7 @@
 const GameStateScript = preload("res://scripts/game_state.gd")
 const CardsScript = preload("res://scripts/cards.gd")
 const TableModelScript = preload("res://client/table_model.gd")
+const AmendModelScript = preload("res://client/amend_model.gd")
 
 const ActPhase = GameStateScript.ActPhase
 const DEFAULT_TOPIC := "Anything you like"
@@ -27,6 +28,9 @@ static func describe(view: Dictionary, me: int, members: Array, elapsed_ms: int 
 	var election: Dictionary = view.get("election", {})
 	if not election.is_empty():
 		return _election(out, view, election, me, members, clock)
+	var amending: Dictionary = AmendModelScript.dock(view, me, members, elapsed_ms)
+	if amending["mode"] != "none":
+		return amending   # an amendment (the window, a proposal waiting for agreement, the vote) comes before the performance
 	var act: Dictionary = view.get("term", {}).get("act", {})
 	if act.is_empty():
 		return out
@@ -57,7 +61,7 @@ static func describe(view: Dictionary, me: int, members: Array, elapsed_ms: int 
 				out["title"] = "The table is voting on you"
 			elif act.has("my_vote") or me in voted:
 				out["mode"] = "voted"
-				out["title"] = "You voted. Waiting for the others"
+				out["title"] = "You voted. Waiting…"
 			else:
 				out["mode"] = "vote"
 				out["title"] = "Was %s any good?" % who
@@ -92,17 +96,17 @@ static func _election(out: Dictionary, view: Dictionary, election: Dictionary, m
 				out["mode"] = "none"   # an exam sheet is open for them
 			else:
 				out["mode"] = "watch"
-				out["title"] = "The exam is being sat" if me in takers or me == int(view.get("leader_id", -1)) else "The exam is being sat (you are sitting it out)"
+				out["title"] = "The exam is being sat"
 		GameStateScript.ElectionPhase.VOTING:
 			var voters: Array = election.get("voters", [])
 			var voted: Array = election.get("voted", [])
 			out["lines"] = ["%d have voted" % voted.size()]
 			if not me in voters:
 				out["mode"] = "watch"
-				out["title"] = "The ballot is open. You can't vote this time"
+				out["title"] = "You can't vote this time"
 			elif me in voted:
 				out["mode"] = "voted"
-				out["title"] = "You voted. Waiting for the others"
+				out["title"] = "You voted. Waiting…"
 			else:
 				out["mode"] = "ballot"
 				out["title"] = "Vote for the next Leader"
@@ -169,7 +173,7 @@ static func _debate(out: Dictionary, view: Dictionary, act: Dictionary, debate: 
 				out["buttons"].append({"label": TableModelScript.name_of(members, int(id)), "command": {"type": "debate_challenge", "rival": int(id), "topic": topic}})
 		else:
 			out["mode"] = "watch"
-			out["title"] = "%s is choosing a rival to debate" % who
+			out["title"] = "%s picks a rival to debate" % who
 		return out
 	var speaker: int = performer if int(debate["side"]) == 0 else int(debate["rival"])
 	var rival_name: String = TableModelScript.name_of(members, int(debate["rival"]))
@@ -191,10 +195,10 @@ static func _debate_vote(out: Dictionary, act: Dictionary, debate: Dictionary, m
 	out["lines"].append("Topic: %s" % str(debate.get("topic", "")))
 	if me == performer or me == rival:
 		out["mode"] = "watch"
-		out["title"] = "The table is voting on your debate"
+		out["title"] = "The table votes on your debate"
 	elif act.has("my_vote") or me in voted:
 		out["mode"] = "voted"
-		out["title"] = "You voted. Waiting for the others"
+		out["title"] = "You voted. Waiting…"
 	else:
 		out["mode"] = "debate_vote"
 		out["title"] = "Who won the debate?"

@@ -121,7 +121,7 @@ func exam_through_the_server() -> void:
 	expect("when all have handed in the exam is marked and the ballot opens", [phones[1].view["election"]["phase"], phones[1].view["election"].get("candidates", [])], [GameStateScriptVoting(), [1, 2, 3]])
 	var ballot: Dictionary = TurnScript.describe(phones[1].view, 1, phones[1].members)
 	expect("the ballot is buttons, one per candidate who passed, in the dock", [ballot["mode"], ballot["buttons"].map(func(b): return b["label"])], ["ballot", ["Ada", "Bola", "Chi"]])
-	expect("a player who failed is told they can't vote", TurnScript.describe(phones[4].view, 4, phones[4].members)["title"], "The ballot is open. You can't vote this time")
+	expect("a player who failed is told they can't vote", TurnScript.describe(phones[4].view, 4, phones[4].members)["title"], "You can't vote this time")
 	send(1, ModelScript.make_command(ballot["buttons"][1]["command"]))
 	expect("voting through the button is recorded and the buttons go", [TurnScript.describe(phones[1].view, 1, phones[1].members)["mode"], TurnScript.describe(phones[1].view, 1, phones[1].members)["buttons"]], ["voted", []])
 

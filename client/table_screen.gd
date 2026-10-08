@@ -7,6 +7,8 @@ const TableLayoutScript = preload("res://client/table_layout.gd")
 const TableModelScript = preload("res://client/table_model.gd")
 const TurnModelScript = preload("res://client/turn_model.gd")
 const ExamScreenScript = preload("res://client/exam_screen.gd")
+const AmendScreenScript = preload("res://client/amend_screen.gd")
+const AmendModelScript = preload("res://client/amend_model.gd")
 
 signal constitution_requested
 signal command_requested(command: Dictionary)
@@ -40,6 +42,8 @@ var dock_input: Dictionary = {"topic": "", "selection": []}
 var dock_shown: Dictionary = {}     # what the dock currently describes (see TurnModel)
 var clock_timer: float = 0.0
 var exam: Control
+var amend_sheet: Control
+var amend_button: Button
 
 
 func _ready() -> void:
@@ -72,6 +76,17 @@ func _build() -> void:
 	exam.visible = false
 	exam.command_requested.connect(func(command): command_requested.emit(command))
 	add_child(exam)
+	amend_sheet = AmendScreenScript.new()
+	amend_sheet.model = model
+	amend_sheet.visible = false
+	amend_sheet.command_requested.connect(func(command): command_requested.emit(command))
+	add_child(amend_sheet)
+	amend_button = Button.new()
+	amend_button.text = "Amend"
+	amend_button.position = Vector2(1280 - 216 - 176, 8)
+	amend_button.size = Vector2(160, 48)
+	amend_button.pressed.connect(func(): amend_sheet.open())
+	add_child(amend_button)
 	overlay = Panel.new()
 	overlay.position = Vector2(120, 70)
 	overlay.size = Vector2(1040, 600)
@@ -104,21 +119,22 @@ func _build_dock() -> void:
 	var head := HBoxContainer.new()
 	column.add_child(head)
 	var left_side := Label.new()   # an empty twin of the clock's side, so the title is truly centred
-	left_side.custom_minimum_size.x = 130
+	left_side.custom_minimum_size.x = 100
 	head.add_child(left_side)
 	dock_title = Label.new()
 	dock_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dock_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dock_title.add_theme_font_size_override("font_size", 21)
-	dock_title.clip_text = true
+	dock_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART   # a long title wraps rather than being cut off
+	dock_title.max_lines_visible = 2
 	head.add_child(dock_title)
 	var right_side := VBoxContainer.new()
-	right_side.custom_minimum_size.x = 130
+	right_side.custom_minimum_size.x = 100
 	right_side.add_theme_constant_override("separation", -4)
 	head.add_child(right_side)
 	dock_clock = Label.new()
 	dock_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	dock_clock.add_theme_font_size_override("font_size", 24)
+	dock_clock.add_theme_font_size_override("font_size", 22)
 	right_side.add_child(dock_clock)
 	dock_lines = Label.new()
 	dock_lines.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -201,6 +217,9 @@ func _style_button(button: Button, tone: String) -> void:
 
 
 func _on_dock_button(spec: Dictionary) -> void:
+	if spec.get("action", "") == "open_amend":
+		amend_sheet.open()
+		return
 	if spec.has("toggle"):
 		var picked: Array = dock_input["selection"]
 		if spec["toggle"] in picked:
@@ -219,6 +238,7 @@ func _process(delta: float) -> void:
 		clock_timer = 0.0
 		_refresh_dock()
 		exam.refresh()
+		amend_sheet.refresh()
 
 
 func _toggle_constitution() -> void:
@@ -282,6 +302,10 @@ func refresh() -> void:
 	_refresh_dock()
 	exam.model = model
 	exam.refresh()
+	amend_sheet.model = model
+	amend_sheet.refresh()
+	amend_button.visible = AmendModelScript.my_window(model.view, model.seat) != -1
+	move_child(amend_sheet, get_child_count() - 1)
 	move_child(exam, get_child_count() - 1)   # badges are made as players appear: keep the sheet above them
 	move_child(overlay, get_child_count() - 1)
 	queue_redraw()

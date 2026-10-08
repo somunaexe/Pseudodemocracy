@@ -762,3 +762,18 @@ Looked at (docs/screenshots/): one bug found by looking, not by the tests: with 
 | Dock polish (your request) | Title and card text centred; buttons 150 x 50 with a wide gap between them. | **Built** |
 
 Looked at (docs/screenshots/): the exam sheet first drew UNDER the player badges (they are made later); fixed by keeping the sheet on top.
+
+### Amendments on the phone (item 14, second part; built: client/amend_model.gd, amend_screen.gd)
+
+| Question | Decision | Status |
+|---|---|---|
+| How a word is changed | **By tapping a value from a short list, never by typing** (your decision: so every change has a known action attached). Only highlighted words with a rule attached (15 of them, in 10 articles) are tappable: the pass mark and its "more/less", the tax rate, the levy, the levy-band triggers, the malpractice fine, union start and minimum size, the dissolve size, the Activist vote multiplier, the Agbero steal, the three Nepo signs. | **Built** |
+| The lists | Enum words (more/less, single/double..., + or -): each meaning once. Numbers and percentages: the current value, plus and minus 1, 5, 10 (100s for big numbers), doubled, halved, and the lowest and highest allowed, at most 11. The levy only offers values inside the levy band, so tapping can never cause the fine for breaking Article 3. | **Built** |
+| Highlighted words with no rule yet (101 of them: "the treasury", "every", "round"...) | Shown in grey and **can't be changed from the phone** for now: there is no known action to attach. The server would still accept a typed word, but a client using the game never sends one. If you want these to be changeable, each needs a vocabulary. | **Decision needed** |
+| When and who | The Inauguration and Farewell windows show "Amend the Constitution?" with Propose and Pass in the centre dock for the Leader (the Vice sees Propose). The mid-term window, when half have played, has an **Amend** button in the top bar. A sick, CANCELLED or Commander Leader is told they can't. | **Built** |
+| The sheet | A full-screen page: choose an article (10), tap a blue word, tap a value (green = your change), see the new wording, Propose. It closes by itself when the window goes. | **Built** |
+| Leader and Vice | With a Vice, a proposal waits for the other of the pair: they get Agree or Refuse in the dock with the wording and a 30 s clock; the proposer sees who they wait for. Both then sit out the vote. | **Built** |
+| The vote | Everyone eligible sees the old and new wording and Keep it or Reject it (green and red); members of a confronting Activist union are told their union votes for them. | **Built** |
+| Confronting | The Unionizer or Capon gets a Confront (Activists) or Block it (mob) button beside their vote. A union that includes the Leader or Vice cannot act on them (Article 17): it shows a button for each rival it may name instead. | **Built** |
+
+Looked at (docs/screenshots/): the unchanged words wrapped into vertical stacks of letters, and long dock titles were cut off ("uration: amend the Constit"). Both fixed: no wrapping inside the word row, shorter titles that wrap if they must.

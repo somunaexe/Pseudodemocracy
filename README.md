@@ -8,7 +8,7 @@ A satirical party game about Nigerian politics for 3 to 10 players, played onlin
 |---|---|
 | Rules engine (`scripts/`) | Complete for the current rules: elections and exams, amendments, performances and all three card decks, roles, unions and mobs, coups, the Vice, rivals, loyalists, corruption, wills and elimination. Grammar checking of amendments is switched off for now. |
 | Server (`server/`) | Rooms, seats, reconnect tokens, per-player views, a save after every accepted move, restore on restart. Hosting files are written but not yet tried (see `docs/deploying.md`). |
-| Client (`client/`) | Landscape phone UI: lobby, oval table, centre card and vote buttons, exam sheets, ballot. Amendments, private panels, the event feed and the end screen are still to build. |
+| Client (`client/`) | Landscape phone UI: lobby, oval table, centre card and vote buttons, exam sheets, ballot, amendments (tap-a-word editor, co-sign, vote, confront). Private panels, the event feed, polls and offers, and the end screen are still to build. |
 
 The full plan is in [`docs/build_plan.md`](docs/build_plan.md), and every rule decision, with who confirmed it, is in [`docs/design_decisions.md`](docs/design_decisions.md).
 

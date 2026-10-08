@@ -5,6 +5,8 @@
 extends SceneTree
 
 const GameScript = preload("res://scripts/game.gd")
+const GameStateScript = preload("res://scripts/game_state.gd")
+const AmendModelScript = preload("res://client/amend_model.gd")
 const ElectionScript = preload("res://scripts/election.gd")
 const ViewsScript = preload("res://scripts/views.gd")
 const TableScreenScript = preload("res://client/table_screen.gd")
@@ -20,16 +22,36 @@ func _init() -> void:
 	if args.size() > 1:
 		path = args[1]
 	var ids: Array = range(1, count + 1)
-	var s := GameScript.new_game(ids, 7)
-	s.decks["performance"] = [20]
-	for id in ids:
-		GameScript.handle(s, id, {"type": "cast_vote", "candidate": 2})
-	GameScript.handle(s, 2, {"type": "pass_window"})
-	s.sick[3] = true
 	var mode: String = args[2] if args.size() > 2 else "perform"
-	var performer: int = s.term["waiting"][0]
-	var me: int = performer
+	var amending: bool = mode in ["window", "amend_sheet", "amend_vote", "cosign"]
+	var s: GameStateScript = null
+	for seed_value in range(7, 400):
+		s = GameScript.new_game(ids, seed_value)
+		for id in ids:
+			GameScript.handle(s, id, {"type": "cast_vote", "candidate": 2})
+		if not amending or s.leader_type == GameStateScript.LeaderType.PRESIDENT:   # a Commander can't amend
+			break
+	s.decks["performance"] = [20]
+	var me: int = 1
+	var performer: int = 2
+	if not amending:
+		GameScript.handle(s, 2, {"type": "pass_window"})
+		performer = s.term["waiting"][0]
+		me = performer
+	s.sick[3] = true
 	match mode:
+		"window":
+			me = 2
+		"amend_sheet":
+			me = 2
+		"cosign":
+			s.vice_id = 3
+			s.sick[3] = false
+			GameScript.handle(s, 2, {"type": "propose", "window": 0, "article_id": 2, "new_texts": AmendModelScript.propose_command(ViewsScript.state_view(s, 2), 2, {tax_rate_index(s): "25%"})["new_texts"]})
+			me = 3
+		"amend_vote":
+			GameScript.handle(s, 2, {"type": "propose", "window": 0, "article_id": 2, "new_texts": AmendModelScript.propose_command(ViewsScript.state_view(s, 2), 2, {tax_rate_index(s): "25%"})["new_texts"]})
+			me = 1
 		"vote":
 			GameScript.handle(s, performer, {"type": "finish_performance"})
 			me = 1 if performer != 1 else 3
@@ -65,6 +87,13 @@ func _init() -> void:
 	table.model = model
 	get_root().add_child(table)
 	table.refresh()
+	if mode == "amend_sheet":
+		table.amend_sheet.open()
+		table.amend_sheet.article_id = 2
+		table.amend_sheet.edits = {tax_rate_index(s): "25%"}
+		table.amend_sheet.tapped = tax_rate_index(s)
+		table.amend_sheet.drawn_for = ""
+		table.amend_sheet.refresh()
 
 
 func _process(_delta: float) -> bool:
@@ -73,3 +102,8 @@ func _process(_delta: float) -> bool:
 		get_root().get_texture().get_image().save_png(path)
 		quit(0)
 	return false
+
+
+# The position of the tax rate ("20%") among the words of Article 2.
+func tax_rate_index(s: GameStateScript) -> int:
+	return AmendModelScript.words(ViewsScript.state_view(s, 2), 2).filter(func(w): return w["kind"] == "bound")[0]["index"]
