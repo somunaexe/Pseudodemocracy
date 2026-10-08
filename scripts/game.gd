@@ -22,6 +22,7 @@ const RolesScript = preload("res://scripts/roles.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const SecretAgentScript = preload("res://scripts/secret_agent.gd")
 const CoupScript = preload("res://scripts/coup.gd")
+const AbsenceScript = preload("res://scripts/absence.gd")
 const CommandPerformanceScript = preload("res://scripts/command_performance.gd")
 const GendersScript = preload("res://scripts/genders.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
@@ -142,6 +143,7 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 		return [_reject(player_id, "Unknown command '%s'." % type)]
 	if events.size() == 1 and events[0]["type"] == "rejected":
 		return events
+	AbsenceScript.acted(state, player_id)   # they did something on their own turn: it is not a missed one
 	events.append_array(TermLoopScript.settle(state))
 	events.append_array(_end_if_alone(state))
 	return events

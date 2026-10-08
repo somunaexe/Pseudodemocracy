@@ -31,6 +31,7 @@ var treasury: int = 0
 var psd: Dictionary = {}            # player id -> cash (never negative)
 var debts: Dictionary = {}          # player id -> Array of { "creditor": int, "amount": int }
 var debt_terms: Dictionary = {}     # player id -> own turns ended while owing anything
+var missed_turns: Dictionary = {}  # player id -> own turns IN A ROW that the server had to end because they did nothing (see Absence)
 var eliminated: Dictionary = {}     # player id -> bool
 
 # Who is playing and how they are doing, for the end-of-game ranking.

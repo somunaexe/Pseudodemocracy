@@ -17,7 +17,7 @@ const PeeksScript = preload("res://scripts/peeks.gd")
 # Everyone at the table may see these.
 const PUBLIC_FIELDS = [
 	"player_count", "turns_played", "leader_id", "leader_type", "sick",
-	"windows_used", "treasury", "psd", "debts", "debt_terms", "eliminated", "player_ids",
+	"windows_used", "treasury", "psd", "debts", "debt_terms", "missed_turns", "eliminated", "player_ids",
 	"half_rounds", "current_round", "articles", "amendment_record", "unions", "heirs", "nepo", "game_over", "clock_ms", "roles", "sick_left", "sick_original", "immune_left", "dose", "doctor_used", "choice", "union_invites", "reform", "genders", "coup_ban", "effect_round", "markers", "frozen", "rivals", "truces", "accords", "skip_draw", "loyalists", "vice_id", "grammar_referee", "mods", "schedule", "poll_counter", "card_offers", "choice_queue", "block_rights", "delayed", "amend_offer", "last_turn_player", "leader_goes_first", "levy_band",
 ]
 

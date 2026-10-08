@@ -262,6 +262,7 @@ func rich_state() -> GameStateScript:
 	s.sick[4] = true
 	DebtScript.charge(s, 3, 2, 3000)   # more than they have: part becomes debt
 	s.debt_terms[3] = 1
+	s.missed_turns[4] = 1
 	s.vice_id = 6   # not one of the voters: the Vice does not vote on amendments
 	s.amend_offer = {"by": 6, "other": 1, "window": 1, "article_id": 2, "texts": ["a", "b"], "deadline": 5555}
 	return s

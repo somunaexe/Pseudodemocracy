@@ -20,6 +20,7 @@ func _init() -> void:
 	amendment_votes()
 	no_grammar_referee()
 	absent_after_a_performance()
+	two_missed_turns()
 	print("%d failure(s)" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -171,6 +172,56 @@ func absent_after_a_performance() -> void:
 	s.choice = {"player": first, "kind": "option", "labels": ["a", "b"], "deadline": s.clock_ms + 1000000, "subject": first}
 	GameScript.tick(s, s.clock_ms + 100000)
 	expect("a pending choice stops the count", [s.term["waiting"][0], s.term["act"].has("end_by")], [first, false])
+
+
+# Runs the first player's turn out without them doing anything, until the server ends it. Returns the events.
+func walk_away(s: GameStateScript, first: int) -> Array:
+	var at: int = PlayScript.next_deadline(s, first)
+	while at != -1:
+		GameScript.tick(s, at)
+		at = PlayScript.next_deadline(s, first)
+	GameScript.tick(s, s.clock_ms)
+	return GameScript.tick(s, s.clock_ms + 15000)
+
+
+func fresh_turn() -> GameStateScript:
+	var s := new_turn_at_inauguration()
+	s.decks["performance"] = [20, 20, 20, 20, 20, 20]
+	send(s, LEADER, {"type": "pass_window"})
+	return s
+
+
+func two_missed_turns() -> void:
+	var s := fresh_turn()
+	var first: int = s.term["waiting"][0]
+	var ev := walk_away(s, first)
+	expect("a turn the server had to end, with nothing done, is missed", [last_of(s, "turn_missed")["missed"], last_of(s, "turn_missed")["limit"], s.missed_turns[first], s.eliminated.get(first, false)], [1, 2, 1, false])
+	s = fresh_turn()
+	first = s.term["waiting"][0]
+	s.missed_turns[first] = 1
+	walk_away(s, first)
+	expect("the second in a row eliminates them, for being absent", [s.eliminated.get(first, false), last_of(s, "player_eliminated")["reason"], s.missed_turns.has(first)], [true, "absent", false])
+	# Doing anything in the turn means it is not a missed one, even if they never press end turn.
+	s = fresh_turn()
+	first = s.term["waiting"][0]
+	s.missed_turns[first] = 1
+	send(s, first, {"type": "finish_performance"})
+	walk_away(s, first)
+	expect("a player who acted but forgot to end the turn is not absent and the count restarts", [s.eliminated.get(first, false), s.missed_turns.has(first), last_of(s, "turn_ended")["auto"]], [false, false, true])
+	# Ending their own turn restarts the count.
+	s = fresh_turn()
+	first = s.term["waiting"][0]
+	s.missed_turns[first] = 1
+	PlayScript.take_turn(s, first)
+	expect("ending a turn themselves clears it", s.missed_turns.has(first), false)
+	# Someone else's actions during a player's turn (voting on their performance) do not count as theirs.
+	s = fresh_turn()
+	first = s.term["waiting"][0]
+	s.missed_turns[first] = 1
+	var voter: int = 1 if first != 1 else 3
+	send(s, voter, {"type": "performance_vote", "good": true})
+	walk_away(s, first)
+	expect("... and others acting do not save them", s.eliminated.get(first, false), true)
 
 
 func at_exam() -> GameStateScript:

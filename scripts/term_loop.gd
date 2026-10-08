@@ -41,6 +41,7 @@ const ChoicesScript = preload("res://scripts/choices.gd")
 const PollsScript = preload("res://scripts/polls.gd")
 const IncomeScript = preload("res://scripts/income.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
+const AbsenceScript = preload("res://scripts/absence.gd")
 const CommandPerformanceScript = preload("res://scripts/command_performance.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const SecretAgentScript = preload("res://scripts/secret_agent.gd")
@@ -112,6 +113,8 @@ static func _end_turn(state: GameStateScript, player_id: int, auto: bool = false
 		ended["auto"] = true   # they did not end it themselves
 	var events: Array = [_log(state, "turn_ended", ended)]
 	events.append_array(TurnEndScript.end_turn(state, player_id))   # a debt term, a Nepo step; may eliminate
+	if not state.eliminated.get(player_id, false):
+		events.append_array(AbsenceScript.turn_over(state, player_id, auto))   # a turn the server had to end; may eliminate
 	return events
 
 

@@ -47,6 +47,7 @@
  "malpracticeFine": 25,
  "performanceSeconds": 60,
  "choiceSeconds": 10,
+ "missedTurnLimit": 2,
  "turnEndSeconds": 15,
  "performanceVoteSeconds": 15,
  "amendPenalty": 100,
