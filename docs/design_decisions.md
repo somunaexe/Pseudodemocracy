@@ -308,6 +308,21 @@ Some cards need the player to decide. The card is drawn and applied as far as it
 | Are role cards secret? | No. Everyone can see who holds which roles. (I wrongly assumed they were secret from the card text; you corrected this.) | Confirmed |
 | How are roles gained? | From Settlement cards. So dealing roles comes with the card effects. | Confirmed |
 
+## Sickness (built: scripts/sickness.gd)
+
+From the handbook (Doctor & Health, Articles 21 to 24). A round is a term.
+
+| Question | Decision | Status |
+|---|---|---|
+| What can a sick player not do? | Use role powers, write exams, vote or be voted for (Article 21). Already enforced everywhere via `state.sick`. | **Built** |
+| How long is sickness? | A number of rounds, counted down at the end of each round: when the term ends, or when a mid-term vacancy ends it early. The very first election ends no round. A sickness of 1 round started mid-term therefore ends at the end of that same term, before the exam. | Assumed, please confirm |
+| Can you be sickened twice? | No stacking: a sick player can't be sickened again, however they became sick (a dose or a card). | Confirmed (handbook) |
+| What happens on recovery? | The player is immune for as many rounds as their ORIGINAL sickness lasted. Sabotage lengthens the sickness but not the immunity (handbook example: Concoction 2 rounds, sabotage +2, sick for 4, immune for 2). | Confirmed (handbook) |
+| Immunity from a card. | The card gives that many rounds, counted the same way, and never shortens an immunity the player already has. | Assumed |
+| Is it public? | Yes: who is sick, for how long, and who is immune. ("Keep track of who is sick and who is immune yourselves.") | Confirmed |
+| CANCELLED players. | At -50 or lower a player has no roles until they climb back: no role powers and no role income. They keep the cards. A CANCELLED Leader still collects the Leader's 100 (handbook). | Confirmed (handbook) |
+| Cards. | "Sick for 1 round" (Scandal) and "immune for the next 2 terms" (Settlement) are applied by the game. The COVID card (it spreads to nearby players and to whoever makes eye contact) stays with the table. | **Built** (2 cards) |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.

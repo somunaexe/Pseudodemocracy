@@ -24,6 +24,7 @@ const GameDataScript = preload("res://scripts/game_data.gd")
 const LawScript = preload("res://scripts/law.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
 const RngScript = preload("res://scripts/rng.gd")
+const SicknessScript = preload("res://scripts/sickness.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 # Only the server may skip the exam (it knows the Leader ran out of time).
@@ -46,6 +47,8 @@ static func begin(state: GameStateScript, reason: String) -> Array:
 	assert(reason in ["first", "term_ended", "vacancy"], "unknown election reason '%s'" % reason)
 	var events: Array = []
 	var leader: int = state.leader_id
+	if reason != "first":
+		events.append_array(SicknessScript.end_of_round(state))   # the round is over: sickness and immunity count down
 	if reason == "term_ended" and leader != -1:
 		state.half_rounds[leader] = int(state.half_rounds.get(leader, 0)) + 2
 

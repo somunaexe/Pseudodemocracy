@@ -16,6 +16,7 @@ class_name Roles
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
+const PopularityScript = preload("res://scripts/popularity.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 
@@ -137,7 +138,7 @@ static func settle_estate(state: GameStateScript, dead_id: int, heir: int) -> Ar
 
 # Why this player can't use this role's power now, or "" if they can. Every role shares these rules:
 # you must hold it, be in the game, and not be sick (Article 17: sick players can't use role powers).
-# Later: a role card frozen by a card or by corruption.
+# and not be CANCELLED. Later: a role card frozen by a card or by corruption.
 static func can_use_power(state: GameStateScript, player_id: int, role: String) -> String:
 	if not has(state, player_id, role):
 		return "You don't hold the %s role." % role
@@ -145,4 +146,12 @@ static func can_use_power(state: GameStateScript, player_id: int, role: String) 
 		return "You are out of the game."
 	if state.sick.get(player_id, false):
 		return "Sick players can't use role powers."
+	if is_cancelled(state, player_id):
+		return "CANCELLED players have no roles until they climb back."
 	return ""
+
+
+# At -50 or lower a player is CANCELLED: they keep their cards but have no roles, so no powers and no role
+# income, until their popularity climbs back above the line.
+static func is_cancelled(state: GameStateScript, player_id: int) -> bool:
+	return PopularityScript.effective(state, player_id) <= GameDataScript.get_int("cancelledAt")

@@ -15,6 +15,7 @@ for (const name of DECKS) {
 
 const ROLES = V.components.roleCards;
 const MONEY_KEYS = ['psd', 'popularity'];
+const SELF_KEYS = ['psd', 'popularity', 'sick', 'immune'];   // what a card can do to its drawer (sick and immune must be positive)
 
 function fail(deck, prefix, message) { throw new Error(`${deck}: "${prefix}": ${message}`); }
 
@@ -29,9 +30,10 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 }
 
 function validate(deck, prefix, text, effect) {
-  const known = [...MONEY_KEYS, 'choose', 'gain_role', 'swap_with', 'target'];
+  const known = [...SELF_KEYS, 'choose', 'gain_role', 'swap_with', 'target'];
   for (const key of Object.keys(effect)) if (!known.includes(key)) fail(deck, prefix, `unknown effect "${key}"`);
-  checkAmounts(deck, prefix, text, Object.fromEntries(MONEY_KEYS.filter((k) => k in effect).map((k) => [k, effect[k]])), MONEY_KEYS);
+  checkAmounts(deck, prefix, text, Object.fromEntries(SELF_KEYS.filter((k) => k in effect).map((k) => [k, effect[k]])), SELF_KEYS);
+  for (const k of ['sick', 'immune']) if (k in effect && effect[k] < 0) fail(deck, prefix, `${k} must be positive`);
   const choose = effect.choose;
   if (!choose) {
     for (const key of ['gain_role', 'swap_with', 'target']) if (key in effect) fail(deck, prefix, `"${key}" needs a "choose"`);
@@ -42,7 +44,7 @@ function validate(deck, prefix, text, effect) {
     if (!Array.isArray(choose.options) || choose.options.length < 2) fail(deck, prefix, 'an option choice needs at least two options');
     for (const option of choose.options) {
       if (typeof option.label !== 'string' || !option.label) fail(deck, prefix, 'every option needs a label');
-      checkAmounts(deck, prefix, text, option, MONEY_KEYS);
+      checkAmounts(deck, prefix, text, option, SELF_KEYS);
     }
     for (const key of ['gain_role', 'swap_with', 'target']) if (key in effect) fail(deck, prefix, `"${key}" doesn't go with an option choice`);
   }

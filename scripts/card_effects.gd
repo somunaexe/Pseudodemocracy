@@ -8,6 +8,8 @@ class_name CardEffects
 #   psd < 0   the player pays the treasury; whatever they can't cover becomes debt
 #   popularity   moves the base popularity (it stays on the track)
 #
+#   sick > 0     the player is sick for that many rounds (unless already sick or immune: skipped, and said)
+#   immune > 0   the player can't be sickened for that many rounds
 # A card with "choose" stops the turn until the player chooses (command "choose", see choose()):
 #   option   one of the card's options, each its own psd/popularity
 #   role     any role the player can be given; they gain it
@@ -26,6 +28,7 @@ const GameStateScript = preload("res://scripts/game_state.gd")
 const CardsScript = preload("res://scripts/cards.gd")
 const DebtScript = preload("res://scripts/debt.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
+const SicknessScript = preload("res://scripts/sickness.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const RngScript = preload("res://scripts/rng.gd")
@@ -37,8 +40,10 @@ static func apply(state: GameStateScript, player_id: int, deck: String, card: in
 	var effect: Dictionary = CardsScript.effects(deck, card)
 	var data: Dictionary = {"player": player_id, "deck": deck, "card": card, "by_table": effect.is_empty()}
 	_apply_money(state, player_id, effect, data)
+	var extra: Array = _apply_status(state, player_id, effect, data)
 	data["asks_choice"] = effect.has("choose")
 	var events: Array = [_log(state, "card_applied", data)]
+	events.append_array(_log_all(state, extra))
 	if effect.has("choose"):
 		events.append_array(_ask(state, player_id, deck, card, effect["choose"]))
 	return events
@@ -64,6 +69,28 @@ static func _apply_money(state: GameStateScript, player_id: int, effect: Diction
 		var before: int = PopularityScript.effective(state, player_id)
 		PopularityScript.change_base(state, player_id, int(effect["popularity"]))
 		data[prefix + "popularity"] = PopularityScript.effective(state, player_id) - before   # what actually changed
+
+
+# sick and immune. Returns the sickness events (not yet logged); a sickness that can't happen is noted in data.
+static func _apply_status(state: GameStateScript, player_id: int, effect: Dictionary, data: Dictionary) -> Array:
+	var events: Array = []
+	if effect.has("sick"):
+		var problem: String = SicknessScript.problem_sickening(state, player_id)
+		if problem != "":
+			data["skipped"] = data.get("skipped", []) + ["sick: " + problem]
+		else:
+			events.append_array(SicknessScript.sicken(state, player_id, int(effect["sick"])))
+			data["sick"] = int(effect["sick"])
+	if effect.has("immune"):
+		events.append_array(SicknessScript.grant_immunity(state, player_id, int(effect["immune"])))
+		data["immune"] = int(effect["immune"])
+	return events
+
+
+static func _log_all(state: GameStateScript, events: Array) -> Array:
+	for event in events:
+		state.event_log.append(event)   # events from helpers are logged here, once
+	return events
 
 
 # --- asking ------------------------------------------------------------------------------

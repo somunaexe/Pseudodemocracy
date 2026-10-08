@@ -82,3 +82,9 @@ enum ActPhase { PERFORMING, VOTING, DONE }
 # several, and each earns its own income. Public: everyone can see who holds which role. Roles are
 # gained from Settlement cards; nothing deals them yet.
 var roles: Dictionary = {}          # player id -> list of role names; absent = no roles
+
+# How long each sick player stays sick, and for how long they cannot be sickened again. A round is a term.
+# state.sick (above) is the flag everything else checks; these say for how long.
+var sick_left: Dictionary = {}      # player id -> rounds of sickness still to go
+var sick_original: Dictionary = {}  # player id -> how long the sickness first was; sabotage doesn't change it
+var immune_left: Dictionary = {}    # player id -> rounds during which they can't be sickened

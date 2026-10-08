@@ -174,7 +174,8 @@ const performance = [
 
 // EFFECTS the game applies by itself when a Settlement or Scandal card is drawn. A card is found by the
 // start of its text (the export fails if that matches no card or more than one). Only effects on the
-// drawer alone are listed: psd is money to (+) or from (-) the treasury, popularity moves the base.
+// drawer alone are listed: psd is money to (+) or from (-) the treasury, popularity moves the base,
+// sick makes the drawer sick for that many rounds and immune makes them immune to being sickened for that many.
 // Cards not listed here are read out to the table and carried out by the table, as before.
 // The export also checks that every amount appears as a number in the card's own text.
 const effects = {
@@ -188,6 +189,7 @@ const effects = {
     ['You throw a lavish independence day party', { psd: -50, popularity: 10 }],
     ['Your cousin abroad wires funds', { psd: 80 }],
     ['You donate to charity live on camera', { psd: -30, popularity: 15 }],
+    ['You lived by Dr. Sebi', { immune: 2 }],
     // Cards that ask the drawer to choose. `choose` is { kind: 'option' | 'role' | 'player', ... }:
     //   option  one of `options`, each its own effects (with a label shown to the player)
     //   role    any role the drawer can be given;   player  any other player in the game
@@ -214,6 +216,7 @@ const effects = {
     ['Bad investment', { psd: -60 }],
     ["You're forced to publicly refund a donor", { psd: -40, popularity: -5 }],
     ['You lose a bet made in confidence', { psd: -35 }],
+    ["You're sickened by an unknown source", { sick: 1 }],
   ],
 };
 
