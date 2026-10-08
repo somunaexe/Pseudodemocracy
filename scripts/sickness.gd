@@ -14,6 +14,7 @@ class_name Sickness
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const EventsScript = preload("res://scripts/events.gd")
+const EffectClockScript = preload("res://scripts/effect_clock.gd")
 
 
 static func is_sick(state: GameStateScript, player_id: int) -> bool:
@@ -42,6 +43,7 @@ static func sicken(state: GameStateScript, player_id: int, rounds: int) -> Array
 	state.sick[player_id] = true
 	state.sick_left[player_id] = rounds
 	state.sick_original[player_id] = rounds
+	EffectClockScript.began(state, "sick", player_id)
 	return [EventsScript.make("sickened", {"player": player_id, "rounds": rounds})]
 
 
@@ -72,6 +74,7 @@ static func recover(state: GameStateScript, player_id: int) -> Array:
 	state.sick[player_id] = false
 	state.sick_left.erase(player_id)
 	state.sick_original.erase(player_id)
+	EffectClockScript.forget(state, "sick", player_id)
 	if immune_for > 0:
 		state.immune_left[player_id] = maxi(int(state.immune_left.get(player_id, 0)), immune_for)
 	return [EventsScript.make("recovered", {"player": player_id, "immune_for": immune_for})]
@@ -80,6 +83,7 @@ static func recover(state: GameStateScript, player_id: int) -> Array:
 # A card makes the player immune for this many rounds (never shortening an immunity they already have).
 static func grant_immunity(state: GameStateScript, player_id: int, rounds: int) -> Array:
 	state.immune_left[player_id] = maxi(int(state.immune_left.get(player_id, 0)), rounds)
+	EffectClockScript.began(state, "immune", player_id)
 	return [EventsScript.make("immunity_granted", {"player": player_id, "rounds": state.immune_left[player_id]})]
 
 
@@ -90,6 +94,8 @@ static func end_of_round(state: GameStateScript) -> Array:
 	var immune: Array = state.immune_left.keys()
 	immune.sort()
 	for id in immune:
+		if EffectClockScript.skips(state, "immune", id):
+			continue   # it began in this round
 		state.immune_left[id] -= 1
 		if state.immune_left[id] <= 0:
 			state.immune_left.erase(id)
@@ -99,6 +105,8 @@ static func end_of_round(state: GameStateScript) -> Array:
 	for id in sick:
 		if not is_sick(state, id):
 			continue
+		if EffectClockScript.skips(state, "sick", id):
+			continue   # it began in this round
 		state.sick_left[id] -= 1
 		if state.sick_left[id] <= 0:
 			events.append_array(recover(state, id))

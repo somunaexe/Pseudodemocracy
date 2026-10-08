@@ -203,6 +203,7 @@ func rich_state() -> GameStateScript:
 	s.role_cards = {0: {"role": "Doctor", "sticker": true, "holder": 2}, 1: {"role": "Doctor", "sticker": false, "holder": 0}}
 	s.agent_used = {4: true}
 	s.coup_ban = {3: 2}
+	s.effect_round = {"sick:3": 2}
 	s.markers = {2: 3, 4: 1}
 	s.rivals = {2: [3, 4]}
 	s.truces = [[2, 3]]
@@ -252,8 +253,7 @@ func rich_state() -> GameStateScript:
 	DebtScript.charge(s, 3, 2, 3000)   # more than they have: part becomes debt
 	s.debt_terms[3] = 1
 	s.vice_id = 6   # not one of the voters: the Vice does not vote on amendments
-	s.vice_type = GameStateScript.LeaderType.DICTATOR
-	s.vice_windows_used = {GameStateScript.AmendWindow.INAUGURATION: true, GameStateScript.AmendWindow.MID_TERM: false, GameStateScript.AmendWindow.FAREWELL: false}
+	s.amend_offer = {"by": 6, "other": 1, "window": 1, "article_id": 2, "texts": ["a", "b"], "deadline": 5555}
 	return s
 
 

@@ -33,6 +33,7 @@ const DebtScript = preload("res://scripts/debt.gd")
 const PermissionsScript = preload("res://scripts/permissions.gd")
 const ElectionScript = preload("res://scripts/election.gd")
 const LevyBandScript = preload("res://scripts/levy_band.gd")
+const AmendmentFlowScript = preload("res://scripts/amendment_flow.gd")
 const IncomeScript = preload("res://scripts/income.gd")
 const CardEffectsScript = preload("res://scripts/card_effects.gd")
 const CommandPerformanceScript = preload("res://scripts/command_performance.gd")
@@ -73,15 +74,14 @@ static func handle(state: GameStateScript, player_id: int, command: Dictionary) 
 
 
 static func _pass_window(state: GameStateScript, player_id: int, phase: int) -> Array:
-	if player_id != state.leader_id and player_id != state.vice_id:
+	if player_id != state.leader_id:
 		return [_reject(player_id, "Only the Leader decides whether to amend.")]
 	if not state.amend.is_empty():
 		return [_reject(player_id, "An amendment is already under way.")]
+	if not state.amend_offer.is_empty():
+		return [_reject(player_id, "A proposal is waiting for the Vice's agreement.")]
 	var window: int = GameStateScript.AmendWindow.INAUGURATION if phase == GameStateScript.TermPhase.INAUGURATION else GameStateScript.AmendWindow.FAREWELL
-	if player_id == state.leader_id:
-		state.windows_used[window] = true   # a window that is passed is gone
-	else:
-		state.vice_windows_used[window] = true   # the Vice's own
+	state.windows_used[window] = true   # a window that is passed is gone
 	return [_log(state, "window_passed", {"leader": player_id, "window": window})]
 
 
@@ -129,6 +129,9 @@ static func _step(state: GameStateScript) -> Array:
 	var hires: Array = SecretAgentScript.step(state)   # and a request to hire a Secret Agent
 	if not hires.is_empty():
 		return hires
+	var offers: Array = AmendmentFlowScript.step(state)   # a proposal waiting for the other of the Leader and the Vice
+	if not offers.is_empty():
+		return offers
 	var wills: Array = WillsScript.step(state)   # so does a will nobody signed in time
 	if not wills.is_empty():
 		return wills
@@ -160,11 +163,9 @@ static func _step(state: GameStateScript) -> Array:
 # The window is over once its amendment (if any) has been settled and the window has been used
 # or passed, or the Leader couldn't have used it anyway.
 static func _window_finished(state: GameStateScript, window: int) -> bool:
-	if not state.amend.is_empty():
+	if not state.amend.is_empty() or not state.amend_offer.is_empty():
 		return false
-	var leader_done: bool = state.windows_used[window] or PermissionsScript.leader_powers_problem(state, state.leader_id) != ""
-	var vice_done: bool = state.vice_id == -1 or state.vice_windows_used[window] or PermissionsScript.leader_powers_problem(state, state.vice_id) != ""
-	return leader_done and vice_done
+	return state.windows_used[window] or PermissionsScript.leader_powers_problem(state, state.leader_id) != ""
 
 
 static func _start_term(state: GameStateScript) -> Array:

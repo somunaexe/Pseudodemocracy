@@ -46,7 +46,7 @@ func markers_and_the_third() -> void:
 	CardEffectsScript.apply(s, 3, "scandal", paid)
 	ev = CardEffectsScript.apply(s, 3, "scandal", paid)
 	expect("the third marker freezes the player", [CorruptionScript.held(s, 3), CorruptionScript.is_frozen(s, 3), types(ev)], [3, true, ["card_applied", "marker_gained", "player_frozen"]])
-	expect("... they lose 30 popularity, remembered", [PopularityScript.base(s, 3) - pop, s.frozen[3]], [-30, {"left": 3, "drop": 30}])
+	expect("... they lose 30 popularity, remembered", [PopularityScript.base(s, 3) - pop, s.frozen[3]], [-30, {"left": 3, "drop": 30, "since": 1}])
 	expect("... and the freeze says for how long", [ev[2]["rounds"], ev[2]["popularity_lost"]], [3, 30])
 
 	# The popularity that was really lost is what comes back, not the 30.
@@ -118,6 +118,9 @@ func waiting_it_out() -> void:
 	freeze(s, 3)
 	var pop: int = PopularityScript.base(s, 3)
 	var ev: Array = RoundEndScript.run(s)
+	expect("the round it began in doesn't count: 3 rounds means 3 further rounds", [s.frozen[3]["left"], count(ev, "freeze_expired")], [3, 0])
+	s.current_round += 1
+	ev = RoundEndScript.run(s)
 	expect("one round passes: still frozen", [s.frozen[3]["left"], count(ev, "freeze_expired")], [2, 0])
 	RoundEndScript.run(s)
 	expect("two rounds: still frozen", s.frozen[3]["left"], 1)
@@ -246,7 +249,7 @@ func views_and_saves() -> void:
 	expect("everyone sees the markers and who is frozen", [seen["markers"], seen["frozen"].keys()], [{3: 3, 4: 2}, [3]])
 	var errors: Array = []
 	var restored: GameStateScript = SerializerScript.state_from_json(SerializerScript.state_to_json(s), errors)
-	expect("a saved game keeps them", [errors, restored.markers, restored.frozen], [[], {3: 3, 4: 2}, {3: {"left": 3, "drop": 30}}])
+	expect("a saved game keeps them", [errors, restored.markers, restored.frozen], [[], {3: 3, 4: 2}, {3: {"left": 3, "drop": 30, "since": 1}}])
 
 
 # --- helpers -----------------------------------------------------------------------------

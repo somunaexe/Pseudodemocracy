@@ -187,6 +187,7 @@ func the_round_ends() -> void:
 	s.popularity[CHALLENGER] = 30
 	s.popularity[LEADER] = -30
 	SicknessScript.sicken(s, 5, 1)
+	s.effect_round.clear()   # it began in an earlier round
 	s.doctor_used[3] = 2
 	s.coup_ban[1] = 1
 	var ev := send(s, CHALLENGER, coup())
@@ -262,7 +263,10 @@ func the_coup_ban() -> void:
 	CardEffectsScript.apply(s, CHALLENGER, "scandal", scandal)
 	expect("drawing it again doesn't add up", s.coup_ban[CHALLENGER], 1)
 	RoundEndScript.run(s)
-	expect("the ban ends with the round", s.coup_ban, {})
+	expect("the round it began in doesn't count: 1 round means 1 further round", s.coup_ban, {CHALLENGER: 1})
+	s.current_round += 1
+	RoundEndScript.run(s)
+	expect("the ban ends with the next round", s.coup_ban, {})
 	expect("... and the coup is allowed again", types(send(s, CHALLENGER, coup())).has("coup_succeeded"), true)
 
 

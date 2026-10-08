@@ -59,7 +59,7 @@ static func give(state: GameStateScript, player_id: int) -> Array:
 		PopularityScript.change_base(state, player_id, -GameDataScript.get_nested_int("corruption", "pop"))
 		var drop: int = before - PopularityScript.base(state, player_id)
 		var wait: int = GameDataScript.get_nested_int("corruption", "wait")
-		state.frozen[player_id] = {"left": wait, "drop": drop}
+		state.frozen[player_id] = {"left": wait, "drop": drop, "since": state.current_round}
 		events.append(EventsScript.make("player_frozen", {"player": player_id, "popularity_lost": drop, "rounds": wait, "roles": RolesScript.held(state, player_id)}))
 	return events
 
@@ -70,6 +70,8 @@ static func end_of_round(state: GameStateScript) -> Array:
 	var ids: Array = state.frozen.keys()
 	ids.sort()
 	for id in ids:
+		if int(state.frozen[id].get("since", -1)) == state.current_round:
+			continue   # 3 rounds means 3 further rounds: not the one it began in
 		state.frozen[id]["left"] = int(state.frozen[id]["left"]) - 1
 		if state.frozen[id]["left"] > 0:
 			continue

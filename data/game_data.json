@@ -120,6 +120,7 @@
  "doseOfferSeconds": 30,
  "doseGuessSeconds": 10,
  "commandVoteMultiplier": 2,
+ "amendCosignSeconds": 30,
  "agentOfferSeconds": 30,
  "agentPriceMax": 5000,
  "scenarioMax": 280,

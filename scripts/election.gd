@@ -93,16 +93,18 @@ static func install_leader(state: GameStateScript, winner: int, how: String) -> 
 	var leader_type: int = LeaderCardsScript.draw(state)
 	state.leader_id = winner
 	state.leader_type = leader_type
-	ViceScript.clear(state)
 	state.turns_played = 0
 	state.leader_goes_first = (how == "coup" or reason == "first")   # after a coup, and in the very first term, the Leader goes first
 	state.amend = {}
+	state.amend_offer = {}
 	for window in state.windows_used:
 		state.windows_used[window] = false
 	if reason != "first":
 		state.current_round += 1
 	state.election = {}
-	return [EventsScript.make("leader_installed", {"leader": winner, "leader_type": leader_type, "how": how, "round": state.current_round})]
+	var events: Array = [EventsScript.make("leader_installed", {"leader": winner, "leader_type": leader_type, "how": how, "round": state.current_round})]
+	events.append_array(ViceScript.after_coup(state, winner))   # after a coup the Vice stays, unless they are the new Leader or a Dictator is
+	return events
 
 
 # --- commands ----------------------------------------------------------------------------

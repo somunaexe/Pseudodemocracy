@@ -58,7 +58,7 @@ static func problem_appointing(state: GameStateScript, owner: int, follower: int
 
 static func appoint(state: GameStateScript, owner: int, follower: int, rounds: int) -> Array:
 	assert(problem_appointing(state, owner, follower) == "", "appoint() needs a follower who can be appointed")
-	state.loyalists[follower] = {"owner": owner, "left": rounds}
+	state.loyalists[follower] = {"owner": owner, "left": rounds, "since": state.current_round}
 	return [EventsScript.make("loyalist_appointed", {"owner": owner, "loyalist": follower, "rounds": rounds})]
 
 
@@ -87,6 +87,8 @@ static func end_of_round(state: GameStateScript) -> Array:
 	var ids: Array = state.loyalists.keys()
 	ids.sort()
 	for id in ids:
+		if int(state.loyalists[id].get("since", -1)) == state.current_round:
+			continue   # n rounds means n further rounds: not the one it began in
 		state.loyalists[id]["left"] = int(state.loyalists[id]["left"]) - 1
 		if state.loyalists[id]["left"] <= 0:
 			events.append(EventsScript.make("loyalty_ended", {"owner": state.loyalists[id]["owner"], "loyalist": id}))

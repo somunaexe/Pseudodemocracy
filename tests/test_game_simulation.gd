@@ -154,7 +154,7 @@ func _init() -> void:
 		expect("a played game produced a '%s' event" % kind, seen["types"].has(kind), true)
 
 	# Choices come up too (only some cards ask for one, so across all the ordinary games).
-	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed"]:
+	for kind in ["choice_needed", "choice_made", "role_gained", "card_played", "union_founded", "vice_appointed", "amendment_offered"]:
 		expect("the twelve ordinary games produced a '%s' event (%d times)" % [kind, all_types.count(kind)], all_types.has(kind), true)
 
 	# The same seed always plays out the same way, to the last byte.
@@ -295,6 +295,11 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 func next_move(s: GameStateScript) -> Dictionary:
 	if not s.election.is_empty():
 		return election_move(s)
+	if not s.amend_offer.is_empty():
+		# The other of the Leader and the Vice agrees to the proposal, except now and then, when they let the time run out.
+		if (s.current_round + s.amend_offer["by"]) % 4 == 3:
+			return {"tick": int(s.amend_offer["deadline"])}
+		return {"player": s.amend_offer["other"], "command": {"type": "amend_agree", "accept": (s.current_round + s.amend_offer["other"]) % 5 != 0}}
 	var choosing := choice_move(s)
 	if not choosing.is_empty():
 		return choosing
@@ -330,16 +335,11 @@ func next_move(s: GameStateScript) -> Dictionary:
 		return amendment_move(s)
 	match s.term.get("phase", NONE):
 		INAUGURATION, FAREWELL:
-			# The Vice (if any) has windows of their own: they pass, or in some rounds amend the tax rate. They are asked
-			# once the Leader has used or passed theirs.
-			if s.vice_id != -1 and window_used(s):
-				var window: int = GameStateScript.AmendWindow.INAUGURATION if s.term["phase"] == INAUGURATION else GameStateScript.AmendWindow.FAREWELL
-				if not s.vice_windows_used[window] and PermissionsScript.leader_powers_problem(s, s.vice_id) == "":
-					if s.current_round % 3 == 0 and s.vice_type != GameStateScript.LeaderType.COMMANDER:
-						return {"player": s.vice_id, "command": tax_amendment(s)}
-					return {"player": s.vice_id, "command": {"type": "pass_window"}}
+			# With a Vice in the term, every third round it is the Vice who proposes the tax amendment (the Leader agrees).
+			if s.vice_id != -1 and s.current_round % 3 == 0 and not window_used(s) and amend_offers_this_term(s) == 0 and PermissionsScript.leader_powers_problem(s, s.vice_id) == "":
+				return {"player": s.vice_id, "command": tax_amendment(s)}
 			# Every other term the Leader tries to amend the tax rate; otherwise they pass.
-			if s.current_round % 2 == 0 and s.leader_type != GameStateScript.LeaderType.COMMANDER and not window_used(s):
+			if s.current_round % 2 == 0 and s.leader_type != GameStateScript.LeaderType.COMMANDER and not window_used(s) and amend_offers_this_term(s) == 0:
 				return {"player": s.leader_id, "command": tax_amendment(s)}
 			return {"player": s.leader_id, "command": {"type": "pass_window"}}
 		TURNS:
@@ -571,6 +571,19 @@ func hire_move(s: GameStateScript) -> Dictionary:
 	return {}
 
 
+# Proposals to amend that waited for agreement since the term began: a refused or lapsed one uses nothing up, so the
+# script must not propose forever.
+func amend_offers_this_term(s: GameStateScript) -> int:
+	var n: int = 0
+	for i in range(s.event_log.size() - 1, -1, -1):
+		var kind: String = s.event_log[i]["type"]
+		if kind == "term_started":
+			break
+		if kind == "amendment_offered":
+			n += 1
+	return n
+
+
 func hires_this_term(s: GameStateScript) -> int:
 	var n: int = 0
 	for i in range(s.event_log.size() - 1, -1, -1):
@@ -614,6 +627,8 @@ func lawyer_move(s: GameStateScript) -> Dictionary:
 	if lawyers.is_empty():
 		return {}
 	var keeper: int = lawyers[0]
+	if RolesScript.can_use_pledge(s, keeper, "Lawyer") != "":
+		return {}   # a sick (or frozen) Lawyer keeps no wills for now
 	var testators: Array = s.will_offers.keys()
 	testators.sort()
 	for testator in testators:
@@ -818,12 +833,12 @@ func check_rules(s: GameStateScript, step: int) -> void:
 		if s.eliminated.get(id, false):
 			problems.append(where + "an eliminated player %d still loses a draw" % id)
 	if s.vice_id != -1:
-		if s.eliminated.get(s.vice_id, false) or s.vice_id == s.leader_id or s.term.is_empty() or s.leader_id == -1:
+		if s.eliminated.get(s.vice_id, false) or s.vice_id == s.leader_id or s.leader_id == -1:
 			problems.append(where + "malformed Vice %d (Leader %d)" % [s.vice_id, s.leader_id])
-	else:
-		for window in s.vice_windows_used:
-			if s.vice_windows_used[window]:
-				problems.append(where + "no Vice, but a Vice window is marked used")
+	if not s.amend_offer.is_empty():
+		var offer: Dictionary = s.amend_offer
+		if not (offer["by"] == s.leader_id and offer["other"] == s.vice_id) and not (offer["by"] == s.vice_id and offer["other"] == s.leader_id):
+			problems.append(where + "a proposal waits for agreement from someone who is not the other of the pair")
 	for follower in s.loyalists:
 		var owner: int = s.loyalists[follower]["owner"]
 		if s.eliminated.get(follower, false) or s.eliminated.get(owner, false) or owner == follower or s.loyalists[follower]["left"] <= 0:

@@ -54,10 +54,6 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 	LoyalistsScript.remove_player(state, player_id)
 	if ViceScript.remove_player(state, player_id):
 		events.append(EventsScript.make("vice_vacant", {"player": player_id}))
-		if not state.amend.is_empty() and int(state.amend.get("by", -1)) == player_id and player_id != state.leader_id:
-			state.amendment_record.append({"round": state.current_round, "leader": player_id, "article_id": state.amend["article_id"], "outcome": "abandoned", "for": 0, "against": 0, "text": ""})
-			state.amend = {}
-			events.append(EventsScript.make("amendment_abandoned", {"reason": "the Vice was eliminated"}))
 
 	var will: Dictionary = state.wills.get(player_id, {})
 	var heir: int = 0   # 0 = nobody (0 is the treasury's id, never a player)
@@ -143,8 +139,13 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 		var mid_term: bool = state.election.is_empty()
 		if mid_term:
 			state.half_rounds[player_id] = int(state.half_rounds.get(player_id, 0)) + 1
-		events.append_array(_vacate_seat(state))
-		if mid_term:
+		if mid_term and state.vice_id != -1:
+			# The Vice takes over and the term goes on: no election. An amendment under way is abandoned.
+			events.append_array(_abandon_amendment(state, "the Leader was eliminated"))
+			events.append_array(ViceScript.succeed(state))
+		else:
+			events.append_array(_vacate_seat(state))
+		if mid_term and state.leader_id == -1:
 			state.event_log.append_array(events)
 			logged = events.size()
 			events.append_array(ElectionScript.begin(state, "vacancy"))   # a new Leader is voted for
@@ -158,18 +159,24 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 # The Leader is eliminated: the seat is empty until a new Leader is voted for, the term ends,
 # and an amendment in progress is abandoned. Its window stays used.
 static func _vacate_seat(state: GameStateScript) -> Array:
-	var events: Array = []
-	if not state.amend.is_empty():
-		state.amendment_record.append({
-			"round": state.current_round, "leader": int(state.amend.get("by", state.leader_id)), "article_id": state.amend["article_id"],
-			"outcome": "abandoned", "for": 0, "against": 0, "text": "",
-		})
-		state.amend = {}
-		events.append(EventsScript.make("amendment_abandoned", {"reason": "the Leader was eliminated"}))
+	var events: Array = _abandon_amendment(state, "the Leader was eliminated")
 	state.leader_id = -1
 	state.term = {}   # the term ends with its Leader; the next one starts when a new Leader is installed
 	events.append(EventsScript.make("leader_vacant", {}))
 	return events
+
+
+# An amendment under way ends with its Leader. Its window stays used.
+static func _abandon_amendment(state: GameStateScript, reason: String) -> Array:
+	state.amend_offer = {}
+	if state.amend.is_empty():
+		return []
+	state.amendment_record.append({
+		"round": state.current_round, "leader": state.leader_id, "article_id": state.amend["article_id"],
+		"outcome": "abandoned", "for": 0, "against": 0, "text": "",
+	})
+	state.amend = {}
+	return [EventsScript.make("amendment_abandoned", {"reason": reason})]
 
 
 # A player who is out no longer waits for, or counts as having had, a turn.

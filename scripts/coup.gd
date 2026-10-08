@@ -121,7 +121,7 @@ static func _succeed(state: GameStateScript, challenger: int, card: int, challen
 	events.append_array(_log_all(state, RivalsScript.accord_penalties(state, old_leader)))   # a Peace Accord with the couped Leader
 	events.append_array(_log_all(state, RoundEndScript.run(state)))
 	if not state.amend.is_empty():
-		state.amendment_record.append({"round": state.current_round, "leader": int(state.amend.get("by", old_leader)), "article_id": state.amend["article_id"], "outcome": "abandoned", "for": 0, "against": 0, "text": ""})
+		state.amendment_record.append({"round": state.current_round, "leader": old_leader, "article_id": state.amend["article_id"], "outcome": "abandoned", "for": 0, "against": 0, "text": ""})
 		events.append(_log(state, "amendment_abandoned", {"reason": "the Leader was couped"}))
 	state.term = {}
 	state.election = {}

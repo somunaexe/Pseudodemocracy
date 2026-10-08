@@ -69,7 +69,7 @@ static func in_truce(state: GameStateScript, a: int, b: int) -> bool:
 
 
 static func accord(state: GameStateScript, a: int, b: int, rounds: int, loss: int) -> Array:
-	state.accords.append({"a": a, "b": b, "left": rounds, "loss": loss})
+	state.accords.append({"a": a, "b": b, "left": rounds, "loss": loss, "since": state.current_round})
 	return [EventsScript.make("accord_made", {"a": a, "b": b, "rounds": rounds, "loss": loss})]
 
 
@@ -103,6 +103,9 @@ static func end_of_round(state: GameStateScript) -> Array:
 	state.truces = []
 	var kept: Array = []
 	for entry in state.accords:
+		if int(entry.get("since", -1)) == state.current_round:
+			kept.append(entry)   # n rounds means n further rounds: not the one it began in
+			continue
 		entry["left"] = int(entry["left"]) - 1
 		if entry["left"] > 0:
 			kept.append(entry)

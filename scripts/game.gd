@@ -34,12 +34,13 @@ const TermLoopScript = preload("res://scripts/term_loop.gd")
 const ScoringScript = preload("res://scripts/scoring.gd")
 const RngScript = preload("res://scripts/rng.gd")
 const PopularityScript = preload("res://scripts/popularity.gd")
+const PermissionsScript = preload("res://scripts/permissions.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const EventsScript = preload("res://scripts/events.gd")
 
 const SERVER_ID := 0
 
-const AMENDMENT_COMMANDS := ["propose", "rule_grammar", "confront", "vote"]
+const AMENDMENT_COMMANDS := ["propose", "amend_agree", "rule_grammar", "confront", "vote"]
 const ELECTION_COMMANDS := ["write_exam", "skip_exam", "answer_exam", "cast_vote"]
 const COUP_COMMANDS := ["coup"]
 const CORRUPTION_COMMANDS := ["pay_fine"]
@@ -138,16 +139,10 @@ static func tick(state: GameStateScript, now_ms: int = -1) -> Array:
 static func _amendment(state: GameStateScript, player_id: int, command: Dictionary) -> Array:
 	if str(command.get("type", "")) == "propose":
 		var window = command.get("window", -1)
-		var phase: int = state.term.get("phase", GameStateScript.TermPhase.NONE)
 		if typeof(window) == TYPE_INT and window in GameStateScript.AmendWindow.values():
-			if phase == GameStateScript.TermPhase.NONE or not state.election.is_empty():
-				return [_reject(player_id, "The Constitution can only be amended during a term.")]
-			if window == GameStateScript.AmendWindow.INAUGURATION and phase != GameStateScript.TermPhase.INAUGURATION:
-				return [_reject(player_id, "The Inauguration amendment can only be made at the Inauguration.")]
-			if window == GameStateScript.AmendWindow.MID_TERM and phase == GameStateScript.TermPhase.INAUGURATION:
-				return [_reject(player_id, "The Mid-term amendment can't be made at the Inauguration.")]
-			if window == GameStateScript.AmendWindow.FAREWELL and phase != GameStateScript.TermPhase.FAREWELL:
-				return [_reject(player_id, "The Farewell amendment can only be made at the Farewell.")]
+			var timing: String = PermissionsScript.timing_problem(state, window)
+			if timing != "":
+				return [_reject(player_id, timing)]
 	return AmendmentFlowScript.handle(state, player_id, command)
 
 

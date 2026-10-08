@@ -94,14 +94,14 @@ func a_peace_accord() -> void:
 	var s := coup_ready()
 	CardEffectsScript.apply(s, 3, "settlement", card)
 	var ev := send(s, 3, {"type": "choose", "choice": LEADER})
-	expect("a Peace Accord with the Leader is recorded: 3 rounds, 10 popularity", [types(ev), s.accords], [["choice_made", "rival_named", "accord_made"], [{"a": 3, "b": LEADER, "left": 3, "loss": 10}]])
+	expect("a Peace Accord with the Leader is recorded: 3 rounds, 10 popularity", [types(ev), s.accords], [["choice_made", "rival_named", "accord_made"], [{"a": 3, "b": LEADER, "left": 3, "loss": 10, "since": 1}]])
 	var pop: int = PopularityScript.effective(s, 3)
 	var other: int = PopularityScript.effective(s, 5)
 	var coup := send(s, CHALLENGER, {"type": "coup"})
 	expect("when the Leader is couped the player at peace with them loses 10", [types(coup).has("accord_penalty"), PopularityScript.effective(s, 3) - pop, PopularityScript.effective(s, 5) - other], [true, -10, 0])
-	expect("... the accord carries on, one round shorter (the coup ended the round)", s.accords[0]["left"], 2)
+	expect("... the accord carries on; the round it began in (ended by the coup) doesn't count", s.accords[0]["left"], 3)
 	var ended: Array = []
-	for i in 2:
+	for i in 3:
 		ended.append_array(RoundEndScript.run(s))
 	expect("after 3 rounds it is over", [s.accords, count(ended, "accord_ended")], [[], 1])
 

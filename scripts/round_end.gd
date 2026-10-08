@@ -6,6 +6,7 @@ class_name RoundEnd
 
 const GameStateScript = preload("res://scripts/game_state.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
+const EffectClockScript = preload("res://scripts/effect_clock.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
@@ -13,7 +14,9 @@ const LoyalistsScript = preload("res://scripts/loyalists.gd")
 
 
 static func run(state: GameStateScript) -> Array:
-	for id in state.coup_ban.keys():   # a coup ban counts down with each round
+	for id in state.coup_ban.keys():   # a coup ban counts down with each round, not the one it began in
+		if EffectClockScript.skips(state, "coup_ban", id):
+			continue
 		state.coup_ban[id] -= 1
 		if state.coup_ban[id] <= 0:
 			state.coup_ban.erase(id)

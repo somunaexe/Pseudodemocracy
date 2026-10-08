@@ -22,6 +22,7 @@ func _init() -> void:
 	the_handbook_example()
 	cures()
 	rounds_passing()
+	n_rounds_means_n_further_rounds()
 	a_round_ending_in_a_game()
 	cancelled_players_have_no_roles()
 	sickness_cards()
@@ -57,6 +58,7 @@ func the_handbook_example() -> void:
 	SicknessScript.sicken(s, 3, 2)
 	var ev := SicknessScript.lengthen(s, 3, 2)
 	expect("sabotage lengthens the sickness to 4 rounds", [ev[0]["type"], s.sick_left[3], s.sick_original[3]], ["sickness_lengthened", 4, 2])
+	s.current_round += 1   # the sickness began in an earlier round: it doesn't count down in the round it began in
 	for i in 3:
 		SicknessScript.end_of_round(s)
 	expect("after three rounds one is left", [s.sick[3], s.sick_left[3]], [true, 1])
@@ -106,6 +108,7 @@ func rounds_passing() -> void:
 	SicknessScript.sicken(s, 3, 1)
 	s.immune_left[4] = 1
 	SicknessScript.sicken(s, 5, 3)
+	s.current_round += 1   # everything began in an earlier round
 	var ev := SicknessScript.end_of_round(s)
 	expect("when a round ends, immunity and sickness count down together", [s.sick[3], s.sick[5], s.sick_left[5], s.immune_left.has(4)], [false, true, 2, false])
 	expect("... player 3, who has just recovered, keeps their full immunity of 1 round", s.immune_left[3], 1)
@@ -118,11 +121,26 @@ func rounds_passing() -> void:
 	expect("sickness with no recorded length is left as it is", [SicknessScript.end_of_round(s), s.sick[2]], [[], true])
 
 
+func n_rounds_means_n_further_rounds() -> void:
+	var s := table()
+	SicknessScript.sicken(s, 3, 1)
+	s.immune_left[4] = 1
+	SicknessScript.grant_immunity(s, 5, 1)
+	expect("the sickness is for 1 round as stored", s.sick_left[3], 1)
+	var ev := SicknessScript.end_of_round(s)
+	expect("the round it began in doesn't count: nobody is cured yet", [s.sick[3], s.sick_left[3], types(ev)], [true, 1, ["immunity_ended"]])
+	expect("... and an immunity given in that round is kept whole (old ones tick)", [s.immune_left.has(4), s.immune_left.get(5, 0)], [false, 1])
+	s.current_round += 1
+	ev = SicknessScript.end_of_round(s)
+	expect("the next round does: cured, and the card immunity ticks", [s.sick[3], types(ev), s.immune_left.has(5)], [false, ["immunity_ended", "recovered"], false])
+
+
 func a_round_ending_in_a_game() -> void:
 	# The Leader is sick for 1 round. When the term ends the round is over, they recover, and they can
 	# write the exam.
 	var s := new_turn()
 	SicknessScript.sicken(s, 2, 1)
+	s.effect_round.clear()   # it began in an earlier round
 	var ended: Array = []
 	for id in [2, 3, 4, 5, 1]:
 		ended = PlayScript.take_turn(s, id)
@@ -138,6 +156,7 @@ func a_round_ending_in_a_game() -> void:
 	# A vacancy ends the round too.
 	s = new_turn()
 	SicknessScript.sicken(s, 3, 1)
+	s.effect_round.clear()   # it began in an earlier round
 	ElimScript_eliminate(s, 2)
 	expect("a Leader eliminated mid-term ends the round: sickness counts down", [s.sick[3], s.immune_left.get(3, 0)], [false, 1])
 

@@ -479,7 +479,7 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | What does "can't pick Settlement cards" mean? | A good vote still moves popularity, but they draw no Settlement card. A bad vote still draws a Scandal. | Assumed |
 | How is it lifted? | `pay_fine`: 200 PSD from cash to the treasury, any time; roles back, the popularity drop reversed (only what really came off, if the track stopped it), markers back in the box. Or wait 3 rounds: the freeze lifts, the roles go back in the box for good, the drop stays, the markers go back. | Confirmed (glossary) |
 | Can the fine be paid on credit? | No: it must come from cash. | Assumed |
-| Does the round of the freeze count as one of the three? | Yes, like sickness: the clock ticks at the end of each round, including the one the freeze happened in. | Assumed |
+| Does the round of the freeze count as one of the three? | No: 3 rounds means 3 further rounds (`EffectClock`; the same for sickness, immunity from a card, coup bans, Loyalists and Accords). | Confirmed |
 | Can a frozen player take more markers? | No; a card that would give one says it was refused. A marker also isn't given when the box is empty. | Assumed |
 | Does an eliminated player's marker go back? | Yes. | Assumed |
 | The embezzlement card: who decides? | The Leader chooses (stay quiet, split, expose), with `choiceSeconds` to answer, else the server picks at random. The embezzler's turn can't end until it is done. Splitting: the Leader takes half of the 200 from the embezzler (debt if short). Exposing: the embezzler keeps the money and gets a marker. If the embezzler is the Leader, or the seat is empty, nobody chooses. | Assumed |
@@ -494,7 +494,7 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | "Choose a rival" when you have none. | Any other player is offered, and the one you choose becomes your rival. With rivals, only they are offered. | Confirmed (glossary), labelling the chosen assumed |
 | A rival's scandal (+5 / -15). | You gain 5 at once; the chosen rival loses 15. | **Built** |
 | The vote of no confidence card (kept). | Playable any time, without a union. The two of you can't coup each other until the round ends. It also makes the chosen player your rival. | **Built**, rival label assumed |
-| Peace Accord. | For 3 rounds, if either of you is successfully couped (overthrown as Leader), the other loses 10 popularity. A failed coup costs nothing. The couping round counts as one of the 3 (the coup ends the round). | **Built** |
+| Peace Accord. | For 3 rounds, if either of you is successfully couped (overthrown as Leader), the other loses 10 popularity. A failed coup costs nothing. The round the Accord was made in does not count. | **Built** |
 | Lose the next Result card draw. | The chosen player's next Settlement or Scandal card is not drawn (they still perform and the popularity still moves). A tie draws no card, so the penalty waits. | **Built** |
 | Mob caught on camera. | The drawer's union or mob disperses (whoever is in it, not just the leader) and the other members become the drawer's rivals. | **Built** |
 | A rival may check your coup card, Doctor bead or role draw for free. | Not built: it needs a Secret-Agent-style peek for a rival. The table plays it as before. | Known gap |
@@ -512,31 +512,32 @@ Fifteen markers in the box. Cards give them out: eight cards give one to the dra
 | Can someone follow two owners? | No: a new appointment replaces the old. | Assumed |
 | Can there be circles (A follows B who follows A)? | No: an appointment that would make one is refused (the card doesn't offer that player). A chain (A > B > C) is fine. | Assumed |
 | What about a Loyalist of an Activist union's member when the union confronts? | The member's vote is automatic (and doubled). Their Loyalists, and theirs, vote against the Leader too, once each, without the doubling. | Assumed |
-| How long is "3 terms"? | A round counts down at each round end, the round of the appointment included (as for sickness). | Assumed |
+| How long is "3 terms"? | The round of the appointment is not one of them (EffectClock): 3 rounds is 3 further rounds. | Assumed |
 | The appointment card. | The chosen player gets 100 PSD from the treasury and a random role card they can hold (none if they can't hold any: it says so), and becomes the Loyalist. | **Built** |
 | "Your current Loyalist (if any) defects" | One Loyalist, chosen at random, leaves. | Assumed |
 | "An extra 5 for each male Loyalist you have". | Counts the drawer's own Loyalists (direct) who are male. | **Built** |
 | Elimination. | A player who leaves follows nobody and nobody follows them. | **Built** |
 
-## The Vice (built: scripts/vice.gd, leader_cards.gd)
+## The Vice (built: scripts/vice.gd)
 
-"A second Leader created by a card. A Vice is a Leader in every way, but each term served as Vice scores 1/2 round." The card is the keys to the city. The handbook is thin here, so most of this is assumed and wants your yes or no.
+"A second Leader created by a card. A Vice is a Leader in every way, but each term served as Vice scores 1/2 round." The card is the keys to the city.
 
 | Question | Decision | Status |
 |---|---|---|
-| The keys to the city. | The drawer takes the Leader's role outright if their popularity is higher (the Leader is demoted to Vice, the new Leader keeps the Leader card of the role they took). Otherwise the drawer becomes Vice. The Leader drawing it, or a Vice who isn't more popular, gets nothing. | Confirmed (card text), details assumed |
-| Equal popularity. | Not "higher", so Vice. | Assumed |
+| The keys to the city. | The drawer takes the Leader's role outright if their popularity is higher (the Leader is demoted to Vice and the new Leader keeps the Leader card of the role they took). Otherwise, equal popularity included, the drawer becomes Vice. The Leader drawing it, or a Vice who isn't more popular, gets nothing. | Confirmed |
 | How many Vices? | One. A new Vice replaces the old (a displaced Vice is just a player again). | Assumed |
-| The Vice's Leader card. | Drawn like a Leader's (Dictator, President x3, Commander) and decides what the Vice's amendments need. | Assumed |
-| What does the Vice earn? | 90 PSD at the start of their own turn (the Leader 100), plus role income, taxed as usual. | Confirmed (90) |
-| Amendments. | The Vice amends like the Leader but with windows of their own: each can use or pass each window. The Inauguration and Farewell wait for both. A Commander (or sick, or CANCELLED) Vice can't and isn't waited for. | Assumed |
-| Who votes on an amendment? | Neither the Leader nor the Vice, on either's amendment. Popularity, fines and unions' confront payments go to whoever proposed it. | Assumed |
-| Unions. | A union or mob can't recruit the Vice (as with the Leader). | Assumed |
-| Scoring. | The Vice scores 1 half-round for a term served (the Leader 2). A term cut short by a coup or by the Leader leaving scores the Vice nothing. A game stopped mid-term credits the Vice 1 as well. | Confirmed (1/2), the rest assumed |
-| "The ousted Leader scores 1/2 for this term." | They serve the rest of the term as Vice, so they score 1 half-round; the new Leader scores the full 2 at the end. | Assumed |
-| When does the Vice end? | At the end of the term. Also if the Leader is couped or eliminated, or the Vice is eliminated (an amendment of theirs under way is abandoned). | Assumed |
+| Does the Vice have a Leader card? | No. The Leader's card decides everything. | Confirmed (amend together) |
+| What does the Vice earn? | 90 PSD at the start of their own turn (the Leader 100), plus role income, taxed as usual. | Confirmed |
+| Amendments. | The Vice shares the Leader's windows. They amend together: a proposal by either is not put out until the other agrees (`amend_agree`, `amendCosignSeconds` = 30 to answer; silence is a refusal). Nothing is used up until it is agreed, then it goes out as the Leader's amendment. The Leader passing a window ends it for both. | Confirmed |
+| Who votes on it, and who gets the result? | Neither the Leader nor the Vice votes. A vote result, or a failed check (fine and popularity loss), applies to both of them. An Agbero mob's steal is paid by the Leader. | Confirmed (both sit out), consequences assumed |
+| A sick, CANCELLED or eliminated Vice. | Not needed to agree: the Leader proposes alone. A Commander Leader still can't amend, Vice or no Vice. | Assumed |
+| Unions. | A union or mob can't recruit the Vice, as with the Leader; a union with the Vice in it can't confront. | Assumed |
+| Scoring. | The Vice scores 1 half-round for a term served (the Leader 2); also if the game is stopped mid-term. The ousted Leader of a swap serves the rest as Vice, so scores 1; the new Leader gets the full 2 at the end. | Confirmed (1/2) |
+| When does the Vice end? | With the Leader's term. | Confirmed |
+| The Leader is eliminated. | The Vice takes over as Leader and the term goes on, with no election. An amendment under way is abandoned. | Confirmed |
+| The Leader is couped. | The Vice stays Vice in the new term, unless the new Leader draws a Dictator card (then there is no Vice), or the Vice is the one who couped (then they are Leader). | Confirmed |
+| The Vice is eliminated. | There is no Vice; a proposal waiting for them is dropped. | Assumed |
 | Can a Vice coup? | Yes, as any player who isn't the Leader. | Assumed |
-| Does the Vice succeed a Leader who leaves? | No: there is an election. | Assumed |
 
 ## Roles (skeleton built: scripts/roles.gd)
 

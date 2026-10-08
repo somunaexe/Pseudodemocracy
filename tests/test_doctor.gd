@@ -258,6 +258,7 @@ func the_handbook_example() -> void:
 	answer(s, true)
 	finish(s)
 	expect("sick for 4 rounds after the sabotage", [s.sick_left[4], s.sick_original[4]], [4, 2])
+	s.current_round += 1   # the sickness began in an earlier round
 	for i in 4:
 		RoundEndScript.run(s)
 	expect("... recovered after 4 rounds, immune for 2, not 4", [s.sick[4], s.immune_left[4]], [false, 2])

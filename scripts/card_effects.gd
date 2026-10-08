@@ -51,6 +51,7 @@ const SicknessScript = preload("res://scripts/sickness.gd")
 const GendersScript = preload("res://scripts/genders.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const CorruptionScript = preload("res://scripts/corruption.gd")
+const EffectClockScript = preload("res://scripts/effect_clock.gd")
 const RivalsScript = preload("res://scripts/rivals.gd")
 const LoyalistsScript = preload("res://scripts/loyalists.gd")
 const ViceScript = preload("res://scripts/vice.gd")
@@ -148,6 +149,7 @@ static func _apply_status(state: GameStateScript, player_id: int, effect: Dictio
 			data["sick"] = int(effect["sick"])
 	if effect.has("no_coup"):
 		state.coup_ban[player_id] = maxi(int(state.coup_ban.get(player_id, 0)), int(effect["no_coup"]))
+		EffectClockScript.began(state, "coup_ban", player_id)
 		data["no_coup"] = int(effect["no_coup"])
 	if effect.has("immune"):
 		events.append_array(SicknessScript.grant_immunity(state, player_id, int(effect["immune"])))

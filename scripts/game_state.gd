@@ -17,15 +17,11 @@ var windows_used: Dictionary = {    # AmendWindow -> bool
 	AmendWindow.FAREWELL: false,
 }
 
-# The Vice: a second Leader for the rest of a term (see Vice). -1 when there is none. The Vice has a Leader card of their
-# own (vice_type) and their own set of amendment windows.
+# The Vice: a second Leader for the rest of a term (see Vice). -1 when there is none.
 var vice_id: int = -1
-var vice_type: LeaderType = LeaderType.PRESIDENT
-var vice_windows_used: Dictionary = {    # AmendWindow -> bool
-	AmendWindow.INAUGURATION: false,
-	AmendWindow.MID_TERM: false,
-	AmendWindow.FAREWELL: false,
-}
+
+# A proposal to amend that waits for the other of the Leader and the Vice to agree (see AmendmentFlow). Public.
+var amend_offer: Dictionary = {}    # { "by", "other", "window", "article_id", "texts", "deadline" }
 
 # Money and debt. Player ids start at 1 (0 means the treasury, see Debt.TREASURY_ID).
 var treasury: int = 0
@@ -145,6 +141,9 @@ var agent_offers: Dictionary = {}   # agent id -> { "client", "kind", "target", 
 
 # Players barred from attempting a coup, and for how many more rounds (a Scandal card). Public.
 var coup_ban: Dictionary = {}       # player id -> rounds left
+
+# The round an effect that lasts some rounds began in, which doesn't count as one of them (see EffectClock). Keys like "sick:3".
+var effect_round: Dictionary = {}
 
 # Corruption markers held (see Corruption), and the players frozen by their last one. Public.
 var markers: Dictionary = {}        # player id -> markers held

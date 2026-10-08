@@ -41,7 +41,7 @@ func appointing() -> void:
 	var s := new_turn()
 	expect("nobody is loyal to start with", [LoyalistsScript.owner_of(s, 4), LoyalistsScript.followers_of(s, 3)], [0, []])
 	var ev := LoyalistsScript.appoint(s, 3, 4, 3)
-	expect("3 appoints 4 for 3 rounds", [ev[0]["type"], LoyalistsScript.owner_of(s, 4), s.loyalists[4]], ["loyalist_appointed", 3, {"owner": 3, "left": 3}])
+	expect("3 appoints 4 for 3 rounds", [ev[0]["type"], LoyalistsScript.owner_of(s, 4), s.loyalists[4]], ["loyalist_appointed", 3, {"owner": 3, "left": 3, "since": 1}])
 	LoyalistsScript.appoint(s, 3, 5, 3)
 	expect("an owner can have many Loyalists, in order", LoyalistsScript.followers_of(s, 3), [4, 5])
 	LoyalistsScript.appoint(s, 1, 4, 2)
@@ -204,6 +204,9 @@ func time_and_defection() -> void:
 	LoyalistsScript.appoint(s, 3, 4, 2)
 	LoyalistsScript.appoint(s, 3, 5, 3)
 	var ev := RoundEndScript.run(s)
+	expect("the round the loyalty began in doesn't count", [s.loyalists[4]["left"], s.loyalists[5]["left"], ev.size()], [2, 3, 0])
+	s.current_round += 1
+	ev = RoundEndScript.run(s)
 	expect("a round passes: both have one fewer", [s.loyalists[4]["left"], s.loyalists[5]["left"], ev.size()], [1, 2, 0])
 	ev = RoundEndScript.run(s)
 	expect("the shorter loyalty ends", [s.loyalists.has(4), s.loyalists.has(5), types(ev)], [false, true, ["loyalty_ended"]])
@@ -271,10 +274,10 @@ func views_and_saves() -> void:
 	var s := new_turn()
 	LoyalistsScript.appoint(s, 3, 4, 2)
 	var seen: Dictionary = ViewsScript.state_view(s, 1)
-	expect("everyone sees who is loyal to whom", seen["loyalists"], {4: {"owner": 3, "left": 2}})
+	expect("everyone sees who is loyal to whom", seen["loyalists"], {4: {"owner": 3, "left": 2, "since": 1}})
 	var errors: Array = []
 	var restored: GameStateScript = SerializerScript.state_from_json(SerializerScript.state_to_json(s), errors)
-	expect("a saved game keeps it", [errors, restored.loyalists], [[], {4: {"owner": 3, "left": 2}}])
+	expect("a saved game keeps it", [errors, restored.loyalists], [[], {4: {"owner": 3, "left": 2, "since": 1}}])
 
 
 # --- helpers -----------------------------------------------------------------------------
