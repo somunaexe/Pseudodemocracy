@@ -231,7 +231,7 @@ A term: **Inauguration** (the Leader may amend, or `pass_window`) then the **lev
 
 | Question | Decision | Status |
 |---|---|---|
-| Who takes the first turn? | The player after the last one to take a turn, then round the table in seat order, skipping the eliminated. Only after a coup does the new Leader go first, for that one term. An interrupted term resumes from the last completed turn. The very first term starts at the first seat (no previous player, no coup). | Confirmed (first-term rule assumed) |
+| Who takes the first turn? | The player after the last one to take a turn, then round the table in seat order, skipping the eliminated. Only after a coup does the new Leader go first, for that one term. An interrupted term resumes from the last completed turn. In the very first term the first Leader goes first, as after a coup. | Confirmed |
 | What is the order within the term? | Inauguration amendment, then the levy, then the turns. So a Leader who amends the levy at the Inauguration changes what is collected that round. | **Built** (tested) |
 | Who pays the levy? | Every player who is not eliminated, the Leader included, at the rate in the Constitution (Article 3). What a player can't cover becomes debt. | **Built** |
 | Does passing a window use it up? | Yes. A passed window is gone, so the Inauguration amendment can't be made later in the term. | **Built** |
