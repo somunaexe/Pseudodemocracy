@@ -9,3 +9,5 @@ trap 'kill $server 2>/dev/null' EXIT
 sleep 3
 out=$(timeout 30 "$GODOT" --headless --script tools/smoke_client.gd -- "$port" 2>&1)
 echo "$out" | grep -q '"type":"room"' && echo "SERVER SMOKE TEST PASSED" || { echo "$out"; echo "SERVER SMOKE TEST FAILED"; exit 1; }
+out=$(timeout 60 "$GODOT" --headless --script tools/smoke_phone.gd -- "$port" 2>&1)
+echo "$out" | grep -q "PHONE SMOKE OK" && echo "$out" | grep "PHONE SMOKE OK" || { echo "$out"; echo "PHONE SMOKE TEST FAILED"; exit 1; }

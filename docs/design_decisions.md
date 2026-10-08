@@ -715,3 +715,15 @@ Checks: `tests/test_server_core.gd` (pretend connections) and `tools/smoke_serve
 | A question to them (card choice, poll, offer, invitation, exam) | Each has its own clock and a default answer. | Built earlier |
 | After the performance, before "end turn" | **New:** after `turnEndSeconds` (15) the server ends the turn for them (`turn_ended` with `auto: true`), through the normal end-of-turn steps (debt term, Nepo). The count only runs while nothing else holds the turn up and restarts afterwards. Before this, the table would wait for ever. | **Built** |
 | Absent for several turns | **New (your call):** a turn the server had to end where the player did nothing at all is a *missed turn*; `missedTurnLimit` (2) missed turns IN A ROW eliminate them (reason `absent`; will, cash and roles go as for any elimination). Any turn they act in or end themselves restarts the count. Others acting on their turn (voting) does not count for them. Shown to everyone as `missed_turns`, with a `turn_missed` event as a warning. In a row, not in total, is my reading. | **Built** |
+
+## The client (phase 3, started: client/), phones first
+
+| Question | Decision | Status |
+|---|---|---|
+| First platform | **Phones, held upright** (your call). Base screen 720x1280, portrait, stretch to fit; touch is the only input assumed; buttons and fields at least 96 px tall. Tablets, desktop and browser come from the same project later. | **Built** (settings) |
+| Structure | `session_model.gd` (pure: what the server said, what to send; tested against the real server core), `connection.gd` (socket, saved seat, reconnect with back-off), `lobby_screen.gd` (drawn in code, reads the model, emits what the player asked), `main.gd` (joins them). | **Built** |
+| Reconnecting | The phone saves `{token, room code, server address}` in `user://session.json`. Reopening the app, or a dropped network, sends `resume` automatically; an unknown token returns the phone to the start screen (no retry loop). | **Built** |
+| Lobby screen | Server address, name (1 to 24), gender (optional), create a room or join with a 4-letter code; the waiting room shows the code large, who is in (and who is away), and Start for the host with 3 or more. Mistakes in the name or code are caught on the phone first. | **Built** |
+| Not yet | The table, turn, election, amendment, private panels, actions menu, event feed and end screens (items 12 to 18). Android/iOS export needs the export templates and signing keys, which are not set up. | Next |
+
+Checks: `tests/test_client_lobby.gd` (model, screen) and `tools/smoke_server.sh` (the real phone code against the real server, including a dropped connection).
