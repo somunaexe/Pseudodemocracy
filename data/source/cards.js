@@ -186,6 +186,7 @@ const effects = {
     ['A viral video shows you helping', { popularity: 10 }],
     ['You cried at a funeral', { popularity: 5 }],
     ['You privatized a public asset', { psd: 150, popularity: -10 }],
+    ['You quietly sold some government equipment', { psd: 90, popularity: -5, marker: 1 }],
     ['A foreign government sends', { psd: 100 }],
     ['You throw a lavish independence day party', { psd: -50, popularity: 10 }],
     ['Your cousin abroad wires funds', { psd: 80 }],
@@ -212,6 +213,16 @@ const effects = {
   ],
   scandal: [
     ['You overpaid for office supplies', { psd: -40 }],
+    // marker: 1 gives the drawer a corruption marker (see Corruption). In a player choice, target.marker gives one to the chosen
+    // player too, and pay_chosen is money the drawer pays the chosen player. A choice with chooser: 'leader' is made by the
+    // Leader about the drawer: share 'half' takes half of the card's psd off the drawer for the Leader.
+    ['You paid an official', { psd: -100, marker: 1 }],
+    ['Your appointee turns out', { marker: 1, choose: { kind: 'player' }, target: { marker: 1 } }],
+    ['Your ghost workers', { psd: -150, marker: 1 }],
+    ["You're fined for late paperwork", { psd: -50, marker: 1 }],
+    ['You bounce a check', { psd: -45, marker: 1 }],
+    ['Choose a player \u2014 they collect 70', { choose: { kind: 'player' }, pay_chosen: 70, target: { marker: 1 } }],
+    ['You embezzled funds', { psd: 200, choose: { kind: 'option', chooser: 'leader', options: [{ label: 'Stay quiet' }, { label: 'Split the money', share: 'half' }, { label: 'Expose them', marker: 1 }] } }],
     ['An old speech resurfaces', { popularity: -8 }],
     ['Your handshake photo ages badly', { popularity: -5 }],
     ['Your motorcade damages a market stall', { psd: -70, popularity: -5 }],

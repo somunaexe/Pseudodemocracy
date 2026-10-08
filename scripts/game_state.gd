@@ -135,3 +135,7 @@ var agent_offers: Dictionary = {}   # agent id -> { "client", "kind", "target", 
 
 # Players barred from attempting a coup, and for how many more rounds (a Scandal card). Public.
 var coup_ban: Dictionary = {}       # player id -> rounds left
+
+# Corruption markers held (see Corruption), and the players frozen by their last one. Public.
+var markers: Dictionary = {}        # player id -> markers held
+var frozen: Dictionary = {}         # player id -> { "left": rounds until the freeze runs out, "drop": popularity lost }

@@ -88,7 +88,7 @@ static func _end_turn(state: GameStateScript, player_id: int) -> Array:
 		return [_reject(player_id, "It isn't your turn.")]
 	if state.term.get("act", {}).get("phase", -1) != GameStateScript.ActPhase.DONE:
 		return [_reject(player_id, "Finish your performance first.")]
-	if not state.choice.is_empty() and state.choice["player"] == player_id:
+	if not state.choice.is_empty() and state.choice.get("subject", state.choice["player"]) == player_id:
 		return [_reject(player_id, "Make your choice first.")]
 	if not state.command.is_empty():
 		return [_reject(player_id, "A Command Performance is under way.")]

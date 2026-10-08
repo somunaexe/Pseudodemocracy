@@ -468,6 +468,24 @@ From the handbook (Part 6, Activists & Agberos, Articles 7 to 17). Founding a gr
 | Does a mob disperse? | Yes, the instant it acts (Article 13); its Agbero-card holders may re-form. An Activist union lingers. | Confirmed |
 | When is it void? | If the term ends (a coup, the Leader eliminated) or the performer leaves the game. | Assumed |
 
+## Corruption markers (built: scripts/corruption.gd)
+
+Fifteen markers in the box. Cards give them out: eight cards give one to the drawer, one gives one to the drawer and one to a player they choose, one gives one to the chosen player only, and one lets the Leader expose the drawer. A player on their third marker is **frozen**.
+
+| Question | Decision | Status |
+|---|---|---|
+| What does the third marker do? | Roles frozen, no Settlement cards, -30 popularity (a drop of the base, remembered). | Confirmed (glossary) |
+| What does "roles frozen" mean in play? | The player keeps the cards but has no powers, no role income and no coup, as with CANCELLED. The Leader's own pay stays. | Assumed |
+| What does "can't pick Settlement cards" mean? | A good vote still moves popularity, but they draw no Settlement card. A bad vote still draws a Scandal. | Assumed |
+| How is it lifted? | `pay_fine`: 200 PSD from cash to the treasury, any time; roles back, the popularity drop reversed (only what really came off, if the track stopped it), markers back in the box. Or wait 3 rounds: the freeze lifts, the roles go back in the box for good, the drop stays, the markers go back. | Confirmed (glossary) |
+| Can the fine be paid on credit? | No: it must come from cash. | Assumed |
+| Does the round of the freeze count as one of the three? | Yes, like sickness: the clock ticks at the end of each round, including the one the freeze happened in. | Assumed |
+| Can a frozen player take more markers? | No; a card that would give one says it was refused. A marker also isn't given when the box is empty. | Assumed |
+| Does an eliminated player's marker go back? | Yes. | Assumed |
+| The embezzlement card: who decides? | The Leader chooses (stay quiet, split, expose), with `choiceSeconds` to answer, else the server picks at random. The embezzler's turn can't end until it is done. Splitting: the Leader takes half of the 200 from the embezzler (debt if short). Exposing: the embezzler keeps the money and gets a marker. If the embezzler is the Leader, or the seat is empty, nobody chooses. | Assumed |
+| "Collect 70 PSD from you as compensation". | The drawer pays the chosen player 70 (debt if short), the chosen player gets a marker, the drawer none. | Assumed |
+| "Snitch and split the punishment" (the embezzlement traced card). | Not built: it needs a second choice by a second player. The table plays it as before. | Known gap |
+
 ## Roles (skeleton built: scripts/roles.gd)
 
 The five role cards are held, given, taken, swapped, inherited and rescinded. What each role can DO is not built; this table says what the handbook gives me and what I still need.
@@ -485,14 +503,14 @@ The five role cards are held, given, taken, swapped, inherited and rescinded. Wh
 | How many of each role? | Five cards of each (`roleCopies`), so at most five holders. A player never holds two of the same role, but can hold several different ones. | Assumed (never two of the same) |
 | What is a player with no role? | A Civilian. There is no Civilian card. | Confirmed (CHANGES.md) |
 | Are roles visible? | Yes, to everyone. A coup sticker on a role card is the hidden part. | Confirmed |
-| Who may use a role's power? | Someone who holds it, is in the game, and isn't sick (Article 17). Frozen role cards come with corruption markers and a Scandal card. | **Built** (the shared rule) |
+| Who may use a role's power? | Someone who holds it, is in the game, and isn't sick (Article 17). A player frozen by corruption can't either (see Corruption). | **Built** (the shared rule) |
 | What happens to roles on elimination? | Rescinded (the cards go back in the box), unless willed. | Confirmed (Article 53 and CHANGES.md) |
 | Can a will name a different heir for roles? | Yes (Article 56): an optional `role_heir` in the will, by default the heir of the money. A will on hold, or a role heir who is the testator, a stranger or eliminated, means the roles are rescinded. | **Built** |
 | Does a role heir become a Nepo Baby? | Yes: anyone who inherits something from a will does, if they actually received a role card. One heir for everything is a Nepo Baby once. | Confirmed |
 | The heir already holds that role. | They can't hold it twice, so that card goes back in the box. | Assumed |
 | How are roles gained? | From Settlement cards: choose any role, swap roles, gain the Lawyer role (all built, see Choices). Others (found a union, become a Doctor/Lawyer if you hold neither) wait for their mechanics. | **Built** (3 cards) |
 
-Not built yet, and the next steps: the Vice, Rivals, Loyalists and corruption markers, choices of several players, the other kept cards, and a first Godot screen. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
+Not built yet, and the next steps: the Vice, Rivals and Loyalists, choices of several players, the other kept cards, and a first Godot screen. A role card can carry a hidden coup status: everyone sees a player is a Doctor, but no one knows whether that card has a coup sticker on it (10 stickers). That record now exists, server-only; coups will use it.
 
 Known gaps: if nobody can stand in an election (everyone CANCELLED), the election fails and the game stalls. If only one or two players remain, nothing ends the game; the server must send `finish_game`.
 

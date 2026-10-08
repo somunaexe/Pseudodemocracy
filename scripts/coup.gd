@@ -68,6 +68,8 @@ static func _problem_with(state: GameStateScript, player_id: int) -> String:
 		return "The Leader can't coup themselves."
 	if RolesScript.is_cancelled(state, player_id):
 		return "CANCELLED players have no roles, so no coup card."
+	if state.frozen.has(player_id):
+		return "Your roles are frozen by corruption, so you have no coup card."
 	if state.coup_ban.get(player_id, 0) > 0:
 		return "You can't attempt a coup for %d more round(s)." % state.coup_ban[player_id]
 	var cost: int = GameDataScript.get_int("coupCost")

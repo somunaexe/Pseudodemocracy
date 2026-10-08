@@ -51,9 +51,9 @@ func every_listed_card() -> void:
 			expect(label + ": money is conserved", total_money(s), total)
 			expect(label + ": the player's cash moved by exactly the card's amount", s.psd[3] - cash, int(effect.get("psd", 0)))
 			expect(label + ": popularity moved by exactly the card's amount", PopularityScript.effective(s, 3) - pop, int(effect.get("popularity", 0)))
-			var status_events: int = 1 if (effect.has("sick") or effect.has("immune")) else 0
+			var status_events: int = (1 if (effect.has("sick") or effect.has("immune")) else 0) + (1 if effect.has("marker") else 0)
 			expect(label + ": public events, logged once, not left to the table", [ev.size() - status_events, ev[0]["audience"], ev[0]["by_table"], s.event_log.back() == ev.back()], [1, [], false, true])
-	expect("25 cards are applied by the game without asking anything", listed, 25)
+	expect("30 cards are applied by the game without asking anything", listed, 30)
 
 
 func collecting() -> void:

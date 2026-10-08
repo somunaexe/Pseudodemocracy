@@ -25,7 +25,7 @@ static func gross(state: GameStateScript, player_id: int) -> int:
 	var total: int = 0
 	if player_id == state.leader_id:
 		total += GameDataScript.get_int("leaderIncome")
-	if not RolesScript.is_cancelled(state, player_id):   # CANCELLED players have no roles; the Leader's pay stays
+	if not RolesScript.is_cancelled(state, player_id) and not state.frozen.has(player_id):   # CANCELLED or frozen players have no roles; the Leader's pay stays
 		for role in RolesScript.held(state, player_id):
 			total += GameDataScript.get_nested_int("roleIncome", str(role))
 	return total

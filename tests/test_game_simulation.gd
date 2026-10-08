@@ -13,6 +13,7 @@ const CoupScript = preload("res://scripts/coup.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
 const RolesScript = preload("res://scripts/roles.gd")
+const CorruptionScript = preload("res://scripts/corruption.gd")
 const ScoringScript = preload("res://scripts/scoring.gd")
 
 const EXAM_WRITING = GameStateScript.ElectionPhase.EXAM_WRITING
@@ -27,6 +28,7 @@ const BOX := 12550   # every PSD note in the game
 
 var failures: int = 0
 var problems: Array = []
+var pay_fines: bool = false   # a frozen player in the simulation pays the fine as soon as they can
 
 
 func _init() -> void:
@@ -121,6 +123,23 @@ func _init() -> void:
 	var coup_restarted := play(5, 603, 7, 0, 5, 0, 0, 0, false, true)
 	expect("a server restarting from its save every 5 moves gives the same coup game", [coup_restarted["problems"], coup_restarted["final"] == coup_straight["final"]], [[], true])
 
+	# Corruption at the table: a frozen player who pays the fine, and one who waits it out.
+	var corruption_types: Array = []
+	for seed_value in range(1, 9):
+		pay_fines = seed_value % 2 == 0
+		var run := play(5, 700 + seed_value, 7, 0, 0, 0, 0, 0, false, false, 5)
+		corruption_types.append_array(run["types"])
+		expect("corruption game %d: ran to the end (%d moves)" % [seed_value, run["steps"]], run["finished"], true)
+		expect("corruption game %d: no rule was ever broken" % seed_value, run["problems"], [])
+	pay_fines = false
+	for kind in ["marker_gained", "fine_paid", "freeze_expired"]:   # the freeze itself happens at set-up
+		expect("the corruption games produced a '%s' event (%d times)" % [kind, corruption_types.count(kind)], corruption_types.has(kind), true)
+	pay_fines = true
+	var corrupt_straight := play(5, 702, 7, 0, 0, 0, 0, 0, false, false, 5)
+	var corrupt_restarted := play(5, 702, 7, 0, 5, 0, 0, 0, false, false, 5)
+	pay_fines = false
+	expect("a server restarting from its save every 5 moves gives the same corruption game", [corrupt_restarted["problems"], corrupt_restarted["final"] == corrupt_straight["final"]], [[], true])
+
 	# Everything that can happen did happen somewhere.
 	var seen := play(5, 7, 6)
 	for kind in ["election_started", "exam_written", "exam_revealed", "vote_started", "leader_elected", "leader_installed",
@@ -162,7 +181,7 @@ func _init() -> void:
 
 # Plays until `terms` terms have been completed. If `poor` is a player id, that player starts
 # with only 30 PSD (and names player 4 as their heir) and so drifts into debt.
-func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0, agent: int = 0, unions: bool = false, coups: bool = false) -> Dictionary:
+func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart_every: int = 0, doctor: int = 0, lawyer: int = 0, agent: int = 0, unions: bool = false, coups: bool = false, corrupt: int = 0) -> Dictionary:
 	var ids: Array = range(1, player_count + 1)
 	var s := GameScript.new_game(ids, seed_value)
 	if poor != 0:
@@ -190,6 +209,14 @@ func play(player_count: int, seed_value: int, terms: int, poor: int = 0, restart
 		s.hands[5] = [{"deck": "settlement", "card": 9}]
 		RolesScript.grant(s, 3, "Agbero")
 		RolesScript.grant(s, 4, "Agbero")
+	if corrupt != 0:
+		# Frozen by corruption from the start, with two roles to lose. pay_fines says whether they pay the fine as soon
+		# as they can or wait the freeze out. A second player holds one marker, which stays unfrozen.
+		RolesScript.grant(s, corrupt, "Doctor")
+		RolesScript.grant(s, corrupt, "Activist")
+		for i in 3:
+			CorruptionScript.give(s, corrupt)
+		CorruptionScript.give(s, 2)
 	if agent != 0:
 		RolesScript.grant(s, agent, "Secret Agent")   # a Secret Agent, who checks cards, wills and beads
 	if lawyer != 0:
@@ -263,6 +290,10 @@ func next_move(s: GameStateScript) -> Dictionary:
 	var coup := coup_move(s)
 	if not coup.is_empty():
 		return coup
+	if pay_fines:
+		for id in s.frozen:
+			if s.psd.get(id, 0) >= 200:
+				return {"player": id, "command": {"type": "pay_fine"}}
 	var hiring := hire_move(s)
 	if not hiring.is_empty():
 		return hiring
@@ -720,6 +751,20 @@ func check_rules(s: GameStateScript, step: int) -> void:
 			problems.append(where + "player %d has a malformed will" % id)
 		if will.get("on_hold", false) != (int(will.get("arrears", 0)) > 0) and will.has("lawyer"):
 			problems.append(where + "player %d's will: on hold and arrears disagree" % id)
+	var held_total: int = 0
+	for id in s.markers:
+		held_total += s.markers[id]
+		if s.eliminated.get(id, false) or s.markers[id] <= 0 or s.markers[id] > CorruptionScript.limit():
+			problems.append(where + "player %d holds %d markers" % [id, s.markers[id]])
+		if (s.markers[id] == CorruptionScript.limit()) != s.frozen.has(id):
+			problems.append(where + "player %d: markers and the freeze disagree" % id)
+	if held_total > 15:
+		problems.append(where + "%d markers are out, but the box holds 15" % held_total)
+	for id in s.frozen:
+		if not s.markers.has(id) or s.frozen[id]["left"] <= 0:
+			problems.append(where + "player %d is frozen without markers or time" % id)
+		if RolesScript.can_use_pledge(s, id, "Doctor") == "" and RolesScript.has(s, id, "Doctor"):
+			problems.append(where + "frozen player %d can still use a pledge" % id)
 	var in_union: Dictionary = {}
 	for union_id in s.unions:
 		var union: Dictionary = s.unions[union_id]

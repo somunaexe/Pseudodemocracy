@@ -16,8 +16,8 @@ for (const name of DECKS) {
 const ROLES = V.components.roleCards;
 const UNIONS = ['activist', 'agbero'];
 const GENDERS = V.genders;
-const MONEY_KEYS = ['psd', 'popularity'];
-const SELF_KEYS = ['psd', 'popularity', 'sick', 'immune', 'no_coup'];   // what a card can do to its drawer (sick and immune must be positive)
+const MONEY_KEYS = ['psd', 'popularity', 'marker'];
+const SELF_KEYS = ['psd', 'popularity', 'sick', 'immune', 'no_coup'];
 
 function fail(deck, prefix, message) { throw new Error(`${deck}: "${prefix}": ${message}`); }
 
@@ -25,6 +25,11 @@ function fail(deck, prefix, message) { throw new Error(`${deck}: "${prefix}": ${
 function checkAmounts(deck, prefix, text, effect, allowed) {
   for (const [kind, amount] of Object.entries(effect)) {
     if (kind === 'label') continue;
+    if (kind === 'marker') {
+      if (amount !== 1) fail(deck, prefix, 'a card gives one marker');
+      if (!/corruption marker/.test(text)) fail(deck, prefix, "marker needs 'corruption marker' in the card's text");
+      continue;
+    }
     if (!allowed.includes(kind)) fail(deck, prefix, `unknown effect "${kind}"`);
     if (!Number.isInteger(amount) || amount === 0) fail(deck, prefix, `has a bad ${kind} amount`);
     if (!new RegExp(`(^|[^0-9])${Math.abs(amount)}([^0-9]|$)`).test(text)) fail(deck, prefix, `${Math.abs(amount)} does not appear in the card's text`);
@@ -32,7 +37,12 @@ function checkAmounts(deck, prefix, text, effect, allowed) {
 }
 
 function validate(deck, prefix, text, effect) {
-  const known = [...SELF_KEYS, 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each'];
+  const known = [...SELF_KEYS, 'marker', 'choose', 'gain_role', 'swap_with', 'target', 'keep', 'found_union', 'collect_each', 'pay_chosen'];
+  if ('pay_chosen' in effect) {
+    if (!effect.choose || effect.choose.kind !== 'player') fail(deck, prefix, 'pay_chosen needs a player choice');
+    checkAmounts(deck, prefix, text, { psd: effect.pay_chosen }, ['psd']);
+    if (effect.pay_chosen <= 0) fail(deck, prefix, 'pay_chosen must be positive');
+  }
   if ('collect_each' in effect) {
     const spec = effect.collect_each;
     if (!GENDERS.includes(spec.gender)) fail(deck, prefix, `unknown gender "${spec.gender}"`);
@@ -47,7 +57,7 @@ function validate(deck, prefix, text, effect) {
   if ('found_union' in effect && !UNIONS.includes(effect.found_union)) fail(deck, prefix, `unknown union "${effect.found_union}"`);
   if ('found_union' in effect && 'choose' in effect) fail(deck, prefix, 'a card founds a union directly or by a choice, not both');
   for (const key of Object.keys(effect)) if (!known.includes(key)) fail(deck, prefix, `unknown effect "${key}"`);
-  checkAmounts(deck, prefix, text, Object.fromEntries(SELF_KEYS.filter((k) => k in effect).map((k) => [k, effect[k]])), SELF_KEYS);
+  checkAmounts(deck, prefix, text, Object.fromEntries([...SELF_KEYS, 'marker'].filter((k) => k in effect).map((k) => [k, effect[k]])), [...SELF_KEYS, 'marker']);
   for (const k of ['sick', 'immune', 'no_coup']) if (k in effect && effect[k] < 0) fail(deck, prefix, `${k} must be positive`);
   const choose = effect.choose;
   if (!choose) {
@@ -55,11 +65,13 @@ function validate(deck, prefix, text, effect) {
     return;
   }
   if (!['option', 'role', 'player'].includes(choose.kind)) fail(deck, prefix, `unknown choice kind "${choose.kind}"`);
+  if ('chooser' in choose && (choose.chooser !== 'leader' || choose.kind !== 'option')) fail(deck, prefix, 'only an option choice can be made by the leader');
   if (choose.kind === 'option') {
     if (!Array.isArray(choose.options) || choose.options.length < 2) fail(deck, prefix, 'an option choice needs at least two options');
     for (const option of choose.options) {
       if (typeof option.label !== 'string' || !option.label) fail(deck, prefix, 'every option needs a label');
-      checkAmounts(deck, prefix, text, Object.fromEntries(Object.entries(option).filter(([k]) => k !== 'found_union')), SELF_KEYS);
+      checkAmounts(deck, prefix, text, Object.fromEntries(Object.entries(option).filter(([k]) => !['found_union', 'share'].includes(k))), [...SELF_KEYS, 'marker']);
+      if ('share' in option && (option.share !== 'half' || !('psd' in effect) || effect.psd <= 0)) fail(deck, prefix, 'share "half" needs a card that pays the drawer');
       if ('found_union' in option && !UNIONS.includes(option.found_union)) fail(deck, prefix, `unknown union "${option.found_union}"`);
     }
     for (const key of ['gain_role', 'swap_with', 'target']) if (key in effect) fail(deck, prefix, `"${key}" doesn't go with an option choice`);

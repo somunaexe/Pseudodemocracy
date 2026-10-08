@@ -12,6 +12,7 @@ class_name CardEffects
 #   immune > 0   the player can't be sickened for that many rounds
 #   no_coup > 0  the player can't attempt a coup for that many rounds
 #   collect_each   every other player of a gender pays the drawer an amount (what they can't pay becomes debt)
+#   marker       the player gets a corruption marker (see Corruption)
 # A card with "keep" goes into the player's hand instead (state.hands), to be played later with the command
 # "play_card" (see play()). The union cards do that: playing one founds a union (see Unions).
 # A card with "choose" stops the turn until the player chooses (command "choose", see choose()):
@@ -19,7 +20,11 @@ class_name CardEffects
 #   role     any role the player can be given; they gain it
 #   player   another player in the game (with who = has_role, one who holds a role card). The card
 #            can then move the chosen player's popularity (target), swap all roles with them
-#            (swap_with) and give the drawer a role (gain_role).
+#            (swap_with), give the drawer a role (gain_role), take money from the drawer for them (pay_chosen, debt if
+#            the drawer can't cover it) and give them a corruption marker (target.marker).
+#   option with chooser "leader"   the Leader chooses, not the drawer: stay quiet, share (the Leader takes half of the card's
+#            money from the drawer) or expose (the drawer gets a marker). The drawer's turn waits for it. (Assumed: if the
+#            drawer IS the Leader, or the seat is empty, nobody chooses and the drawer keeps it all.)
 # The pending choice sits in state.choice; its player's turn can't end while it is there. (A card played from the hand
 # can ask for one too, outside any turn.)
 # The player has choiceSeconds (10) on the server clock. If they let it run out, the server chooses at
@@ -36,6 +41,7 @@ const PopularityScript = preload("res://scripts/popularity.gd")
 const SicknessScript = preload("res://scripts/sickness.gd")
 const GendersScript = preload("res://scripts/genders.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
+const CorruptionScript = preload("res://scripts/corruption.gd")
 const RolesScript = preload("res://scripts/roles.gd")
 const GameDataScript = preload("res://scripts/game_data.gd")
 const RngScript = preload("res://scripts/rng.gd")
@@ -121,6 +127,9 @@ static func _apply_status(state: GameStateScript, player_id: int, effect: Dictio
 	if effect.has("immune"):
 		events.append_array(SicknessScript.grant_immunity(state, player_id, int(effect["immune"])))
 		data["immune"] = int(effect["immune"])
+	if effect.has("marker"):
+		events.append_array(CorruptionScript.give(state, player_id))
+		data["marker"] = true
 	return events
 
 
@@ -136,8 +145,13 @@ static func _ask(state: GameStateScript, player_id: int, deck: String, card: int
 	var kind: String = spec["kind"]
 	var seconds: int = GameDataScript.get_int("choiceSeconds")
 	var ends_at: int = state.clock_ms + seconds * 1000
-	var pending: Dictionary = {"player": player_id, "deck": deck, "card": card, "kind": kind, "deadline": ends_at}
-	var shown: Dictionary = {"player": player_id, "deck": deck, "card": card, "kind": kind, "seconds": seconds, "ends_at_ms": ends_at}
+	var chooser: int = player_id
+	if spec.get("chooser", "") == "leader":
+		chooser = state.leader_id
+		if chooser == player_id or chooser == -1 or state.eliminated.get(chooser, false):
+			return [_log(state, "choice_unavailable", {"player": player_id, "deck": deck, "card": card, "kind": kind})]
+	var pending: Dictionary = {"player": chooser, "subject": player_id, "deck": deck, "card": card, "kind": kind, "deadline": ends_at}
+	var shown: Dictionary = {"player": chooser, "subject": player_id, "deck": deck, "card": card, "kind": kind, "seconds": seconds, "ends_at_ms": ends_at}
 	match kind:
 		"option":
 			var labels: Array = []
@@ -247,16 +261,25 @@ static func time_out(state: GameStateScript) -> Array:
 
 
 static func _make_choice(state: GameStateScript, pending: Dictionary, value: Variant, auto: bool) -> Array:
-	var player_id: int = pending["player"]
+	var chooser: int = pending["player"]
+	var player_id: int = pending.get("subject", chooser)   # whose card it is; the Leader may be the one choosing
 	state.choice = {}
 	var effect: Dictionary = CardsScript.effects(pending["deck"], pending["card"])
-	var data: Dictionary = {"player": player_id, "deck": pending["deck"], "card": pending["card"], "kind": pending["kind"], "choice": value, "auto": auto}
+	var data: Dictionary = {"player": chooser, "subject": player_id, "deck": pending["deck"], "card": pending["card"], "kind": pending["kind"], "choice": value, "auto": auto}
 	var events: Array = []
 	var skipped: Array = []
 	match pending["kind"]:
 		"option":
 			var option: Dictionary = effect["choose"]["options"][value]
 			_apply_money(state, player_id, option, data)
+			if option.get("share", "") == "half":
+				var half: int = int(effect["psd"]) / 2
+				var owed: int = DebtScript.charge(state, player_id, chooser, half)
+				data["shared"] = half
+				if owed > 0:
+					data["new_debt"] = owed
+			if option.has("marker"):
+				events.append_array(CorruptionScript.give(state, player_id))
 			if option.has("found_union"):
 				var union_problem: String = UnionsScript.problem_founding(state, player_id)
 				if union_problem != "":
@@ -271,6 +294,13 @@ static func _make_choice(state: GameStateScript, pending: Dictionary, value: Var
 				_apply_money(state, value, effect["target"], target_data)
 				for key in target_data:
 					data["target_" + key] = target_data[key]
+				if effect["target"].has("marker"):
+					events.append_array(CorruptionScript.give(state, value))
+			if effect.has("pay_chosen"):
+				var owes: int = DebtScript.charge(state, player_id, value, int(effect["pay_chosen"]))
+				data["paid_to_chosen"] = int(effect["pay_chosen"]) - owes
+				if owes > 0:
+					data["new_debt"] = owes
 			if effect.get("swap_with", "") == "$choice":
 				events.append_array(RolesScript.swap(state, player_id, value))
 			if effect.has("gain_role"):

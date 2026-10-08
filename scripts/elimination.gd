@@ -28,6 +28,7 @@ const RolesScript = preload("res://scripts/roles.gd")
 const UnionsScript = preload("res://scripts/unions.gd")
 const WillsScript = preload("res://scripts/wills.gd")
 const NepoScript = preload("res://scripts/nepo.gd")
+const CorruptionScript = preload("res://scripts/corruption.gd")
 const EventsScript = preload("res://scripts/events.gd")
 const FlowScript = preload("res://scripts/amendment_flow.gd")
 const ElectionScript = preload("res://scripts/election.gd")
@@ -45,6 +46,7 @@ static func eliminate(state: GameStateScript, player_id: int, reason: String) ->
 	var events: Array = [EventsScript.make("player_eliminated", {"player": player_id, "reason": reason})]
 	state.eliminated[player_id] = true
 	state.nepo.erase(player_id)
+	CorruptionScript.release(state, player_id)
 
 	var will: Dictionary = state.wills.get(player_id, {})
 	var heir: int = 0   # 0 = nobody (0 is the treasury's id, never a player)

@@ -126,10 +126,13 @@ static func _resolve(state: GameStateScript, act: Dictionary) -> Array:
 	if good != bad:
 		outcome = "good" if good > bad else "bad"
 		var deck: String = "settlement" if good > bad else "scandal"
-		var card: int = CardsScript.draw(state, deck)
-		data["deck"] = deck
-		data["card"] = card
-		data["text"] = CardsScript.text(deck, card)
+		if deck == "settlement" and state.frozen.has(act["player"]):
+			data["frozen"] = true   # corruption: no Settlement cards for them
+		else:
+			var card: int = CardsScript.draw(state, deck)
+			data["deck"] = deck
+			data["card"] = card
+			data["text"] = CardsScript.text(deck, card)
 	data["outcome"] = outcome
 	act["phase"] = DONE
 	var events: Array = [_log(state, "performance_resolved", data)]

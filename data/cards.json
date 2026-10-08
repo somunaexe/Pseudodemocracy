@@ -217,6 +217,11 @@
     },
     "gain_role": "$choice"
    },
+   "25": {
+    "psd": 90,
+    "popularity": -5,
+    "marker": 1
+   },
    "26": {
     "popularity": 5
    },
@@ -262,6 +267,23 @@
    }
   },
   "scandal": {
+   "5": {
+    "psd": -100,
+    "marker": 1
+   },
+   "6": {
+    "marker": 1,
+    "choose": {
+     "kind": "player"
+    },
+    "target": {
+     "marker": 1
+    }
+   },
+   "17": {
+    "psd": -150,
+    "marker": 1
+   },
    "20": {
     "psd": -40
    },
@@ -284,6 +306,10 @@
    "27": {
     "popularity": -7
    },
+   "28": {
+    "psd": -50,
+    "marker": 1
+   },
    "29": {
     "popularity": -10
    },
@@ -293,8 +319,21 @@
    "34": {
     "popularity": -10
    },
+   "36": {
+    "psd": -45,
+    "marker": 1
+   },
    "37": {
     "popularity": -12
+   },
+   "38": {
+    "choose": {
+     "kind": "player"
+    },
+    "pay_chosen": 70,
+    "target": {
+     "marker": 1
+    }
    },
    "39": {
     "no_coup": 1
@@ -308,6 +347,26 @@
    },
    "44": {
     "psd": -35
+   },
+   "47": {
+    "psd": 200,
+    "choose": {
+     "kind": "option",
+     "chooser": "leader",
+     "options": [
+      {
+       "label": "Stay quiet"
+      },
+      {
+       "label": "Split the money",
+       "share": "half"
+      },
+      {
+       "label": "Expose them",
+       "marker": 1
+      }
+     ]
+    }
    }
   }
  }

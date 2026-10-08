@@ -248,7 +248,7 @@ static func settle_estate(state: GameStateScript, dead_id: int, heir: int) -> Ar
 
 # Why this player can't use this role's power now, or "" if they can. Every role shares these rules:
 # you must hold it, be in the game, and not be sick (Article 17: sick players can't use pledges).
-# and not be CANCELLED. Later: a role card frozen by a card or by corruption.
+# and not be CANCELLED or frozen by corruption (see Corruption).
 static func can_use_pledge(state: GameStateScript, player_id: int, role: String) -> String:
 	if not has(state, player_id, role):
 		return "You don't hold the %s role." % role
@@ -258,6 +258,8 @@ static func can_use_pledge(state: GameStateScript, player_id: int, role: String)
 		return "Sick players can't use pledges."
 	if is_cancelled(state, player_id):
 		return "CANCELLED players have no roles until they climb back."
+	if state.frozen.has(player_id):
+		return "Your roles are frozen by corruption."
 	return ""
 
 
