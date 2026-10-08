@@ -251,7 +251,7 @@ A term: **Inauguration** (the Leader may amend, or `pass_window`) then the **lev
 |---|---|---|
 | How does the Leader set the levy (Article 4)? | By amending Article 3, like any other rule. There is no separate command. | Confirmed |
 | What if the new levy is outside the band? | A failed check (Article 3: "the levy must stay within the levy band"): the fine, the popularity loss and the used window all apply. | Confirmed |
-| Where is the band kept? | In `state.levy_band` (low, high), starting at 25 to 50 and public. The numbers printed in Article 4 are the starting band; the UI must show the live one. | **Built** |
+| Where is the band kept? | In `state.levy_band` (low, high), starting at 25 to 50 and public. The numbers printed in Article 4 are the starting band and are never rewritten (only a Leader's amendment changes the Constitution's words, and only highlighted ones); the UI shows the live band. | Confirmed |
 | When does the band shift (Article 5)? | When a term ends, after the Farewell. A term cut short by the Leader's elimination has no shift. | Confirmed |
 | Whose popularity? | The sitting Leader's effective popularity (Nepo debuff included). Below minus X raises the band by 10; above plus X lowers it by 10. Exactly X does nothing. | Confirmed |
 | What moves? | Both ends together. The low end never drops below 25; if the floor stops it, the high end moves by the same smaller amount, so the band keeps its width. At the floor with nothing to move, there is no event. | Confirmed |
